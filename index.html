@@ -9,14 +9,16 @@
         :root {
             color-scheme: dark;
             --bg: #0a0a0c;
-            --panel: #121214;
-            --panel-border: #232326;
+            --panel: rgba(255, 255, 255, 0.05);
+            --panel-border: rgba(255, 255, 255, 0.12);
             --text: #ededee;
-            --muted: #7a7a80;
+            --muted: #a3a3aa;
             --accent: #ff2a44;
             --accent-dim: #5c1019;
             --accent-glow: rgba(255, 42, 68, 0.35);
             --ease: cubic-bezier(0.16, 1, 0.3, 1);
+            --glass-blur: blur(20px) saturate(160%);
+            --glass-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
         }
 
         * {
@@ -27,8 +29,10 @@
             margin: 0;
             font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
             background:
-                radial-gradient(circle at 12% 0%, rgba(255, 42, 68, 0.07), transparent 45%),
-                radial-gradient(circle at 100% 100%, rgba(255, 42, 68, 0.05), transparent 40%),
+                radial-gradient(circle at 12% 0%, rgba(255, 42, 68, 0.25), transparent 45%),
+                radial-gradient(circle at 100% 10%, rgba(64, 132, 255, 0.18), transparent 40%),
+                radial-gradient(circle at 20% 90%, rgba(43, 222, 178, 0.14), transparent 45%),
+                radial-gradient(circle at 90% 90%, rgba(255, 196, 0, 0.12), transparent 40%),
                 var(--bg);
             color: var(--text);
             min-height: 100vh;
@@ -51,12 +55,15 @@
 
         .sidebar {
             background: var(--panel);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border: 1px solid var(--panel-border);
             border-radius: 14px;
             padding: 18px;
             height: fit-content;
             position: sticky;
             top: 24px;
+            box-shadow: var(--glass-shadow);
             transition: opacity 220ms var(--ease), transform 220ms var(--ease);
         }
 
@@ -161,6 +168,10 @@
             align-items: center;
             justify-content: center;
             background: var(--panel);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--glass-shadow);
             color: var(--muted);
         }
 
@@ -208,6 +219,8 @@
 
         .empty-state {
             background: var(--panel);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border: 1px dashed var(--panel-border);
             border-radius: 14px;
             padding: 48px 24px;
@@ -259,11 +272,14 @@
 
         .topic-card {
             background: var(--panel);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border: 1px solid var(--panel-border);
             border-radius: 14px;
             padding: 18px;
             cursor: pointer;
             color: var(--text);
+            box-shadow: var(--glass-shadow);
             transition: border-color 200ms var(--ease), transform 200ms var(--ease), box-shadow 200ms var(--ease);
         }
 
@@ -315,7 +331,9 @@
             font-weight: 600;
             color: var(--text);
             cursor: pointer;
-            background: transparent;
+            background: rgba(255, 42, 68, 0.08);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             box-shadow: none;
             transition: background 180ms var(--ease), box-shadow 180ms var(--ease), transform 180ms var(--ease);
         }
@@ -342,10 +360,12 @@
 
         .panel {
             background: var(--panel);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border: 1px solid var(--panel-border);
             border-radius: 14px;
             padding: 16px;
-            box-shadow: none;
+            box-shadow: var(--glass-shadow);
         }
 
         .panel h2 {
@@ -366,21 +386,89 @@
         canvas {
             display: block;
             width: 100%;
-            max-width: 500px;
+            max-width: 380px;
             height: auto;
             margin: 0 auto;
             border-radius: 10px;
             border: 1px solid var(--panel-border);
-            background: #0d0d0f;
+            background: rgba(13, 13, 15, 0.5);
+        }
+
+        .loss-canvas {
+            margin-top: 10px;
+            max-width: 380px;
+            height: auto;
+            aspect-ratio: 500 / 90;
+        }
+
+        .progress-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            max-width: 380px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .progress-track {
+            flex: 1;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--panel-border);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+            box-shadow: 0 0 10px var(--accent-glow);
+            transition: width 120ms linear;
+        }
+
+        .progress-label {
+            font-size: 12px;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            color: var(--muted);
+            white-space: nowrap;
+            min-width: 92px;
+            text-align: right;
         }
 
         .metrics {
-            margin-top: 12px;
+            margin-top: 10px;
             text-align: center;
             font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
             color: var(--text);
-            line-height: 1.55;
-            font-size: 14px;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+
+        .explainer {
+            margin-top: 28px;
+            background: var(--panel);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--panel-border);
+            border-radius: 14px;
+            padding: 22px 26px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .explainer p {
+            margin: 0 0 14px;
+            color: var(--muted);
+            font-size: 14.5px;
+            line-height: 1.7;
+        }
+
+        .explainer p:last-child {
+            margin-bottom: 0;
+            color: var(--text);
+            font-weight: 500;
         }
 
         @media (max-width: 850px) {
@@ -400,7 +488,7 @@
 </head>
 
 <body>
-    <div class="app-shell">
+    <div class="app-shell sidebar-collapsed">
         <aside class="sidebar" id="sidebar">
             <h3>Sections</h3>
             <div class="nav-list">
@@ -450,7 +538,14 @@
                             <h2>Single Linear Layer with Sigmoid</h2>
                             <div class="architecture">Dense(units=1, activation="sigmoid")</div>
                             <canvas id="logisticCanvas" width="500" height="500"></canvas>
-                            <div class="metrics" id="logisticMetrics">Epoch: 0<br>Loss: 0.0000<br>Accuracy: 0.00%</div>
+                            <div class="progress-row">
+                                <div class="progress-track">
+                                    <div class="progress-fill" id="logisticProgressFill"></div>
+                                </div>
+                                <span class="progress-label" id="logisticProgressLabel">Epoch 0 / 150</span>
+                            </div>
+                            <canvas class="loss-canvas" id="logisticLossCanvas" width="500" height="90"></canvas>
+                            <div class="metrics" id="logisticMetrics">Epoch: 0 &nbsp;|&nbsp; Loss: 0.0000 &nbsp;|&nbsp; Accuracy: 0.00%</div>
                         </div>
 
                         <div class="panel">
@@ -459,8 +554,27 @@
                                 activation="sigmoid")
                             </div>
                             <canvas id="reluCanvas" width="500" height="500"></canvas>
-                            <div class="metrics" id="reluMetrics">Epoch: 0<br>Loss: 0.0000<br>Accuracy: 0.00%</div>
+                            <div class="progress-row">
+                                <div class="progress-track">
+                                    <div class="progress-fill" id="reluProgressFill"></div>
+                                </div>
+                                <span class="progress-label" id="reluProgressLabel">Epoch 0 / 150</span>
+                            </div>
+                            <canvas class="loss-canvas" id="reluLossCanvas" width="500" height="90"></canvas>
+                            <div class="metrics" id="reluMetrics">Epoch: 0 &nbsp;|&nbsp; Loss: 0.0000 &nbsp;|&nbsp; Accuracy: 0.00%</div>
                         </div>
+                    </div>
+
+                    <div class="explainer">
+                        <p>A world made only of straight lines would never produce circles, spirals, branching
+                            trees, or coastlines. Nature isn't linear—it emerges from simple rules interacting in
+                            nonlinear ways.</p>
+                        <p>A neural network without activation functions sees the world through a single straight
+                            boundary, no matter how many layers it has. Add a ReLU, and that changes. One simple
+                            nonlinear rule gives the network the ability to bend, split, and shape its decision
+                            boundary to match the complexity of the data.</p>
+                        <p>The activation function isn't just another layer—it's the moment the model stops
+                            thinking in straight lines.</p>
                     </div>
                 </div>
             </section>
@@ -474,7 +588,9 @@
             logisticModel: null,
             reluModel: null,
             isTraining: false,
-            epoch: 0
+            epoch: 0,
+            logisticLossHistory: [],
+            reluLossHistory: []
         };
 
         const generateBtn = document.getElementById('generateBtn');
@@ -483,15 +599,21 @@
 
         const logisticCanvas = document.getElementById('logisticCanvas');
         const reluCanvas = document.getElementById('reluCanvas');
+        const logisticLossCanvas = document.getElementById('logisticLossCanvas');
+        const reluLossCanvas = document.getElementById('reluLossCanvas');
         const logisticMetrics = document.getElementById('logisticMetrics');
         const reluMetrics = document.getElementById('reluMetrics');
+        const logisticProgressFill = document.getElementById('logisticProgressFill');
+        const reluProgressFill = document.getElementById('reluProgressFill');
+        const logisticProgressLabel = document.getElementById('logisticProgressLabel');
+        const reluProgressLabel = document.getElementById('reluProgressLabel');
         const navButtons = document.querySelectorAll('.nav-button');
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebarToggle');
 
         const canvasSize = 500;
         const bounds = 1.5;
-        const trainingEpochs = 150;
+        const trainingEpochs = 100;
         const delayMs = 25;
 
         function gaussianRandom() {
@@ -781,12 +903,75 @@
 
         function updateMetrics(modelKey, epoch, loss, accuracy) {
             const label = modelKey === 'logistic' ? logisticMetrics : reluMetrics;
-            label.innerHTML = `Epoch: ${epoch}<br>Loss: ${loss.toFixed(4)}<br>Accuracy: ${(accuracy * 100).toFixed(2)}%`;
+            label.innerHTML = `Epoch: ${epoch} &nbsp;|&nbsp; Loss: ${loss.toFixed(4)} &nbsp;|&nbsp; Accuracy: ${(accuracy * 100).toFixed(2)}%`;
+        }
+
+        function updateProgress(modelKey, epoch) {
+            const fill = modelKey === 'logistic' ? logisticProgressFill : reluProgressFill;
+            const label = modelKey === 'logistic' ? logisticProgressLabel : reluProgressLabel;
+            const pct = Math.min(100, (epoch / trainingEpochs) * 100);
+            fill.style.width = `${pct}%`;
+            label.textContent = `Epoch ${epoch} / ${trainingEpochs}`;
+        }
+
+        function drawLossChart(canvas, history) {
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            const padding = { top: 10, right: 12, bottom: 18, left: 36 };
+            const plotW = width - padding.left - padding.right;
+            const plotH = height - padding.top - padding.bottom;
+
+            const maxLoss = history.length ? Math.max(...history, 1e-3) : 1;
+
+            // grid + y-axis labels
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = '10px ui-monospace, SFMono-Regular, Consolas, monospace';
+            ctx.lineWidth = 1;
+            const gridLines = 4;
+            for (let i = 0; i <= gridLines; i += 1) {
+                const y = padding.top + (plotH / gridLines) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(padding.left + plotW, y);
+                ctx.stroke();
+                const value = maxLoss * (1 - i / gridLines);
+                ctx.fillText(value.toFixed(2), 2, y + 3);
+            }
+
+            if (history.length < 2) return;
+
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#ff2a44';
+            history.forEach((loss, idx) => {
+                const x = padding.left + (idx / (trainingEpochs - 1)) * plotW;
+                const y = padding.top + (1 - loss / maxLoss) * plotH;
+                if (idx === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // fill under curve
+            ctx.lineTo(padding.left + ((history.length - 1) / (trainingEpochs - 1)) * plotW, padding.top + plotH);
+            ctx.lineTo(padding.left, padding.top + plotH);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255, 42, 68, 0.12)';
+            ctx.fill();
         }
 
         function resetMetrics() {
-            logisticMetrics.innerHTML = 'Epoch: 0<br>Loss: 0.0000<br>Accuracy: 0.00%';
-            reluMetrics.innerHTML = 'Epoch: 0<br>Loss: 0.0000<br>Accuracy: 0.00%';
+            logisticMetrics.innerHTML = 'Epoch: 0 &nbsp;|&nbsp; Loss: 0.0000 &nbsp;|&nbsp; Accuracy: 0.00%';
+            reluMetrics.innerHTML = 'Epoch: 0 &nbsp;|&nbsp; Loss: 0.0000 &nbsp;|&nbsp; Accuracy: 0.00%';
+            state.logisticLossHistory = [];
+            state.reluLossHistory = [];
+            updateProgress('logistic', 0);
+            updateProgress('relu', 0);
+            drawLossChart(logisticLossCanvas, []);
+            drawLossChart(reluLossCanvas, []);
         }
 
         function resetModels() {
@@ -833,8 +1018,14 @@
                 const acc2 = history2.history.acc?.[0] ?? history2.history.accuracy?.[0] ?? 0;
 
                 state.epoch = epoch;
+                state.logisticLossHistory.push(loss1);
+                state.reluLossHistory.push(loss2);
                 updateMetrics('logistic', epoch, loss1, acc1);
                 updateMetrics('relu', epoch, loss2, acc2);
+                updateProgress('logistic', epoch);
+                updateProgress('relu', epoch);
+                drawLossChart(logisticLossCanvas, state.logisticLossHistory);
+                drawLossChart(reluLossCanvas, state.reluLossHistory);
                 drawScene();
                 if (epoch < trainingEpochs) {
                     await sleep(delayMs);
