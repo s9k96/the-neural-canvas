@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linear vs ReLU Neural Network</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #07111f;
+            --panel: rgba(255, 255, 255, 0.06);
+            --panel-border: rgba(255, 255, 255, 0.14);
+            --text: #f4f7fb;
+            --muted: #99a8bf;
+            --accent: #4f8cff;
+            --accent-2: #ff5d7a;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+            background: radial-gradient(circle at top, #11233d 0%, var(--bg) 60%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .app-shell {
+            display: grid;
+            grid-template-columns: 230px minmax(0, 1fr);
+            gap: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .sidebar {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            padding: 18px;
+            height: fit-content;
+            position: sticky;
+            top: 24px;
+        }
+
+        .sidebar h3 {
+            margin: 0 0 12px;
+            font-size: 15px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .nav-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            border: 0;
+            border-radius: 12px;
+            padding: 11px 12px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            box-shadow: none;
+            font-weight: 600;
+        }
+
+        .nav-button.active {
+            background: linear-gradient(135deg, var(--accent), #7f6cff);
+            box-shadow: 0 10px 18px rgba(79, 140, 255, 0.18);
+        }
+
+        .nav-button.home-btn {
+            font-size: 17px;
+            padding: 13px 12px;
+            margin-bottom: 6px;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .nav-button.section-btn {
+            margin-left: 8px;
+            font-size: 14px;
+        }
+
+        .content {
+            min-width: 0;
+        }
+
+        .wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section[hidden] {
+            display: none !important;
+        }
+
+        .empty-state {
+            background: var(--panel);
+            border: 1px dashed rgba(255, 255, 255, 0.16);
+            border-radius: 20px;
+            padding: 48px 24px;
+            text-align: center;
+            color: var(--muted);
+            min-height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 0 0 16px;
+            font-size: clamp(28px, 3.2vw, 40px);
+            letter-spacing: 0.02em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            margin-bottom: 22px;
+            font-size: 15px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 22px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 999px;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--accent), #7f6cff);
+            box-shadow: 0 10px 18px rgba(79, 140, 255, 0.18);
+            transition: transform 140ms ease, opacity 140ms ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+            transform: none;
+        }
+
+        .panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            padding: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+        }
+
+        .panel h2 {
+            margin: 0 0 10px;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .panel .architecture {
+            text-align: center;
+            color: var(--muted);
+            margin-bottom: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            margin: 0 auto;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: #0d1626;
+        }
+
+        .metrics {
+            margin-top: 12px;
+            text-align: center;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            color: var(--text);
+            line-height: 1.55;
+            font-size: 14px;
+        }
+
+        @media (max-width: 850px) {
+            .app-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .panels {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <h3>Sections</h3>
+            <div class="nav-list">
+                <button class="nav-button home-btn" data-target="home">Home</button>
+                <button class="nav-button section-btn active" data-target="linear">Linear vs Non-Linear</button>
+            </div>
+        </aside>
+
+        <main class="content">
+            <section id="homeSection" class="section">
+                <div class="empty-state">Select a section from the sidebar to begin.</div>
+            </section>
+
+            <section id="linearSection" class="section" hidden>
+                <div class="wrapper">
+                    <h1>Linear vs ReLU Neural Network</h1>
+                    <div class="subtitle">Why a linear classifier struggles on concentric rings while a hidden ReLU
+                        layer can solve
+                        it.</div>
+
+                    <div class="controls">
+                        <button id="generateBtn">Generate Data</button>
+                        <button id="trainBtn">Train</button>
+                        <button id="resetBtn">Reset</button>
+                    </div>
+
+                    <div class="panels">
+                        <div class="panel">
+                            <h2>Single Linear Layer with Sigmoid</h2>
+                            <div class="architecture">Dense(units=1, activation="sigmoid")</div>
+                            <canvas id="logisticCanvas" width="500" height="500"></canvas>
+                            <div class="metrics" id="logisticMetrics">Epoch: 0<br>Loss: 0.0000<br>Accuracy: 0.00%</div>
+                        </div>
+
+                        <div class="panel">
+                            <h2>One Hidden Layer with ReLU for non-linearity</h2>
+                            <div class="architecture">Dense(units=8, activation="relu")<br>Dense(units=1,
+                                activation="sigmoid")
+                            </div>
+                            <canvas id="reluCanvas" width="500" height="500"></canvas>
+                            <div class="metrics" id="reluMetrics">Epoch: 0<br>Loss: 0.0000<br>Accuracy: 0.00%</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script>
+        const state = {
+            data: null,
+            logisticModel: null,
+            reluModel: null,
+            isTraining: false,
+            epoch: 0
+        };
+
+        const generateBtn = document.getElementById('generateBtn');
+        const trainBtn = document.getElementById('trainBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        const logisticCanvas = document.getElementById('logisticCanvas');
+        const reluCanvas = document.getElementById('reluCanvas');
+        const logisticMetrics = document.getElementById('logisticMetrics');
+        const reluMetrics = document.getElementById('reluMetrics');
+        const navButtons = document.querySelectorAll('.nav-button');
+
+        const canvasSize = 500;
+        const bounds = 1.5;
+        const trainingEpochs = 150;
+        const delayMs = 25;
+
+        function gaussianRandom() {
+            let u = 0;
+            let v = 0;
+            while (u === 0) u = Math.random();
+            while (v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        function generateData() {
+            const points = [];
+            const labels = [];
+
+            function addPoint(radius, label) {
+                const angle = Math.random() * 2 * Math.PI;
+                const noisyRadius = radius + gaussianRandom() * 0.07 + 0.02;
+                const x = noisyRadius * Math.cos(angle) + gaussianRandom() * 0.035;
+                const y = noisyRadius * Math.sin(angle) + gaussianRandom() * 0.035;
+                points.push([x, y]);
+                labels.push(label);
+            }
+
+            for (let i = 0; i < 150; i += 1) {
+                addPoint(0.45, 0);
+            }
+
+            for (let i = 0; i < 150; i += 1) {
+                addPoint(0.95, 1);
+            }
+
+            const xs = points.map(p => p[0]);
+            const ys = points.map(p => p[1]);
+            const maxAbs = Math.max(...xs.map(Math.abs), ...ys.map(Math.abs), 1e-6);
+            const scale = (bounds * 1.0) / maxAbs;
+
+            const normalized = points.map(([x, y]) => [x * scale, y * scale]);
+            return {
+                points: normalized,
+                labels
+            };
+        }
+
+        function createLogisticModel() {
+            const model = tf.sequential({
+                layers: [
+                    tf.layers.dense({
+                        inputShape: [2],
+                        units: 1,
+                        activation: 'sigmoid',
+                        kernelInitializer: 'glorotNormal'
+                    })
+                ]
+            });
+            model.compile({
+                optimizer: tf.train.adam(0.03),
+                loss: 'binaryCrossentropy',
+                metrics: ['accuracy']
+            });
+            return model;
+        }
+
+        function createReluModel() {
+            const model = tf.sequential({
+                layers: [
+                    tf.layers.dense({ inputShape: [2], units: 8, activation: 'relu', kernelInitializer: 'glorotNormal' }),
+                    tf.layers.dense({ units: 1, activation: 'sigmoid', kernelInitializer: 'glorotNormal' })
+                ]
+            });
+            model.compile({
+                optimizer: tf.train.adam(0.01),
+                loss: 'binaryCrossentropy',
+                metrics: ['accuracy']
+            });
+            return model;
+        }
+
+        function modelToCanvas(x, y, canvas) {
+            const width = canvas.width;
+            const height = canvas.height;
+            return {
+                x: ((x + bounds) / (bounds * 2)) * width,
+                y: height - ((y + bounds) / (bounds * 2)) * height
+            };
+        }
+
+        function canvasToModel(px, py, canvas) {
+            const width = canvas.width;
+            const height = canvas.height;
+            return {
+                x: (px / width) * (bounds * 2) - bounds,
+                y: bounds - (py / height) * (bounds * 2)
+            };
+        }
+
+        function colorForProbability(p) {
+            const red = Math.round(255 * p);
+            const blue = Math.round(255 * (1 - p));
+            return `rgb(${red}, 0, ${blue})`;
+        }
+
+        function drawDecisionBoundary(model, canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const step = 4;
+            const cols = Math.ceil(canvas.width / step);
+            const rows = Math.ceil(canvas.height / step);
+            const points = new Array(rows * cols);
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const px = c * step;
+                    const py = r * step;
+                    const { x: modelX, y: modelY } = canvasToModel(px, py, canvas);
+                    points[r * cols + c] = [modelX, modelY];
+                }
+            }
+
+            const input = tf.tensor2d(points, [points.length, 2], 'float32');
+            const output = model.predict(input).reshape([points.length]);
+            const probs = output.dataSync();
+            tf.dispose([input, output]);
+
+            // Draw heatmap
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const p = probs[r * cols + c] ?? 0.5;
+                    ctx.fillStyle = colorForProbability(p);
+                    ctx.fillRect(c * step, r * step, step + 1, step + 1);
+                }
+            }
+
+            // Draw decision boundary contour (marching squares at threshold 0.5)
+            const threshold = 0.5;
+            ctx.lineWidth = 2.2;
+            ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+            ctx.beginPath();
+
+            function interp(ax, ay, av, bx, by, bv) {
+                const t = (threshold - av) / ((bv - av) || 1e-6);
+                return { x: ax + (bx - ax) * t, y: ay + (by - ay) * t };
+            }
+
+            for (let r = 0; r < rows - 1; r++) {
+                for (let c = 0; c < cols - 1; c++) {
+                    const i00 = probs[r * cols + c];
+                    const i10 = probs[r * cols + c + 1];
+                    const i01 = probs[(r + 1) * cols + c];
+                    const i11 = probs[(r + 1) * cols + c + 1];
+
+                    let squareIndex = 0;
+                    if (i00 > threshold) squareIndex |= 1;
+                    if (i10 > threshold) squareIndex |= 2;
+                    if (i11 > threshold) squareIndex |= 4;
+                    if (i01 > threshold) squareIndex |= 8;
+
+                    const x0 = c * step, y0 = r * step, x1 = (c + 1) * step, y1 = (r + 1) * step;
+
+                    switch (squareIndex) {
+                        case 0:
+                        case 15:
+                            break;
+                        case 1: {
+                            const p1 = interp(x0, y0, i00, x1, y0, i10);
+                            const p2 = interp(x0, y0, i00, x0, y1, i01);
+                            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                            break;
+                        }
+                        case 2: {
+                            const p1 = interp(x1, y0, i10, x1, y1, i11);
+                            const p2 = interp(x0, y0, i00, x1, y0, i10);
+                            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                            break;
+                        }
+                        case 3: {
+                            const p1 = interp(x1, y0, i10, x1, y1, i11);
+                            const p2 = interp(x0, y0, i00, x0, y1, i01);
+                            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                            break;
+                        }
+                        case 4: {
+                            const p1 = interp(x1, y1, i11, x0, y1, i01);
+                            const p2 = interp(x1, y0, i10, x1, y1, i11);
+                            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                            break;
+                        }
+                        case 5: {
+                            const pa = interp(x0, y0, i00, x1, y0, i10);
+                            const pb = interp(x1, y1, i11, x0, y1, i01);
+                            const pc = interp(x0, y0, i00, x0, y1, i01);
+                            const pd = interp(x1, y0, i10, x1, y1, i11);
+                            ctx.moveTo(pa.x, pa.y); ctx.lineTo(pc.x, pc.y);
+                            ctx.moveTo(pb.x, pb.y); ctx.lineTo(pd.x, pd.y);
+                            break;
+                        }
+                        case 6: {
+                            const p1 = interp(x0, y0, i00, x1, y0, i10);
+                            const p2 = interp(x1, y1, i11, x0, y1, i01);
+                            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                            break;
+                        }
+                        case 7: {
+                            const p1 = interp(x0, y0, i00, x0, y1, i01);
+                            const p2 = interp(x1, y1, i11, x0, y1, i01);
+                            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                            break;
+                        }
+                        case 8: {
+                            const p1 = interp(x0, y1, i01, x1, y1, i11);
+                            const p2 = interp(x0, y0, i00, x0, y1, i01);
+                            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                            break;
+                        }
+                        case 9: {
+                            const p1 = interp(x0, y1, i01, x1, y1, i11);
+                            const p2 = interp(x1, y0, i10, x1, y1, i11);
+                            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                            break;
+                        }
+                        case 10: {
+                            const pa = interp(x0, y1, i01, x1, y1, i11);
+                            const pb = interp(x1, y0, i10, x0, y0, i00);
+                            const pc = interp(x0, y0, i00, x0, y1, i01);
+                            const pd = interp(x1, y0, i10, x1, y1, i11);
+                            ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y);
+                            ctx.moveTo(pc.x, pc.y); ctx.lineTo(pd.x, pd.y);
+                            break;
+                        }
+                        case 11: {
+                            const p1 = interp(x1, y0, i10, x0, y0, i00);
+                            const p2 = interp(x1, y1, i11, x0, y1, i01);
+                            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                            break;
+                        }
+                        case 12: {
+                            const p1 = interp(x0, y1, i01, x1, y1, i11);
+                            const p2 = interp(x1, y1, i11, x1, y0, i10);
+                            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                            break;
+                        }
+                        case 13: {
+                            const p1 = interp(x0, y1, i01, x1, y1, i11);
+                            const p2 = interp(x0, y0, i00, x1, y0, i10);
+                            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                            break;
+                        }
+                        case 14: {
+                            const p1 = interp(x0, y0, i00, x1, y0, i10);
+                            const p2 = interp(x0, y0, i00, x0, y1, i01);
+                            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            ctx.stroke();
+        }
+
+        function drawPoints(data, canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.save();
+            data.points.forEach(([x, y], idx) => {
+                const { x: px, y: py } = modelToCanvas(x, y, canvas);
+                ctx.beginPath();
+                ctx.arc(px, py, 3.2, 0, Math.PI * 2);
+                ctx.fillStyle = data.labels[idx] === 0 ? '#2f7bff' : '#ff4b4b';
+                ctx.lineWidth = 1.2;
+                ctx.strokeStyle = 'white';
+                ctx.stroke();
+                ctx.fill();
+            });
+            ctx.restore();
+        }
+
+        function drawScene() {
+            drawDecisionBoundary(state.logisticModel, logisticCanvas);
+            drawPoints(state.data, logisticCanvas);
+
+            drawDecisionBoundary(state.reluModel, reluCanvas);
+            drawPoints(state.data, reluCanvas);
+        }
+
+        function updateMetrics(modelKey, epoch, loss, accuracy) {
+            const label = modelKey === 'logistic' ? logisticMetrics : reluMetrics;
+            label.innerHTML = `Epoch: ${epoch}<br>Loss: ${loss.toFixed(4)}<br>Accuracy: ${(accuracy * 100).toFixed(2)}%`;
+        }
+
+        function resetMetrics() {
+            logisticMetrics.innerHTML = 'Epoch: 0<br>Loss: 0.0000<br>Accuracy: 0.00%';
+            reluMetrics.innerHTML = 'Epoch: 0<br>Loss: 0.0000<br>Accuracy: 0.00%';
+        }
+
+        function resetModels() {
+            if (state.logisticModel) state.logisticModel.dispose();
+            if (state.reluModel) state.reluModel.dispose();
+            state.logisticModel = createLogisticModel();
+            state.reluModel = createReluModel();
+            state.epoch = 0;
+            resetMetrics();
+            drawScene();
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function trainModels() {
+            if (state.isTraining) return;
+            state.isTraining = true;
+            setButtonsDisabled(true);
+
+            const inputTensor = tf.tensor2d(state.data.points, [state.data.points.length, 2], 'float32');
+            const labelTensor = tf.tensor2d(state.data.labels.map(v => [v]), [state.data.labels.length, 1], 'float32');
+
+            for (let epoch = 1; epoch <= trainingEpochs; epoch += 1) {
+                const [history1, history2] = await Promise.all([
+                    state.logisticModel.fit(inputTensor, labelTensor, {
+                        epochs: 1,
+                        batchSize: 64,
+                        shuffle: true,
+                        verbose: 0
+                    }),
+                    state.reluModel.fit(inputTensor, labelTensor, {
+                        epochs: 1,
+                        batchSize: 64,
+                        shuffle: true,
+                        verbose: 0
+                    })
+                ]);
+
+                const loss1 = history1.history.loss?.[0] ?? 0;
+                const acc1 = history1.history.acc?.[0] ?? history1.history.accuracy?.[0] ?? 0;
+                const loss2 = history2.history.loss?.[0] ?? 0;
+                const acc2 = history2.history.acc?.[0] ?? history2.history.accuracy?.[0] ?? 0;
+
+                state.epoch = epoch;
+                updateMetrics('logistic', epoch, loss1, acc1);
+                updateMetrics('relu', epoch, loss2, acc2);
+                drawScene();
+                if (epoch < trainingEpochs) {
+                    await sleep(delayMs);
+                }
+            }
+
+            tf.dispose([inputTensor, labelTensor]);
+            state.isTraining = false;
+            setButtonsDisabled(false);
+        }
+
+        function setButtonsDisabled(disabled) {
+            generateBtn.disabled = disabled;
+            trainBtn.disabled = disabled;
+            resetBtn.disabled = disabled;
+        }
+
+        function showSection(target) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.hidden = section.id !== `${target}Section`;
+            });
+            navButtons.forEach(button => {
+                button.classList.toggle('active', button.dataset.target === target);
+            });
+        }
+
+        function init() {
+            state.data = generateData();
+            state.logisticModel = createLogisticModel();
+            state.reluModel = createReluModel();
+            resetMetrics();
+            drawScene();
+            showSection('linear');
+        }
+
+        generateBtn.addEventListener('click', () => {
+            state.data = generateData();
+            state.logisticModel = createLogisticModel();
+            state.reluModel = createReluModel();
+            state.epoch = 0;
+            resetMetrics();
+            drawScene();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            state.epoch = 0;
+            state.logisticModel = createLogisticModel();
+            state.reluModel = createReluModel();
+            resetMetrics();
+            drawScene();
+        });
+
+        trainBtn.addEventListener('click', trainModels);
+
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                showSection(button.dataset.target);
+            });
+        });
+
+        window.addEventListener('load', () => {
+            init();
+        });
+    </script>
+</body>
+
+</html>
