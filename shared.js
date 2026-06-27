@@ -1,6 +1,7 @@
 const NAV_PAGES = [
     { id: 'home', label: 'Home', href: 'index.html', home: true },
-    { id: 'linear', label: 'Linear vs Non-Linear', href: 'linear-nonlinear.html' }
+    { id: 'linear', label: 'Linear vs Non-Linear', href: 'linear-nonlinear.html' },
+    { id: 'depth-collapse', label: 'Depth Without Nonlinearity', href: 'depth-collapse.html' }
 ];
 
 function renderSidebarNav() {

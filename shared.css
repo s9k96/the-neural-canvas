@@ -328,7 +328,7 @@ button:disabled {
 
 .panels {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 20px;
 }
 
@@ -443,6 +443,78 @@ canvas {
     margin-bottom: 0;
     color: var(--text);
     font-weight: 500;
+}
+
+.proof-panel {
+    margin-top: 20px;
+    background: var(--panel);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 22px 26px;
+    box-shadow: var(--glass-shadow);
+}
+
+.proof-panel h2 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    text-align: center;
+}
+
+.proof-panel .proof-subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.matrix-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+.matrix-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 14px 22px;
+    text-align: center;
+    min-width: 140px;
+}
+
+.matrix-box .matrix-title {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+}
+
+.matrix-box .matrix-values {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 15px;
+    color: var(--text);
+    line-height: 1.7;
+}
+
+.matrix-op {
+    font-size: 22px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.cosine-result {
+    margin-top: 18px;
+    text-align: center;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 14px;
+    color: var(--accent);
+    font-weight: 600;
 }
 
 @media (max-width: 850px) {
