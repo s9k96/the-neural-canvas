@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Depth Without Nonlinearity</title>
+    <title>Depth Without Creativity</title>
     <link rel="stylesheet" href="shared.css" />
 </head>
 
@@ -24,8 +24,8 @@
             </button>
 
             <div class="wrapper">
-                <h1>Depth Without Nonlinearity</h1>
-                <div class="subtitle">Five stacked linear layers are no stronger than one — stack five ReLUs
+                <h1>Depth Without Creativity</h1>
+                <div class="subtitle">Five stacked linear layers are no stronger than one - stack five ReLUs
                     instead, and everything changes.</div>
 
                 <div class="controls">
@@ -68,7 +68,8 @@
 
                     <div class="panel">
                         <h2>5 Layers + ReLU</h2>
-                        <div class="architecture">Dense(8,relu)&rarr;Dense(8,relu)&rarr;Dense(8,relu)&rarr;Dense(8,relu)&rarr;Dense(1,
+                        <div class="architecture">
+                            Dense(8,relu)&rarr;Dense(8,relu)&rarr;Dense(8,relu)&rarr;Dense(8,relu)&rarr;Dense(1,
                             sigmoid)</div>
                         <canvas id="deepReluCanvas" width="500" height="500"></canvas>
                         <div class="progress-row">
@@ -98,22 +99,22 @@
                             <div class="matrix-values" id="singleMatrix">train to compute</div>
                         </div>
                     </div>
-                    <div class="cosine-result" id="cosineResult">Direction similarity: —</div>
+                    <div class="cosine-result" id="cosineResult">Direction similarity: -</div>
                 </div>
 
                 <div class="explainer">
                     <p>Stacking linear layers doesn't add expressive power: each layer is just a matrix
                         multiplication, and the product of any number of matrices is itself one matrix. Five
                         linear layers with no activation between them compute exactly the same family of
-                        functions as a single linear layer — they can only ever draw a straight decision
+                        functions as a single linear layer - they can only ever draw a straight decision
                         boundary.</p>
                     <p>That's exactly what happens on the rings above: the 1-layer and 5-linear-layer networks
                         land on the same accuracy and the same straight-line boundary, no matter how long they
                         train. Insert a ReLU between each of those same five layers, though, and the composition
-                        is no longer linear — the network can bend its boundary around the inner ring and solve
+                        is no longer linear - the network can bend its boundary around the inner ring and solve
                         the task.</p>
-                    <p>Depth alone buys nothing. Depth plus a nonlinearity between every layer is what buys
-                        expressive power.</p>
+                    <p>Depth lets you think for longer. Nonlinearity lets you think differently. Real intelligence needs
+                        both.</p>
                 </div>
             </div>
         </main>
@@ -518,7 +519,7 @@
             });
             composedMatrixEl.textContent = 'train to compute';
             singleMatrixEl.textContent = 'train to compute';
-            cosineResultEl.textContent = 'Direction similarity: —';
+            cosineResultEl.textContent = 'Direction similarity: -';
         }
 
         function matMul(a, b) {
@@ -549,7 +550,7 @@
 
             composedMatrixEl.innerHTML = `[ ${composed[0][0].toFixed(3)} ]<br>[ ${composed[1][0].toFixed(3)} ]`;
             singleMatrixEl.innerHTML = `[ ${single[0][0].toFixed(3)} ]<br>[ ${single[1][0].toFixed(3)} ]`;
-            cosineResultEl.textContent = `Direction similarity (cosine): ${cosine.toFixed(3)} ${Math.abs(cosine) > 0.85 ? '— same line, as predicted' : ''}`;
+            cosineResultEl.textContent = `Direction similarity (cosine): ${cosine.toFixed(3)} ${Math.abs(cosine) > 0.85 ? '- same line, as predicted' : ''}`;
         }
 
         function sleep(ms) {

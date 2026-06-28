@@ -355,6 +355,8 @@ button:disabled {
     margin-bottom: 12px;
     font-size: 13px;
     line-height: 1.5;
+    min-height: calc(1.5em * 2);
+    overflow-wrap: anywhere;
 }
 
 canvas {
