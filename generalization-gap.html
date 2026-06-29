@@ -46,8 +46,8 @@
                 </div>
 
                 <div class="panels">
-                    <div class="panel">
-                        <h2>n = 20 training points</h2>
+                    <div class="panel" id="n20Panel">
+                        <h2 class="panel-title-row">n = 20 training points <span class="spinner"></span></h2>
                         <div class="architecture">Dense(64,relu)&rarr;Dense(64,relu)&rarr;Dense(64,relu)&rarr;Dense(1,
                             sigmoid)</div>
                         <canvas id="n20Canvas" width="500" height="500"></canvas>
@@ -70,8 +70,8 @@
                         </div>
                     </div>
 
-                    <div class="panel">
-                        <h2>n = 200 training points</h2>
+                    <div class="panel" id="n200Panel">
+                        <h2 class="panel-title-row">n = 200 training points <span class="spinner"></span></h2>
                         <div class="architecture">Dense(64,relu)&rarr;Dense(64,relu)&rarr;Dense(64,relu)&rarr;Dense(1,
                             sigmoid)</div>
                         <canvas id="n200Canvas" width="500" height="500"></canvas>
@@ -94,8 +94,8 @@
                         </div>
                     </div>
 
-                    <div class="panel">
-                        <h2>n = 2000 training points</h2>
+                    <div class="panel" id="n2000Panel">
+                        <h2 class="panel-title-row">n = 2000 training points <span class="spinner"></span></h2>
                         <div class="architecture">Dense(64,relu)&rarr;Dense(64,relu)&rarr;Dense(64,relu)&rarr;Dense(1,
                             sigmoid)</div>
                         <canvas id="n2000Canvas" width="500" height="500"></canvas>
@@ -179,6 +179,7 @@
         const metricsEls = {};
         const progressFills = {};
         const progressLabels = {};
+        const panelEls = {};
 
         SIZES.forEach(({ key }) => {
             canvases[key] = document.getElementById(`${key}Canvas`);
@@ -186,6 +187,7 @@
             metricsEls[key] = document.getElementById(`${key}Metrics`);
             progressFills[key] = document.getElementById(`${key}ProgressFill`);
             progressLabels[key] = document.getElementById(`${key}ProgressLabel`);
+            panelEls[key] = document.getElementById(`${key}Panel`);
         });
 
         const gapChart = document.getElementById('gapChart');
@@ -332,7 +334,26 @@
             progressLabels[key].textContent = `Epoch ${epoch} / ${epochs}`;
         }
 
-        function drawLossChart(canvas, trainHistory, testHistory, epochs) {
+        function computeGlobalMaxLoss() {
+            let max = 0;
+            SIZES.forEach(({ key }) => {
+                const h = state.history[key];
+                if (!h) return;
+                if (h.train.length) max = Math.max(max, ...h.train);
+                if (h.test.length) max = Math.max(max, ...h.test);
+            });
+            return Math.max(max, 1e-3);
+        }
+
+        function drawAllLossCharts() {
+            const maxLoss = computeGlobalMaxLoss();
+            SIZES.forEach(({ key, epochs }) => {
+                const h = state.history[key] || { train: [], test: [] };
+                drawLossChart(lossCanvases[key], h.train, h.test, epochs, maxLoss);
+            });
+        }
+
+        function drawLossChart(canvas, trainHistory, testHistory, epochs, maxLoss = 1) {
             const ctx = canvas.getContext('2d');
             const width = canvas.width;
             const height = canvas.height;
@@ -341,9 +362,6 @@
             const padding = { top: 10, right: 12, bottom: 18, left: 36 };
             const plotW = width - padding.left - padding.right;
             const plotH = height - padding.top - padding.bottom;
-
-            const all = trainHistory.concat(testHistory);
-            const maxLoss = all.length ? Math.max(...all, 1e-3) : 1;
 
             ctx.strokeStyle = 'rgba(255,255,255,0.08)';
             ctx.fillStyle = 'rgba(255,255,255,0.4)';
@@ -384,8 +402,9 @@
                 metricsEls[key].innerHTML = '<div class="metrics-line">Epoch: 0 &nbsp;|&nbsp; Train: 0.0000</div><div class="metrics-line">Test: 0.0000 &nbsp;|&nbsp; Gap: 0.0000</div>';
                 state.history[key] = { train: [], test: [] };
                 updateProgress(key, 0, epochs);
-                drawLossChart(lossCanvases[key], [], [], epochs);
+                panelEls[key].classList.remove('training');
             });
+            drawAllLossCharts();
             drawGapChart({});
         }
 
@@ -452,6 +471,8 @@
             const labelTensor = tf.tensor2d(data.labels.map(v => [v]), [data.labels.length, 1], 'float32');
             const batchSize = Math.min(64, n);
 
+            panelEls[key].classList.add('training');
+
             for (let epoch = 1; epoch <= epochs; epoch += 1) {
                 const fitResult = await model.fit(inputTensor, labelTensor, { epochs: 1, batchSize, shuffle: true, verbose: 0 });
                 const trainLoss = fitResult.history.loss?.[0] ?? 0;
@@ -464,7 +485,7 @@
                 state.history[key].test.push(testLoss);
                 updateMetrics(key, epoch, trainLoss, testLoss);
                 updateProgress(key, epoch, epochs);
-                drawLossChart(lossCanvases[key], state.history[key].train, state.history[key].test, epochs);
+                drawAllLossCharts();
 
                 if (epoch % 8 === 0 || epoch === epochs) {
                     drawScene(key);
@@ -473,6 +494,7 @@
             }
 
             tf.dispose([inputTensor, labelTensor]);
+            panelEls[key].classList.remove('training');
             const finalTrain = state.history[key].train[state.history[key].train.length - 1];
             const finalTest = state.history[key].test[state.history[key].test.length - 1];
             return finalTest - finalTrain;

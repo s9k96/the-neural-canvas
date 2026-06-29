@@ -367,6 +367,38 @@ button:disabled {
     box-shadow: var(--glass-shadow);
 }
 
+.panel.training {
+    border-color: var(--accent);
+    box-shadow: var(--glass-shadow), 0 0 0 3px var(--accent-glow);
+}
+
+.panel-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.spinner {
+    display: none;
+    width: 13px;
+    height: 13px;
+    border: 2px solid var(--accent-dim);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 700ms linear infinite;
+}
+
+.panel.training .spinner {
+    display: inline-block;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .panel h2 {
     margin: 0 0 10px;
     font-size: 18px;
