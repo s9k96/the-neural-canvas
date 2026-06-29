@@ -21,11 +21,28 @@ function renderSidebarNav() {
 
 function initSidebarToggle() {
     const toggle = document.getElementById('sidebarToggle');
-    const shell = document.querySelector('.app-shell');
-    if (!toggle || !shell) return;
-    toggle.addEventListener('click', () => {
-        shell.classList.toggle('sidebar-collapsed');
+    const close = document.getElementById('sidebarClose');
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (!toggle || !sidebar || !backdrop) return;
+
+    function openNav() {
+        sidebar.classList.add('open');
+        backdrop.classList.add('visible');
+    }
+
+    function closeNav() {
+        sidebar.classList.remove('open');
+        backdrop.classList.remove('visible');
+    }
+
+    toggle.addEventListener('click', openNav);
+    close?.addEventListener('click', closeNav);
+    backdrop.addEventListener('click', closeNav);
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeNav();
     });
+    sidebar.querySelectorAll('.nav-button').forEach(link => link.addEventListener('click', closeNav));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
