@@ -448,6 +448,36 @@ canvas {
     font-size: 13px;
 }
 
+.metrics-line {
+    white-space: nowrap;
+}
+
+.metrics-line + .metrics-line {
+    margin-top: 4px;
+}
+
+.chart-axis-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chart-ylabel {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.chart-xlabel {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+}
+
 .explainer {
     margin-top: 28px;
     background: var(--panel);

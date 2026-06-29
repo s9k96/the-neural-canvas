@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neural Canvas — Data Closes the Gap</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="shared.css" />
+</head>
+
+<body>
+    <div class="app-shell">
+        <button class="nav-toggle" id="sidebarToggle" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="4" y1="7" x2="20" y2="7"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="17" x2="20" y2="17"></line>
+            </svg>
+        </button>
+
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Sections</h3>
+                <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">&times;</button>
+            </div>
+            <div class="nav-list"></div>
+        </aside>
+
+        <main class="content">
+
+            <div class="wrapper">
+                <h1>Data Closes the Gap</h1>
+                <div class="subtitle">The same over-parameterized network is dropped onto a noisy classification
+                    task three times — with 20, 200, and 2000 training points, each scored against the same
+                    600-point held-out test set. Watch train loss collapse to zero every time, while test loss
+                    only follows it down once there's enough data.</div>
+
+                <div class="controls">
+                    <button id="generateBtn">Generate Data</button>
+                    <button id="trainBtn">Train</button>
+                    <button id="resetBtn">Reset</button>
+                </div>
+
+                <div class="panels">
+                    <div class="panel">
+                        <h2>n = 20 training points</h2>
+                        <div class="architecture">Dense(64,relu)&rarr;Dense(64,relu)&rarr;Dense(64,relu)&rarr;Dense(1,
+                            sigmoid)</div>
+                        <canvas id="n20Canvas" width="500" height="500"></canvas>
+                        <div class="progress-row">
+                            <div class="progress-track">
+                                <div class="progress-fill" id="n20ProgressFill"></div>
+                            </div>
+                            <span class="progress-label" id="n20ProgressLabel">Epoch 0 / 200</span>
+                        </div>
+                        <canvas class="loss-canvas" id="n20LossCanvas" width="500" height="90"></canvas>
+                        <div class="legend">
+                            <span class="legend-item"><span class="legend-dot" style="background:#ff2a44"></span>
+                                Train loss</span>
+                            <span class="legend-item"><span class="legend-dot" style="background:#4084ff"></span>
+                                Test loss</span>
+                        </div>
+                        <div class="metrics" id="n20Metrics">
+                            <div class="metrics-line">Epoch: 0 &nbsp;|&nbsp; Train: 0.0000</div>
+                            <div class="metrics-line">Test: 0.0000 &nbsp;|&nbsp; Gap: 0.0000</div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <h2>n = 200 training points</h2>
+                        <div class="architecture">Dense(64,relu)&rarr;Dense(64,relu)&rarr;Dense(64,relu)&rarr;Dense(1,
+                            sigmoid)</div>
+                        <canvas id="n200Canvas" width="500" height="500"></canvas>
+                        <div class="progress-row">
+                            <div class="progress-track">
+                                <div class="progress-fill" id="n200ProgressFill"></div>
+                            </div>
+                            <span class="progress-label" id="n200ProgressLabel">Epoch 0 / 200</span>
+                        </div>
+                        <canvas class="loss-canvas" id="n200LossCanvas" width="500" height="90"></canvas>
+                        <div class="legend">
+                            <span class="legend-item"><span class="legend-dot" style="background:#ff2a44"></span>
+                                Train loss</span>
+                            <span class="legend-item"><span class="legend-dot" style="background:#4084ff"></span>
+                                Test loss</span>
+                        </div>
+                        <div class="metrics" id="n200Metrics">
+                            <div class="metrics-line">Epoch: 0 &nbsp;|&nbsp; Train: 0.0000</div>
+                            <div class="metrics-line">Test: 0.0000 &nbsp;|&nbsp; Gap: 0.0000</div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <h2>n = 2000 training points</h2>
+                        <div class="architecture">Dense(64,relu)&rarr;Dense(64,relu)&rarr;Dense(64,relu)&rarr;Dense(1,
+                            sigmoid)</div>
+                        <canvas id="n2000Canvas" width="500" height="500"></canvas>
+                        <div class="progress-row">
+                            <div class="progress-track">
+                                <div class="progress-fill" id="n2000ProgressFill"></div>
+                            </div>
+                            <span class="progress-label" id="n2000ProgressLabel">Epoch 0 / 200</span>
+                        </div>
+                        <canvas class="loss-canvas" id="n2000LossCanvas" width="500" height="90"></canvas>
+                        <div class="legend">
+                            <span class="legend-item"><span class="legend-dot" style="background:#ff2a44"></span>
+                                Train loss</span>
+                            <span class="legend-item"><span class="legend-dot" style="background:#4084ff"></span>
+                                Test loss</span>
+                        </div>
+                        <div class="metrics" id="n2000Metrics">
+                            <div class="metrics-line">Epoch: 0 &nbsp;|&nbsp; Train: 0.0000</div>
+                            <div class="metrics-line">Test: 0.0000 &nbsp;|&nbsp; Gap: 0.0000</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="proof-panel">
+                    <h2>Proof: Generalization Gap vs Dataset Size</h2>
+                    <div class="proof-subtitle">Same architecture, same 600-point held-out test set, same number of
+                        training epochs - the only thing that changes between bars is how much data the network
+                        got to see.</div>
+                    <div class="chart-axis-wrap">
+                        <div class="chart-ylabel">Generalization gap (test &minus; train loss)</div>
+                        <canvas id="gapChart" width="900" height="220"
+                            style="max-width:700px; width:100%; height:auto; aspect-ratio:900/220;"></canvas>
+                    </div>
+                    <div class="chart-xlabel">Training set size (n)</div>
+                </div>
+
+                <div class="explainer">
+                    <p>All three networks share the exact same architecture: three hidden layers of 64 ReLU units
+                        apiece, vastly more parameters than needed for a 2-D classification boundary. Handed only 20
+                        noisy points, that capacity does what capacity does - it memorizes every point, noise
+                        included, and train loss collapses to essentially zero. The decision boundary it draws is a
+                        tangle of tiny islands carved out just to catch the mislabeled stragglers.</p>
+                    <p>The held-out test set never changes across the three runs and is drawn from the same noisy
+                        distribution. A network that memorized its 20 training points has learned nothing
+                        transferable about that distribution, so test loss stays high - the train/test gap is huge.
+                        Give the same architecture 200 points and the gap narrows; give it 2000 and the network can
+                        no longer afford to memorize idiosyncratic noise, so it falls back on the actual signal and
+                        train and test loss converge.</p>
+                    <p>Capacity didn't change. Optimizer didn't change. The only lever was data, and that's the
+                        whole lesson: more data doesn't just help accuracy, it closes the gap between what a model
+                        memorizes and what it actually generalizes.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script>
+        const SIZES = [
+            { key: 'n20', n: 20, epochs: 200 },
+            { key: 'n200', n: 200, epochs: 200 },
+            { key: 'n2000', n: 2000, epochs: 200 }
+        ];
+        const TEST_SIZE = 600;
+        const FLIP_PROB = 0.08;
+        const NOISE_SCALE = 0.18;
+        const bounds = 2.2;
+
+        const state = {
+            testData: null,
+            trainData: {},
+            models: {},
+            isTraining: false,
+            history: {}
+        };
+
+        const generateBtn = document.getElementById('generateBtn');
+        const trainBtn = document.getElementById('trainBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        const canvases = {};
+        const lossCanvases = {};
+        const metricsEls = {};
+        const progressFills = {};
+        const progressLabels = {};
+
+        SIZES.forEach(({ key }) => {
+            canvases[key] = document.getElementById(`${key}Canvas`);
+            lossCanvases[key] = document.getElementById(`${key}LossCanvas`);
+            metricsEls[key] = document.getElementById(`${key}Metrics`);
+            progressFills[key] = document.getElementById(`${key}ProgressFill`);
+            progressLabels[key] = document.getElementById(`${key}ProgressLabel`);
+        });
+
+        const gapChart = document.getElementById('gapChart');
+
+        function gaussianRandom() {
+            let u = 0;
+            let v = 0;
+            while (u === 0) u = Math.random();
+            while (v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        function makeMoons(n) {
+            const points = [];
+            const labels = [];
+            for (let i = 0; i < n; i += 1) {
+                const t = Math.random() * Math.PI;
+                const isOuter = i % 2 === 0;
+                let x, y, label;
+                if (isOuter) {
+                    x = Math.cos(t);
+                    y = Math.sin(t);
+                    label = 0;
+                } else {
+                    x = 1 - Math.cos(t);
+                    y = 1 - Math.sin(t) - 0.5;
+                    label = 1;
+                }
+                x += gaussianRandom() * NOISE_SCALE;
+                y += gaussianRandom() * NOISE_SCALE;
+                if (Math.random() < FLIP_PROB) label = 1 - label;
+                points.push([x, y]);
+                labels.push(label);
+            }
+            return { points, labels };
+        }
+
+        function createModel() {
+            const model = tf.sequential({
+                layers: [
+                    tf.layers.dense({ inputShape: [2], units: 64, activation: 'relu', kernelInitializer: 'glorotNormal' }),
+                    tf.layers.dense({ units: 64, activation: 'relu', kernelInitializer: 'glorotNormal' }),
+                    tf.layers.dense({ units: 64, activation: 'relu', kernelInitializer: 'glorotNormal' }),
+                    tf.layers.dense({ units: 1, activation: 'sigmoid', kernelInitializer: 'glorotNormal' })
+                ]
+            });
+            model.compile({ optimizer: tf.train.adam(0.01), loss: 'binaryCrossentropy', metrics: ['accuracy'] });
+            return model;
+        }
+
+        function modelToCanvas(x, y, canvas) {
+            const width = canvas.width;
+            const height = canvas.height;
+            return {
+                x: ((x + bounds) / (bounds * 2)) * width,
+                y: height - ((y + bounds) / (bounds * 2)) * height
+            };
+        }
+
+        function canvasToModel(px, py, canvas) {
+            const width = canvas.width;
+            const height = canvas.height;
+            return {
+                x: (px / width) * (bounds * 2) - bounds,
+                y: bounds - (py / height) * (bounds * 2)
+            };
+        }
+
+        function colorForProbability(p) {
+            const from = [34, 197, 94];
+            const to = [250, 204, 21];
+            const r = Math.round(from[0] + (to[0] - from[0]) * p);
+            const g = Math.round(from[1] + (to[1] - from[1]) * p);
+            const b = Math.round(from[2] + (to[2] - from[2]) * p);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function drawDecisionBoundary(model, canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!model) return;
+
+            const step = 5;
+            const cols = Math.ceil(canvas.width / step);
+            const rows = Math.ceil(canvas.height / step);
+            const points = new Array(rows * cols);
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const px = c * step;
+                    const py = r * step;
+                    const { x: modelX, y: modelY } = canvasToModel(px, py, canvas);
+                    points[r * cols + c] = [modelX, modelY];
+                }
+            }
+
+            const input = tf.tensor2d(points, [points.length, 2], 'float32');
+            const output = model.predict(input).reshape([points.length]);
+            const probs = output.dataSync();
+            tf.dispose([input, output]);
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const p = probs[r * cols + c] ?? 0.5;
+                    ctx.fillStyle = colorForProbability(p);
+                    ctx.fillRect(c * step, r * step, step + 1, step + 1);
+                }
+            }
+        }
+
+        function drawPoints(data, canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.save();
+            data.points.forEach(([x, y], idx) => {
+                const { x: px, y: py } = modelToCanvas(x, y, canvas);
+                ctx.beginPath();
+                ctx.arc(px, py, 3.4, 0, Math.PI * 2);
+                ctx.fillStyle = data.labels[idx] === 0 ? '#22c55e' : '#facc15';
+                ctx.lineWidth = 1.2;
+                ctx.strokeStyle = '#0a0a0c';
+                ctx.stroke();
+                ctx.fill();
+            });
+            ctx.restore();
+        }
+
+        function drawScene(key) {
+            drawDecisionBoundary(state.models[key], canvases[key]);
+            drawPoints(state.trainData[key], canvases[key]);
+        }
+
+        function drawAllScenes() {
+            SIZES.forEach(({ key }) => drawScene(key));
+        }
+
+        function updateMetrics(key, epoch, trainLoss, testLoss) {
+            const gap = testLoss - trainLoss;
+            metricsEls[key].innerHTML = `<div class="metrics-line">Epoch: ${epoch} &nbsp;|&nbsp; Train: ${trainLoss.toFixed(4)}</div><div class="metrics-line">Test: ${testLoss.toFixed(4)} &nbsp;|&nbsp; Gap: ${gap.toFixed(4)}</div>`;
+        }
+
+        function updateProgress(key, epoch, epochs) {
+            const pct = Math.min(100, (epoch / epochs) * 100);
+            progressFills[key].style.width = `${pct}%`;
+            progressLabels[key].textContent = `Epoch ${epoch} / ${epochs}`;
+        }
+
+        function drawLossChart(canvas, trainHistory, testHistory, epochs) {
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            const padding = { top: 10, right: 12, bottom: 18, left: 36 };
+            const plotW = width - padding.left - padding.right;
+            const plotH = height - padding.top - padding.bottom;
+
+            const all = trainHistory.concat(testHistory);
+            const maxLoss = all.length ? Math.max(...all, 1e-3) : 1;
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = '10px ui-monospace, SFMono-Regular, Consolas, monospace';
+            ctx.lineWidth = 1;
+            const gridLines = 4;
+            for (let i = 0; i <= gridLines; i += 1) {
+                const y = padding.top + (plotH / gridLines) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(padding.left + plotW, y);
+                ctx.stroke();
+                const value = maxLoss * (1 - i / gridLines);
+                ctx.fillText(value.toFixed(2), 2, y + 3);
+            }
+
+            if (trainHistory.length < 2) return;
+
+            function plotLine(history, color) {
+                ctx.beginPath();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = color;
+                history.forEach((loss, idx) => {
+                    const x = padding.left + (idx / (epochs - 1)) * plotW;
+                    const y = padding.top + (1 - loss / maxLoss) * plotH;
+                    if (idx === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            }
+
+            plotLine(trainHistory, '#ff2a44');
+            plotLine(testHistory, '#4084ff');
+        }
+
+        function resetMetrics() {
+            SIZES.forEach(({ key, epochs }) => {
+                metricsEls[key].innerHTML = '<div class="metrics-line">Epoch: 0 &nbsp;|&nbsp; Train: 0.0000</div><div class="metrics-line">Test: 0.0000 &nbsp;|&nbsp; Gap: 0.0000</div>';
+                state.history[key] = { train: [], test: [] };
+                updateProgress(key, 0, epochs);
+                drawLossChart(lossCanvases[key], [], [], epochs);
+            });
+            drawGapChart({});
+        }
+
+        function drawGapChart(gaps) {
+            const ctx = gapChart.getContext('2d');
+            const width = gapChart.width;
+            const height = gapChart.height;
+            ctx.clearRect(0, 0, width, height);
+
+            const padding = { top: 20, right: 24, bottom: 36, left: 50 };
+            const plotW = width - padding.left - padding.right;
+            const plotH = height - padding.top - padding.bottom;
+
+            const values = SIZES.map(({ key }) => gaps[key] ?? 0);
+            const maxVal = Math.max(...values, 0.1);
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = '11px ui-monospace, SFMono-Regular, Consolas, monospace';
+            ctx.lineWidth = 1;
+            const gridLines = 4;
+            for (let i = 0; i <= gridLines; i += 1) {
+                const y = padding.top + (plotH / gridLines) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(padding.left + plotW, y);
+                ctx.stroke();
+                const value = maxVal * (1 - i / gridLines);
+                ctx.fillText(value.toFixed(3), 4, y + 3);
+            }
+
+            const barWidth = plotW / SIZES.length * 0.5;
+            SIZES.forEach(({ key, n }, idx) => {
+                const slot = padding.left + (plotW / SIZES.length) * (idx + 0.5);
+                const value = gaps[key] ?? 0;
+                const barH = (value / maxVal) * plotH;
+                const x = slot - barWidth / 2;
+                const y = padding.top + plotH - barH;
+
+                const grad = ctx.createLinearGradient(0, y, 0, padding.top + plotH);
+                grad.addColorStop(0, '#ff2a44');
+                grad.addColorStop(1, 'rgba(255, 42, 68, 0.25)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(x, y, barWidth, barH);
+
+                ctx.fillStyle = 'var(--text)';
+                ctx.fillStyle = '#ededee';
+                ctx.textAlign = 'center';
+                ctx.fillText(value.toFixed(3), slot, y - 6);
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.fillText(`n=${n}`, slot, padding.top + plotH + 18);
+                ctx.textAlign = 'left';
+            });
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function trainOne(key, n, epochs, testInput, testLabel) {
+            const data = state.trainData[key];
+            const model = state.models[key];
+            const inputTensor = tf.tensor2d(data.points, [data.points.length, 2], 'float32');
+            const labelTensor = tf.tensor2d(data.labels.map(v => [v]), [data.labels.length, 1], 'float32');
+            const batchSize = Math.min(64, n);
+
+            for (let epoch = 1; epoch <= epochs; epoch += 1) {
+                const fitResult = await model.fit(inputTensor, labelTensor, { epochs: 1, batchSize, shuffle: true, verbose: 0 });
+                const trainLoss = fitResult.history.loss?.[0] ?? 0;
+
+                const evalResult = model.evaluate(testInput, testLabel, { verbose: 0 });
+                const testLoss = (await evalResult[0].data())[0];
+                tf.dispose(evalResult);
+
+                state.history[key].train.push(trainLoss);
+                state.history[key].test.push(testLoss);
+                updateMetrics(key, epoch, trainLoss, testLoss);
+                updateProgress(key, epoch, epochs);
+                drawLossChart(lossCanvases[key], state.history[key].train, state.history[key].test, epochs);
+
+                if (epoch % 8 === 0 || epoch === epochs) {
+                    drawScene(key);
+                    await sleep(0);
+                }
+            }
+
+            tf.dispose([inputTensor, labelTensor]);
+            const finalTrain = state.history[key].train[state.history[key].train.length - 1];
+            const finalTest = state.history[key].test[state.history[key].test.length - 1];
+            return finalTest - finalTrain;
+        }
+
+        async function trainModels() {
+            if (state.isTraining) return;
+            state.isTraining = true;
+            setButtonsDisabled(true);
+
+            const testInput = tf.tensor2d(state.testData.points, [state.testData.points.length, 2], 'float32');
+            const testLabel = tf.tensor2d(state.testData.labels.map(v => [v]), [state.testData.labels.length, 1], 'float32');
+
+            const gaps = {};
+            await Promise.all(SIZES.map(async ({ key, n, epochs }) => {
+                gaps[key] = await trainOne(key, n, epochs, testInput, testLabel);
+                drawGapChart(gaps);
+            }));
+
+            tf.dispose([testInput, testLabel]);
+            state.isTraining = false;
+            setButtonsDisabled(false);
+        }
+
+        function setButtonsDisabled(disabled) {
+            generateBtn.disabled = disabled;
+            trainBtn.disabled = disabled;
+            resetBtn.disabled = disabled;
+        }
+
+        function createModels() {
+            SIZES.forEach(({ key }) => {
+                state.models[key] = createModel();
+            });
+        }
+
+        function generateData() {
+            state.testData = makeMoons(TEST_SIZE);
+            SIZES.forEach(({ key, n }) => {
+                state.trainData[key] = makeMoons(n);
+            });
+        }
+
+        function init() {
+            generateData();
+            createModels();
+            resetMetrics();
+            drawAllScenes();
+        }
+
+        generateBtn.addEventListener('click', () => {
+            generateData();
+            createModels();
+            resetMetrics();
+            drawAllScenes();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            createModels();
+            resetMetrics();
+            drawAllScenes();
+        });
+
+        trainBtn.addEventListener('click', trainModels);
+
+        window.addEventListener('load', () => {
+            init();
+        });
+    </script>
+
+    <script>window.PAGE_ID = 'generalization-gap';</script>
+    <script src="shared.js"></script>
+</body>
+
+</html>

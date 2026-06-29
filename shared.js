@@ -2,7 +2,8 @@ const NAV_PAGES = [
     { id: 'home', label: 'Home', href: 'index.html', home: true },
     { id: 'linear', label: 'Beyond Straight Thinking', href: 'beyond-straight-thinking.html' },
     { id: 'depth-collapse', label: 'Depth Without Creativity', href: 'depth-collapse.html' },
-    { id: 'embedding-clustering', label: 'The Company We Keep', href: 'embedding-clustering.html' }
+    { id: 'embedding-clustering', label: 'The Company We Keep', href: 'embedding-clustering.html' },
+    { id: 'generalization-gap', label: 'Data Closes the Gap', href: 'generalization-gap.html' }
 ];
 
 function renderSidebarNav() {
