@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neural Canvas — The Company We Keep</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="shared.css" />
+</head>
+
+<body>
+    <div class="app-shell">
+        <button class="nav-toggle" id="sidebarToggle" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="4" y1="7" x2="20" y2="7"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="17" x2="20" y2="17"></line>
+            </svg>
+        </button>
+
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Sections</h3>
+                <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">&times;</button>
+            </div>
+            <div class="nav-list"></div>
+        </aside>
+
+        <main class="content">
+
+            <div class="wrapper">
+                <h1>The Company We Keep</h1>
+                <div class="subtitle">A toy grammar, a bigram embedding&rarr;softmax model, and no similarity
+                    signal anywhere in the loss &mdash; yet same-category tokens land next to each other.</div>
+
+                <div class="controls">
+                    <button id="generateBtn">Generate Corpus</button>
+                    <button id="trainBtn">Train</button>
+                    <button id="resetBtn">Reset</button>
+                </div>
+
+                <div class="panel" style="max-width: 900px; margin: 0 auto 20px;">
+                    <h2>Toy Grammar</h2>
+                    <div class="architecture">
+                        10 animals: cat, dog, cow, horse, sheep, goat, pig, duck, hen, fox<br>
+                        10 fruits: apple, mango, banana, grape, peach, plum, melon, lemon, lime, kiwi<br>
+                        10 verbs: eat, chase, see, watch, smell, bite, lick, follow, find, avoid<br>
+                        template: <code>&lt;animal&gt; &lt;verb&gt; &lt;any noun&gt; &lt;END&gt;</code> &mdash; the
+                        object can be any animal or fruit, regardless of the verb
+                    </div>
+                    <div class="corpus-sample" id="corpusSample">Click "Generate Corpus" to sample sentences.</div>
+                </div>
+
+                <div class="panels">
+                    <div class="panel">
+                        <h2>Model</h2>
+                        <div class="architecture">Embedding(vocab=31, dim=8) &rarr; Flatten &rarr; Dense(31, softmax)
+                            <br>trained only to predict the next token
+                        </div>
+                        <canvas class="loss-canvas" id="lossCanvas" width="500" height="140"></canvas>
+                        <div class="progress-row">
+                            <div class="progress-track">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <span class="progress-label" id="progressLabel">Epoch 0 / 150</span>
+                        </div>
+                        <div class="metrics" id="metrics">Epoch: 0 &nbsp;|&nbsp; Loss: 0.0000 &nbsp;|&nbsp; Next-token
+                            accuracy: 0.00%</div>
+                    </div>
+
+                    <div class="panel">
+                        <h2>Embeddings Projected to 2D (PCA)</h2>
+                        <canvas id="scatterCanvas" width="700" height="700" style="max-width: 640px;"></canvas>
+                        <div class="legend" id="scatterLegend"></div>
+                    </div>
+                </div>
+
+                <div class="proof-panel">
+                    <h2>Proof: Nearest Neighbor by Category</h2>
+                    <div class="proof-subtitle">For each token, the closest other token in the full 8D embedding
+                        space &mdash; never told categories exist, only trained to predict what comes next.</div>
+                    <div class="nn-grid" id="nnGrid"></div>
+                    <div class="cosine-result" id="nnSummary">Train to compute nearest neighbors.</div>
+                </div>
+
+                <div class="explainer">
+                    <p><strong>Claim:</strong> a model trained only to predict the next token in a tiny synthetic
+                        grammar will cluster related tokens in embedding space, even though "similarity" was never
+                        part of the loss &mdash; cross-entropy on the next token is the only signal it ever sees.</p>
+                    <p><strong>Build:</strong> sentences are generated from <code>animal verb noun END</code>, where
+                        the verb following an animal is unconstrained and the noun following a verb is unconstrained.
+                        That means every animal shares the same "what comes next" distribution (a verb), every verb
+                        shares the same "what comes next" distribution (any noun), and fruits &mdash; which never
+                        appear as a sentence's subject &mdash; get a distribution all their own. The model is a
+                        single embedding table feeding directly into a softmax: nothing in its architecture knows
+                        about categories.</p>
+                    <p>We are known by the company we keep.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script>
+        const ANIMALS = ['cat', 'dog', 'cow', 'horse', 'sheep', 'goat', 'pig', 'duck', 'hen', 'fox'];
+        const FRUITS = ['apple', 'mango', 'banana', 'grape', 'peach', 'plum', 'melon', 'lemon', 'lime', 'kiwi'];
+        const VERBS = ['eat', 'chase', 'see', 'watch', 'smell', 'bite', 'lick', 'follow', 'find', 'avoid'];
+        const NOUNS = [...ANIMALS, ...FRUITS];
+        const VOCAB = [...ANIMALS, ...FRUITS, ...VERBS, 'END'];
+
+        const CATEGORY = {};
+        ANIMALS.forEach(t => { CATEGORY[t] = 'animal'; });
+        FRUITS.forEach(t => { CATEGORY[t] = 'fruit'; });
+        VERBS.forEach(t => { CATEGORY[t] = 'verb'; });
+        CATEGORY.END = 'end';
+
+        const CATEGORY_COLOR = {
+            animal: '#facc15',
+            fruit: '#22c55e',
+            verb: '#4084ff',
+            end: '#71717a'
+        };
+
+        const tokenToId = Object.fromEntries(VOCAB.map((t, i) => [t, i]));
+        const vocabSize = VOCAB.length;
+        const embedDim = 8;
+        const numSentences = 6000;
+        const trainingEpochs = 150;
+        const delayMs = 5;
+
+        const state = {
+            sentences: [],
+            pairs: null,
+            model: null,
+            lossHistory: [],
+            accHistory: [],
+            isTraining: false
+        };
+
+        const generateBtn = document.getElementById('generateBtn');
+        const trainBtn = document.getElementById('trainBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const corpusSampleEl = document.getElementById('corpusSample');
+        const lossCanvas = document.getElementById('lossCanvas');
+        const scatterCanvas = document.getElementById('scatterCanvas');
+        const scatterLegendEl = document.getElementById('scatterLegend');
+        const progressFill = document.getElementById('progressFill');
+        const progressLabel = document.getElementById('progressLabel');
+        const metricsEl = document.getElementById('metrics');
+        const nnGridEl = document.getElementById('nnGrid');
+        const nnSummaryEl = document.getElementById('nnSummary');
+
+        function choice(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function generateSentence() {
+            const subject = choice(ANIMALS);
+            const verb = choice(VERBS);
+            const object = choice(NOUNS);
+            return [subject, verb, object, 'END'];
+        }
+
+        function generateCorpus() {
+            const sentences = [];
+            for (let i = 0; i < numSentences; i += 1) sentences.push(generateSentence());
+
+            const pairsX = [];
+            const pairsY = [];
+            sentences.forEach(sentence => {
+                for (let i = 0; i < sentence.length - 1; i += 1) {
+                    pairsX.push(tokenToId[sentence[i]]);
+                    pairsY.push(tokenToId[sentence[i + 1]]);
+                }
+            });
+
+            state.sentences = sentences;
+            state.pairs = { x: pairsX, y: pairsY };
+
+            const sample = sentences.slice(0, 5).map(s => s.slice(0, 3).join(' ')).join('  /  ');
+            corpusSampleEl.textContent = `${sentences.length} sentences, ${pairsX.length} next-token pairs. Sample: ${sample}`;
+        }
+
+        function createModel() {
+            const model = tf.sequential({
+                layers: [
+                    tf.layers.embedding({ inputDim: vocabSize, outputDim: embedDim, inputLength: 1 }),
+                    tf.layers.flatten(),
+                    tf.layers.dense({ units: vocabSize, activation: 'softmax' })
+                ]
+            });
+            model.compile({ optimizer: tf.train.adam(0.05), loss: 'sparseCategoricalCrossentropy', metrics: ['accuracy'] });
+            return model;
+        }
+
+        function getEmbeddingMatrix() {
+            const layer = state.model.layers[0];
+            return layer.getWeights()[0].arraySync();
+        }
+
+        // --- PCA via power iteration (top 2 components) ---
+        function pca2D(matrix) {
+            const n = matrix.length;
+            const d = matrix[0].length;
+            const mean = new Array(d).fill(0);
+            matrix.forEach(row => row.forEach((v, j) => { mean[j] += v / n; }));
+            const centered = matrix.map(row => row.map((v, j) => v - mean[j]));
+
+            const cov = Array.from({ length: d }, () => new Array(d).fill(0));
+            centered.forEach(row => {
+                for (let i = 0; i < d; i += 1) {
+                    for (let j = 0; j < d; j += 1) {
+                        cov[i][j] += (row[i] * row[j]) / n;
+                    }
+                }
+            });
+
+            function matVec(mat, vec) {
+                return mat.map(row => row.reduce((sum, v, k) => sum + v * vec[k], 0));
+            }
+            function normalize(vec) {
+                const norm = Math.hypot(...vec) || 1e-9;
+                return vec.map(v => v / norm);
+            }
+
+            function powerIteration(mat) {
+                let vec = normalize(Array.from({ length: d }, () => Math.random() - 0.5));
+                for (let iter = 0; iter < 200; iter += 1) {
+                    vec = normalize(matVec(mat, vec));
+                }
+                const mapped = matVec(mat, vec);
+                const eigenvalue = vec.reduce((sum, v, i) => sum + v * mapped[i], 0);
+                return { vec, eigenvalue };
+            }
+
+            const { vec: v1, eigenvalue: lambda1 } = powerIteration(cov);
+            const deflated = cov.map((row, i) => row.map((v, j) => v - lambda1 * v1[i] * v1[j]));
+            const { vec: v2 } = powerIteration(deflated);
+
+            return centered.map(row => [
+                row.reduce((sum, v, k) => sum + v * v1[k], 0),
+                row.reduce((sum, v, k) => sum + v * v2[k], 0)
+            ]);
+        }
+
+        function drawScatter(points2D) {
+            const ctx = scatterCanvas.getContext('2d');
+            const width = scatterCanvas.width;
+            const height = scatterCanvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            const plotted = VOCAB.map((token, i) => ({ token, x: points2D[i][0], y: points2D[i][1] }))
+                .filter(p => CATEGORY[p.token] !== 'end');
+
+            const xs = plotted.map(p => p.x);
+            const ys = plotted.map(p => p.y);
+            const minX = Math.min(...xs), maxX = Math.max(...xs);
+            const minY = Math.min(...ys), maxY = Math.max(...ys);
+            const pad = 60;
+            const rangeX = (maxX - minX) || 1;
+            const rangeY = (maxY - minY) || 1;
+
+            function toCanvas(x, y) {
+                return {
+                    px: pad + ((x - minX) / rangeX) * (width - 2 * pad),
+                    py: height - pad - ((y - minY) / rangeY) * (height - 2 * pad)
+                };
+            }
+
+            ctx.font = '13px Inter, sans-serif';
+            const dots = plotted.map(p => {
+                const { px, py } = toCanvas(p.x, p.y);
+                return { token: p.token, px, py, labelW: ctx.measureText(p.token).width + 8, labelH: 16 };
+            });
+
+            const placed = [];
+            function overlaps(box) {
+                return placed.some(other =>
+                    box.x < other.x + other.w && box.x + box.w > other.x &&
+                    box.y < other.y + other.h && box.y + box.h > other.y
+                );
+            }
+
+            const ringRadii = [14, 22, 30, 40, 52, 66, 82, 100];
+            const anglesPerRing = 10;
+            const radii = [];
+            const angles = [];
+            ringRadii.forEach(r => {
+                for (let a = 0; a < anglesPerRing; a += 1) {
+                    radii.push(r);
+                    angles.push((360 / anglesPerRing) * a - 90);
+                }
+            });
+
+            dots.forEach(d => {
+                let chosen = { lx: d.px, ly: d.py - 16 };
+                for (let k = 0; k < radii.length; k += 1) {
+                    const rad = (angles[k] * Math.PI) / 180;
+                    const cx = d.px + Math.cos(rad) * radii[k];
+                    const cy = d.py + Math.sin(rad) * radii[k];
+                    const box = { x: cx - d.labelW / 2, y: cy - d.labelH / 2, w: d.labelW, h: d.labelH };
+                    if (!overlaps(box)) {
+                        chosen = { lx: cx, ly: cy };
+                        placed.push(box);
+                        return;
+                    }
+                }
+                placed.push({ x: chosen.lx - d.labelW / 2, y: chosen.ly - d.labelH / 2, w: d.labelW, h: d.labelH });
+                d.lx = chosen.lx;
+                d.ly = chosen.ly;
+            });
+            dots.forEach((d, i) => {
+                if (d.lx === undefined) {
+                    d.lx = placed[i] ? placed[i].x + d.labelW / 2 : d.px;
+                    d.ly = placed[i] ? placed[i].y + d.labelH / 2 : d.py - 16;
+                }
+            });
+
+            dots.forEach(d => {
+                const moved = Math.hypot(d.lx - d.px, d.ly - (d.py - 16)) > 4;
+                if (moved) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(d.px, d.py);
+                    ctx.lineTo(d.lx, d.ly);
+                    ctx.stroke();
+                }
+            });
+
+            dots.forEach(d => {
+                ctx.beginPath();
+                ctx.arc(d.px, d.py, 6, 0, Math.PI * 2);
+                ctx.fillStyle = CATEGORY_COLOR[CATEGORY[d.token]];
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#0a0a0c';
+                ctx.stroke();
+
+                const boxW = d.labelW;
+                const boxH = d.labelH;
+                ctx.fillStyle = 'rgba(10,10,12,0.75)';
+                ctx.fillRect(d.lx - boxW / 2, d.ly - boxH / 2, boxW, boxH);
+
+                ctx.fillStyle = '#ededee';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(d.token, d.lx, d.ly + 1);
+            });
+            ctx.textBaseline = 'alphabetic';
+        }
+
+        function renderLegend() {
+            scatterLegendEl.innerHTML = Object.entries(CATEGORY_COLOR)
+                .filter(([cat]) => cat !== 'end')
+                .map(([cat, color]) => `<span class="legend-item"><span class="legend-dot" style="background:${color}"></span>${cat}</span>`)
+                .join('');
+        }
+
+        function drawLossChart() {
+            const ctx = lossCanvas.getContext('2d');
+            const width = lossCanvas.width;
+            const height = lossCanvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            const padding = { top: 10, right: 12, bottom: 18, left: 40 };
+            const plotW = width - padding.left - padding.right;
+            const plotH = height - padding.top - padding.bottom;
+
+            const history = state.lossHistory;
+            const maxLoss = history.length ? Math.max(...history, 1e-3) : 1;
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = '10px ui-monospace, SFMono-Regular, Consolas, monospace';
+            ctx.lineWidth = 1;
+            const gridLines = 4;
+            for (let i = 0; i <= gridLines; i += 1) {
+                const y = padding.top + (plotH / gridLines) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(padding.left + plotW, y);
+                ctx.stroke();
+                const value = maxLoss * (1 - i / gridLines);
+                ctx.fillText(value.toFixed(2), 2, y + 3);
+            }
+
+            if (history.length < 2) return;
+
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#ff2a44';
+            history.forEach((loss, idx) => {
+                const x = padding.left + (idx / (trainingEpochs - 1)) * plotW;
+                const y = padding.top + (1 - loss / maxLoss) * plotH;
+                if (idx === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            ctx.lineTo(padding.left + ((history.length - 1) / (trainingEpochs - 1)) * plotW, padding.top + plotH);
+            ctx.lineTo(padding.left, padding.top + plotH);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255, 42, 68, 0.12)';
+            ctx.fill();
+        }
+
+        function computeNearestNeighbors() {
+            const matrix = getEmbeddingMatrix();
+            const contentTokens = VOCAB.filter(t => CATEGORY[t] !== 'end');
+
+            function dist(a, b) {
+                return Math.hypot(...a.map((v, i) => v - b[i]));
+            }
+
+            let sameCategoryCount = 0;
+            const rows = contentTokens.map(token => {
+                const i = tokenToId[token];
+                let best = null;
+                let bestDist = Infinity;
+                contentTokens.forEach(other => {
+                    if (other === token) return;
+                    const j = tokenToId[other];
+                    const d = dist(matrix[i], matrix[j]);
+                    if (d < bestDist) {
+                        bestDist = d;
+                        best = other;
+                    }
+                });
+                const same = CATEGORY[best] === CATEGORY[token];
+                if (same) sameCategoryCount += 1;
+                return { token, best, same, category: CATEGORY[token] };
+            });
+
+            nnGridEl.innerHTML = rows.map(r => `
+                <div class="nn-row ${r.same ? 'nn-match' : 'nn-miss'}">
+                    <span class="nn-token" style="color:${CATEGORY_COLOR[r.category]}">${r.token}</span>
+                    <span class="nn-arrow">&rarr;</span>
+                    <span class="nn-token" style="color:${CATEGORY_COLOR[CATEGORY[r.best]]}">${r.best}</span>
+                    <span class="nn-flag">${r.same ? 'same category' : 'different category'}</span>
+                </div>
+            `).join('');
+
+            nnSummaryEl.textContent = `${sameCategoryCount} / ${contentTokens.length} tokens have a same-category nearest neighbor`;
+        }
+
+        function refreshScatter() {
+            const matrix = getEmbeddingMatrix();
+            const points2D = pca2D(matrix);
+            drawScatter(points2D);
+        }
+
+        function updateProgress(epoch) {
+            const pct = Math.min(100, (epoch / trainingEpochs) * 100);
+            progressFill.style.width = `${pct}%`;
+            progressLabel.textContent = `Epoch ${epoch} / ${trainingEpochs}`;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function trainModel() {
+            if (state.isTraining) return;
+            if (!state.pairs) generateCorpus();
+            state.isTraining = true;
+            setButtonsDisabled(true);
+
+            const xs = tf.tensor2d(state.pairs.x, [state.pairs.x.length, 1], 'int32');
+            const ys = tf.tensor1d(state.pairs.y);
+
+            for (let epoch = 1; epoch <= trainingEpochs; epoch += 1) {
+                const history = await state.model.fit(xs, ys, { epochs: 1, batchSize: 128, shuffle: true, verbose: 0 });
+                const loss = history.history.loss?.[0] ?? 0;
+                const acc = history.history.acc?.[0] ?? history.history.accuracy?.[0] ?? 0;
+                state.lossHistory.push(loss);
+                state.accHistory.push(acc);
+                metricsEl.innerHTML = `Epoch: ${epoch} &nbsp;|&nbsp; Loss: ${loss.toFixed(4)} &nbsp;|&nbsp; Next-token accuracy: ${(acc * 100).toFixed(2)}%`;
+                updateProgress(epoch);
+                drawLossChart();
+
+                if (epoch % 4 === 0 || epoch === trainingEpochs) {
+                    refreshScatter();
+                }
+
+                if (epoch < trainingEpochs) await sleep(delayMs);
+            }
+
+            tf.dispose([xs, ys]);
+            computeNearestNeighbors();
+            state.isTraining = false;
+            setButtonsDisabled(false);
+        }
+
+        function setButtonsDisabled(disabled) {
+            generateBtn.disabled = disabled;
+            trainBtn.disabled = disabled;
+            resetBtn.disabled = disabled;
+        }
+
+        function resetAll() {
+            state.model = createModel();
+            state.lossHistory = [];
+            state.accHistory = [];
+            metricsEl.innerHTML = 'Epoch: 0 &nbsp;|&nbsp; Loss: 0.0000 &nbsp;|&nbsp; Next-token accuracy: 0.00%';
+            updateProgress(0);
+            drawLossChart();
+            refreshScatter();
+            nnGridEl.innerHTML = '';
+            nnSummaryEl.textContent = 'Train to compute nearest neighbors.';
+        }
+
+        generateBtn.addEventListener('click', () => {
+            generateCorpus();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            resetAll();
+        });
+
+        trainBtn.addEventListener('click', trainModel);
+
+        window.addEventListener('load', () => {
+            renderLegend();
+            generateCorpus();
+            resetAll();
+        });
+    </script>
+
+    <script>window.PAGE_ID = 'embedding-clustering';</script>
+    <script src="shared.js"></script>
+</body>
+
+</html>

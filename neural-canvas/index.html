@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neural Canvas</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="shared.css" />
+</head>
+
+<body>
+    <div class="app-shell">
+        <button class="nav-toggle" id="sidebarToggle" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="4" y1="7" x2="20" y2="7"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="17" x2="20" y2="17"></line>
+            </svg>
+        </button>
+
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Sections</h3>
+                <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">&times;</button>
+            </div>
+            <div class="nav-list"></div>
+        </aside>
+
+        <main class="content">
+
+            <div class="home-hero">
+                <div class="kicker">Neural Canvas</div>
+                <h1>Machine Learning, Made Visible</h1>
+                <p>Interactive, in-browser visualizations of how standard machine learning algorithms actually
+                    behave — watch models train, decision boundaries form, and architecture choices matter.</p>
+                <div class="topic-grid">
+                    <a class="topic-card" href="beyond-straight-thinking.html">
+                        <h3>Beyond Straight Thinking</h3>
+                        <p>See why a single linear layer fails on non-linearly separable data, and how adding a
+                            ReLU hidden layer solves it.</p>
+                    </a>
+                    <a class="topic-card" href="depth-collapse.html">
+                        <h3>Depth Without Creativity</h3>
+                        <p>Five stacked linear layers collapse into one linear map — proved both visually and by
+                            multiplying the weight matrices together.</p>
+                    </a>
+                    <a class="topic-card" href="embedding-clustering.html">
+                        <h3>The Company We Keep</h3>
+                        <p>Trained only to predict the next token in a toy grammar, an embedding table clusters
+                            same-category words — similarity was never part of the loss.</p>
+                    </a>
+                    <a class="topic-card" href="generalization-gap.html">
+                        <h3>Experience Shapes Understanding</h3>
+                        <p>The same over-parameterized network trained on 20, 200, and 2000 noisy points side by
+                            side — train loss hits zero every time, but test loss only catches up once there's
+                            enough data to learn from.</p>
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>window.PAGE_ID = 'home';</script>
+    <script src="shared.js"></script>
+</body>
+
+</html>
