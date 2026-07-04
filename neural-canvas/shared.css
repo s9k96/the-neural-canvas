@@ -686,3 +686,137 @@ canvas {
         grid-template-columns: 1fr;
     }
 }
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.data-table th,
+.data-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--panel-border);
+}
+
+.data-table th {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.data-table td.num {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    text-align: right;
+}
+
+.data-table tr.row-max td.ratio-cell {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.data-table tr.row-min td.ratio-cell {
+    color: #4084ff;
+    font-weight: 700;
+}
+
+.score-banner {
+    text-align: center;
+    margin-top: 18px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 14.5px;
+    color: var(--muted);
+}
+
+.score-banner .score-value {
+    display: block;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 26px;
+    margin-top: 6px;
+}
+
+.text-input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--panel-border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 12px;
+    font-family: inherit;
+}
+
+.text-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.vocab-list {
+    max-height: 420px;
+    overflow-y: auto;
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+}
+
+.vocab-row {
+    display: flex;
+    gap: 10px;
+    padding: 6px 12px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 13px;
+    border-bottom: 1px solid var(--panel-border);
+}
+
+.vocab-row:last-child {
+    border-bottom: none;
+}
+
+.vocab-id {
+    color: var(--muted);
+    min-width: 52px;
+    flex-shrink: 0;
+}
+
+.vocab-piece {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.vocab-pager {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+.encode-output {
+    margin-top: 4px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.encode-token {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--panel-border);
+    border-radius: 5px;
+    padding: 1px 5px;
+    margin: 2px;
+}
