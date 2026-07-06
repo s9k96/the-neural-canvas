@@ -87,7 +87,7 @@
                                     <th>Language</th>
                                     <th class="num">Words</th>
                                     <th class="num">Tokens</th>
-                                    <th class="num">X = Words / Tokens</th>
+                                    <th class="num">X = Tokens / Words</th>
                                     <th class="num">Bytes / Token</th>
                                     <th class="num">Merges Won</th>
                                 </tr>
@@ -99,7 +99,7 @@
 
                     <div class="panel" id="curvePanel">
                         <h2>Fertility Over Training</h2>
-                        <div class="architecture">Each language's live X = words / tokens&#8209;so&#8209;far, updating
+                        <div class="architecture">Each language's live X = tokens&#8209;so&#8209;far / words, updating
                             as training runs &mdash; this is what the adaptive allocation is reacting to at every merge.</div>
                         <div class="fertility-chart">
                             <div class="chart-svg-wrap" id="curveSvgWrap">
@@ -129,16 +129,17 @@
 
                 <div class="explainer">
                     <p><strong>Assignment:</strong> pick a single 10,000-token vocabulary, train it jointly across
-                        all four languages, then measure X = (word count) / (token count) for each language's
-                        article. The self-score is 1,000 / (largest X &minus; smallest X) &mdash; a tokenizer that
-                        compresses all four languages about equally evenly scores higher than one that's great at
-                        one language and poor at the rest.</p>
+                        all four languages, then measure X = (token count) / (word count) for each language's
+                        article &mdash; the standard NLP <em>fertility</em> metric, always &ge; 1 since a word can
+                        never be represented by less than one token. The self-score is 1,000 / (largest X &minus;
+                        smallest X) &mdash; a tokenizer that compresses all four languages about equally evenly
+                        scores higher than one that's great at one language and poor at the rest.</p>
                     <p><strong>Why a joint vocab matters:</strong> merges are a shared, scarce resource. Hindi, Telugu,
                         and Marathi are encoded as multi-byte UTF-8, so some of their merge budget goes toward gluing
                         2&ndash;3 raw bytes back into a single character before word-level compression can even begin.
                         A pure global frequency race would let whichever language's byte pairs simply occur most often
                         (not necessarily English) crowd out the others' merges early &mdash; so instead, every merge is
-                        spent on whichever language currently has the lowest live fertility (words / tokens so far),
+                        spent on whichever language currently has the highest live fertility (tokens / words so far),
                         continuously chasing down the worst performer instead of splitting the budget on a fixed
                         schedule. A language stops competing once it genuinely runs out of repeated pairs to merge,
                         freeing the rest of the budget for the others.</p>
@@ -316,7 +317,7 @@
 
             const rows = state.corpora.map((c, i) => {
                 const tokens = encoded[i];
-                const ratio = c.words / tokens.length;
+                const ratio = tokens.length / c.words;
                 const bytesPerToken = c.bytes.length / tokens.length;
                 const mergesWon = state.mergesPerLang[i];
                 return { name: c.name, words: c.words, tokens: tokens.length, ratio, bytesPerToken, mergesWon };
@@ -375,8 +376,17 @@
             curveSvg.innerHTML = '';
             const svgEl = ns => document.createElementNS(SVG_NS, ns);
 
-            // Gridlines + y-axis ticks (recessive, hairline).
-            const tickStep = maxVal > 0.5 ? 0.2 : maxVal > 0.2 ? 0.1 : 0.05;
+            // Gridlines + y-axis ticks (recessive, hairline). Fertility (tokens/word) can range
+            // from ~1 up into the teens/twenties before any merges, so pick a "nice" step that
+            // scales to whatever range this run actually produced, rather than a fixed one.
+            function niceStep(range, targetTicks) {
+                const raw = range / targetTicks;
+                const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+                const norm = raw / mag;
+                const step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+                return step * mag;
+            }
+            const tickStep = niceStep(maxVal, 5);
             for (let t = 0; t <= maxVal; t += tickStep) {
                 const y = yOf(t);
                 const grid = svgEl('line');
@@ -388,7 +398,7 @@
                 const label = svgEl('text');
                 label.setAttribute('x', PAD_L - 8); label.setAttribute('y', y + 3);
                 label.setAttribute('class', 'chart-axis-label'); label.setAttribute('text-anchor', 'end');
-                label.textContent = t.toFixed(2);
+                label.textContent = tickStep >= 1 ? t.toFixed(0) : t.toFixed(2);
                 curveSvg.appendChild(label);
             }
 

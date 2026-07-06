@@ -22,14 +22,15 @@ function unpackKey(key) {
 // Trains a joint BPE vocab over several byte-array corpora (concatenated with a
 // 0x00 boundary byte, which never appears in real text and never wins a merge).
 // `wordCounts` (default: each corpus's byte length, a rough proxy) is the actual
-// word count for each language — the numerator of the fertility metric X =
-// words/tokens. At every step, the next merge is spent on whichever active
-// language currently has the *lowest* live fertility (words / live token count
-// so far), so the budget continuously chases down the worst performer instead
-// of being split by a fixed schedule. A language drops out once it runs out of
-// repeated pairs, freeing the rest of the budget for the others.
+// word count for each language — the denominator of the fertility metric X =
+// tokens/words (the standard NLP definition — always >= 1, since a word can't be
+// represented by less than one token). At every step, the next merge is spent on
+// whichever active language currently has the *highest* live fertility (live
+// token count / words so far), so the budget continuously chases down the worst
+// performer instead of being split by a fixed schedule. A language drops out
+// once it runs out of repeated pairs, freeing the rest of the budget for the others.
 // Also returns `mergesPerLang` (how many merges each language actually won) and
-// `history` (fertility = wordCounts/liveTokens for every language, sampled through
+// `history` (fertility = liveTokens/wordCounts for every language, sampled through
 // training) so the caller can show the adaptive allocation at work.
 // `onProgress(done, total, history)` fires periodically mid-training with the
 // same `history` array the return value carries — a caller can redraw a live
@@ -93,23 +94,23 @@ async function trainBPE(byteArrays, vocabSize, onProgress, wordCounts) {
     const maxMerges = vocabSize - 256;
 
     // Live token count per language, updated as merges collapse positions —
-    // this is what "words / live token count" tracks during training.
+    // this is what "live token count / words" (live fertility) tracks during training.
     const liveTokens = byteArrays.map(a => a.length);
     const active = new Array(nLangs).fill(true);
     const mergesPerLang = new Array(nLangs).fill(0);
     const history = [];
     const HISTORY_STRIDE = 25; // matches the onProgress cadence below, so callers can render live
     let done = 0;
-    const snapshot = () => ({ merge: done, ratios: wordCounts.map((w, l) => w / liveTokens[l]) });
+    const snapshot = () => ({ merge: done, ratios: wordCounts.map((w, l) => liveTokens[l] / w) });
     history.push(snapshot());
 
     for (let m = 0; m < maxMerges; m++) {
-        // Spend this merge on whichever active language is currently worst off.
-        let chosenLang = -1, worstRatio = Infinity;
+        // Spend this merge on whichever active language is currently worst off (highest fertility).
+        let chosenLang = -1, worstFertility = -Infinity;
         for (let l = 0; l < nLangs; l++) {
             if (!active[l]) continue;
-            const ratio = wordCounts[l] / liveTokens[l];
-            if (ratio < worstRatio) { worstRatio = ratio; chosenLang = l; }
+            const fertility = liveTokens[l] / wordCounts[l];
+            if (fertility > worstFertility) { worstFertility = fertility; chosenLang = l; }
         }
         if (chosenLang === -1) break; // no language has any repeated pair left
 
