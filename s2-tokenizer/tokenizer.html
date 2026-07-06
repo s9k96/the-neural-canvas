@@ -39,6 +39,11 @@
                     evenly it compresses each one.</div>
 
                 <div class="controls">
+                    <label class="vocab-size-field">
+                        Vocab size
+                        <input type="number" id="vocabSizeInput" class="text-input" value="10000" min="257"
+                            max="200000" step="1" />
+                    </label>
                     <button id="trainBtn">Train Tokenizer</button>
                     <button id="retrainBtn" disabled>Retrain</button>
                 </div>
@@ -47,7 +52,8 @@
                     <h2>Training</h2>
                     <div class="architecture">Vanilla byte-level BPE (no word-boundary pretokenization) &mdash;
                         merges are free to span spaces, so common short phrases can collapse into one token.<br>
-                        256 base byte tokens + 9,744 merges = 10,000 vocab</div>
+                        Text is lowercased before training, so "India" and "india" share one token.<br>
+                        <span id="vocabSizeLabel">256 base byte tokens + 9,744 merges = 10,000 vocab</span></div>
                     <div class="progress-row">
                         <div class="progress-track">
                             <div class="progress-fill" id="progressFill"></div>
@@ -65,26 +71,44 @@
                                 <th>Article</th>
                                 <th class="num">Bytes</th>
                                 <th class="num">Words</th>
+                                <th class="num">Unique Words</th>
                             </tr>
                         </thead>
                         <tbody id="corpusBody"></tbody>
                     </table>
                 </div>
 
-                <div class="panel" id="resultsPanel" style="max-width: 900px; margin: 0 auto 20px; display: none;">
-                    <h2>Fertility Results</h2>
-                    <table class="data-table" id="resultsTable">
-                        <thead>
-                            <tr>
-                                <th>Language</th>
-                                <th class="num">Words</th>
-                                <th class="num">Tokens</th>
-                                <th class="num">X = Words / Tokens</th>
-                            </tr>
-                        </thead>
-                        <tbody id="resultsBody"></tbody>
-                    </table>
-                    <div class="score-banner" id="scoreBanner"></div>
+                <div class="fertility-row" id="fertilityRow" style="display: none;">
+                    <div class="panel" id="resultsPanel">
+                        <h2>Fertility Results</h2>
+                        <table class="data-table" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>Language</th>
+                                    <th class="num">Words</th>
+                                    <th class="num">Tokens</th>
+                                    <th class="num">X = Words / Tokens</th>
+                                    <th class="num">Bytes / Token</th>
+                                    <th class="num">Merges Won</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody"></tbody>
+                        </table>
+                        <div class="score-banner" id="scoreBanner"></div>
+                    </div>
+
+                    <div class="panel" id="curvePanel">
+                        <h2>Fertility Over Training</h2>
+                        <div class="architecture">Each language's live X = words / tokens&#8209;so&#8209;far, updating
+                            as training runs &mdash; this is what the adaptive allocation is reacting to at every merge.</div>
+                        <div class="fertility-chart">
+                            <div class="chart-svg-wrap" id="curveSvgWrap">
+                                <svg id="curveSvg" viewBox="0 0 720 320" preserveAspectRatio="none"></svg>
+                                <div class="chart-tooltip" id="curveTooltip"></div>
+                            </div>
+                            <div class="chart-legend" id="curveLegend"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="panel" id="tryPanel" style="max-width: 900px; margin: 0 auto 20px; display: none;">
@@ -96,13 +120,11 @@
 
                 <div class="panel" id="vocabPanel" style="margin: 0 auto 20px; display: none;">
                     <h2>Vocabulary Browser</h2>
+                    <div class="architecture">One shared vocabulary, but every token is only actually used by the
+                        languages whose text it shows up in when encoded &mdash; each column below is the set of
+                        tokens that language's own article actually uses.</div>
                     <input type="text" class="text-input" id="vocabSearch" placeholder="Search tokens..." />
-                    <div class="vocab-list" id="vocabList"></div>
-                    <div class="vocab-pager">
-                        <button class="btn-small" id="vocabPrev">&larr; Prev</button>
-                        <span id="vocabPageLabel">Page 1</span>
-                        <button class="btn-small" id="vocabNext">Next &rarr;</button>
-                    </div>
+                    <div class="vocab-columns" id="vocabColumns"></div>
                 </div>
 
                 <div class="explainer">
@@ -111,12 +133,15 @@
                         article. The self-score is 1,000 / (largest X &minus; smallest X) &mdash; a tokenizer that
                         compresses all four languages about equally evenly scores higher than one that's great at
                         one language and poor at the rest.</p>
-                    <p><strong>Why a joint vocab matters:</strong> merges are a shared, scarce resource. English text
-                        here is comparatively short and repetitive, so common short words and phrases win merges
-                        early and cheaply. Hindi, Telugu, and Marathi are encoded as multi-byte UTF-8, so a large
-                        share of their merge budget goes just toward gluing 2&ndash;3 raw bytes back into a single
-                        character before word-level compression can even begin &mdash; the same 10,000-token budget
-                        buys noticeably less fertility for them.</p>
+                    <p><strong>Why a joint vocab matters:</strong> merges are a shared, scarce resource. Hindi, Telugu,
+                        and Marathi are encoded as multi-byte UTF-8, so some of their merge budget goes toward gluing
+                        2&ndash;3 raw bytes back into a single character before word-level compression can even begin.
+                        A pure global frequency race would let whichever language's byte pairs simply occur most often
+                        (not necessarily English) crowd out the others' merges early &mdash; so instead, every merge is
+                        spent on whichever language currently has the lowest live fertility (words / tokens so far),
+                        continuously chasing down the worst performer instead of splitting the budget on a fixed
+                        schedule. A language stops competing once it genuinely runs out of repeated pairs to merge,
+                        freeing the rest of the budget for the others.</p>
                     <p>Marathi was picked as the fourth language deliberately: it's Indo-Aryan and Devanagari-script
                         like Hindi, so it lands in a similar fertility range instead of becoming a new extreme and
                         widening the spread.</p>
@@ -133,25 +158,28 @@
             { code: 'te', name: 'Telugu', file: 'data/te.json' },
             { code: 'mr', name: 'Marathi', file: 'data/mr.json' },
         ];
-        const VOCAB_SIZE = 10000;
-        const VOCAB_PAGE_SIZE = 200;
+        const DEFAULT_VOCAB_SIZE = 10000;
+        const MIN_VOCAB_SIZE = 257; // 256 base bytes + at least 1 merge
 
         const state = {
             corpora: null,       // [{ code, name, title, text, bytes, words }]
             merges: null,
             vocab: null,         // Uint8Array[]
             vocabDecoded: null,  // string[] (display form)
-            vocabFiltered: null, // indices into vocab matching current search
-            vocabPage: 0,
+            langUsedIds: null,   // [{ code, name, ids: number[] (sorted, distinct) }]
+            mergesPerLang: null, // number[] (index = corpus index)
+            history: null,       // [{ merge, ratios: number[] }] sampled through training
             training: false,
         };
 
+        const vocabSizeInput = document.getElementById('vocabSizeInput');
+        const vocabSizeLabel = document.getElementById('vocabSizeLabel');
         const trainBtn = document.getElementById('trainBtn');
         const retrainBtn = document.getElementById('retrainBtn');
         const progressFill = document.getElementById('progressFill');
         const progressLabel = document.getElementById('progressLabel');
         const corpusBody = document.getElementById('corpusBody');
-        const resultsPanel = document.getElementById('resultsPanel');
+        const fertilityRow = document.getElementById('fertilityRow');
         const resultsBody = document.getElementById('resultsBody');
         const scoreBanner = document.getElementById('scoreBanner');
         const tryPanel = document.getElementById('tryPanel');
@@ -159,10 +187,15 @@
         const tryOutput = document.getElementById('tryOutput');
         const vocabPanel = document.getElementById('vocabPanel');
         const vocabSearch = document.getElementById('vocabSearch');
-        const vocabList = document.getElementById('vocabList');
-        const vocabPrev = document.getElementById('vocabPrev');
-        const vocabNext = document.getElementById('vocabNext');
-        const vocabPageLabel = document.getElementById('vocabPageLabel');
+        const vocabColumns = document.getElementById('vocabColumns');
+        const curvePanel = document.getElementById('curvePanel');
+        const curveSvg = document.getElementById('curveSvg');
+        const curveSvgWrap = document.getElementById('curveSvgWrap');
+        const curveTooltip = document.getElementById('curveTooltip');
+        const curveLegend = document.getElementById('curveLegend');
+
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        const CURVE_COLORS = ['#3987e5', '#e66767', '#c98500', '#d55181']; // fixed categorical order: en, hi, te, mr — blue/red/yellow/magenta, validated pairwise CVD-safe
 
         const decoder = new TextDecoder('utf-8', { fatal: false });
 
@@ -176,15 +209,17 @@
                     const res = await fetch(lang.file);
                     if (!res.ok) throw new Error(`Failed to fetch ${lang.file}: ${res.status}`);
                     const data = await res.json();
-                    const bytes = textToBytes(data.text);
-                    const words = data.text.split(/\s+/).filter(Boolean).length;
-                    return { code: lang.code, name: lang.name, title: data.title, text: data.text, bytes, words };
+                    const bytes = textToBytes(data.text.toLowerCase());
+                    const wordList = data.text.toLowerCase().split(/\s+/).filter(Boolean);
+                    const words = wordList.length;
+                    const uniqueWords = new Set(wordList).size;
+                    return { code: lang.code, name: lang.name, title: data.title, text: data.text, bytes, words, uniqueWords };
                 }));
                 state.corpora = corpora;
                 renderCorpusTable();
             } catch (err) {
                 console.error(err);
-                corpusBody.innerHTML = `<tr><td colspan="4">Failed to load corpus data — this page must be served over` +
+                corpusBody.innerHTML = `<tr><td colspan="5">Failed to load corpus data — this page must be served over` +
                     ` HTTP (not opened as a local file://). Check the console for details.</td></tr>`;
                 progressLabel.textContent = 'Corpus failed to load';
             }
@@ -196,9 +231,27 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td>${c.name}</td><td>${c.title}</td>` +
                     `<td class="num">${c.bytes.length.toLocaleString()}</td>` +
-                    `<td class="num">${c.words.toLocaleString()}</td>`;
+                    `<td class="num">${c.words.toLocaleString()}</td>` +
+                    `<td class="num">${c.uniqueWords.toLocaleString()}</td>`;
                 corpusBody.appendChild(tr);
             }
+        }
+
+        function getRequestedVocabSize() {
+            let size = parseInt(vocabSizeInput.value, 10);
+            if (!Number.isFinite(size)) size = DEFAULT_VOCAB_SIZE;
+            size = Math.max(MIN_VOCAB_SIZE, size);
+            vocabSizeInput.value = size;
+            return size;
+        }
+
+        function showPlaceholderResults() {
+            fertilityRow.style.display = '';
+            resultsBody.innerHTML = state.corpora.map(c =>
+                `<tr><td>${c.name}</td><td class="num">${c.words.toLocaleString()}</td>` +
+                `<td class="num">&hellip;</td><td class="num">&hellip;</td><td class="num">&hellip;</td><td class="num">&hellip;</td></tr>`
+            ).join('');
+            scoreBanner.innerHTML = 'Training&hellip;';
         }
 
         async function train() {
@@ -207,28 +260,38 @@
                 progressLabel.textContent = 'Corpus not loaded yet — see console';
                 return;
             }
+            const vocabSize = getRequestedVocabSize();
+            const maxMerges = vocabSize - 256;
             state.training = true;
             trainBtn.disabled = true;
             retrainBtn.disabled = true;
+            vocabSizeInput.disabled = true;
             progressLabel.textContent = 'Starting...';
             progressFill.style.width = '0%';
+            showPlaceholderResults();
 
             try {
                 const byteArrays = state.corpora.map(c => c.bytes);
-                const { merges, vocab } = await trainBPE(byteArrays, VOCAB_SIZE, (m, total) => {
+                const wordCounts = state.corpora.map(c => c.words);
+                const { merges, vocab, mergesPerLang, history } = await trainBPE(byteArrays, vocabSize, (m, total, liveHistory) => {
                     const pct = Math.round((m / total) * 100);
                     progressFill.style.width = pct + '%';
                     progressLabel.textContent = `Merge ${m.toLocaleString()} / ${total.toLocaleString()}`;
-                });
+                    renderCurveChart(liveHistory, maxMerges);
+                }, wordCounts);
 
                 state.merges = merges;
                 state.vocab = vocab;
                 state.vocabDecoded = vocab.map(bytes => escapeControlChars(decoder.decode(bytes)));
+                state.mergesPerLang = mergesPerLang;
+                state.history = history;
 
                 progressFill.style.width = '100%';
                 progressLabel.textContent = `Done — ${vocab.length.toLocaleString()} tokens`;
+                vocabSizeLabel.textContent =
+                    `256 base byte tokens + ${merges.length.toLocaleString()} merges = ${vocab.length.toLocaleString()} vocab`;
 
-                computeResults();
+                computeResults(maxMerges);
                 setupVocabBrowser();
             } catch (err) {
                 console.error(err);
@@ -237,14 +300,26 @@
                 state.training = false;
                 trainBtn.disabled = false;
                 retrainBtn.disabled = false;
+                vocabSizeInput.disabled = false;
             }
         }
 
-        function computeResults() {
-            const rows = state.corpora.map(c => {
-                const tokens = encodeBytes(c.bytes, state.merges);
+        function computeResults(maxMerges) {
+            const encoded = state.corpora.map(c => encodeBytes(c.bytes, state.merges));
+
+            state.langUsedIds = state.corpora.map((c, i) => ({
+                code: c.code,
+                name: c.name,
+                uniqueWords: c.uniqueWords,
+                ids: [...new Set(encoded[i])].sort((a, b) => a - b),
+            }));
+
+            const rows = state.corpora.map((c, i) => {
+                const tokens = encoded[i];
                 const ratio = c.words / tokens.length;
-                return { name: c.name, words: c.words, tokens: tokens.length, ratio };
+                const bytesPerToken = c.bytes.length / tokens.length;
+                const mergesWon = state.mergesPerLang[i];
+                return { name: c.name, words: c.words, tokens: tokens.length, ratio, bytesPerToken, mergesWon };
             });
 
             const ratios = rows.map(r => r.ratio);
@@ -261,7 +336,9 @@
                 tr.innerHTML = `<td>${r.name}</td>` +
                     `<td class="num">${r.words.toLocaleString()}</td>` +
                     `<td class="num">${r.tokens.toLocaleString()}</td>` +
-                    `<td class="num ratio-cell">${r.ratio.toFixed(4)}</td>`;
+                    `<td class="num ratio-cell">${r.ratio.toFixed(4)}</td>` +
+                    `<td class="num">${r.bytesPerToken.toFixed(2)}</td>` +
+                    `<td class="num">${r.mergesWon.toLocaleString()}</td>`;
                 resultsBody.appendChild(tr);
             });
 
@@ -269,47 +346,211 @@
                 `Spread = ${maxRatio.toFixed(4)} &minus; ${minRatio.toFixed(4)} = ${spread.toFixed(4)}` +
                 `<span class="score-value">Self-Score = 1000 / ${spread.toFixed(4)} = ${selfScore.toFixed(1)}</span>`;
 
-            resultsPanel.style.display = '';
+            fertilityRow.style.display = '';
             tryPanel.style.display = '';
+
+            renderCurveChart(state.history, maxMerges);
+        }
+
+        function renderCurveChart(history, maxMergesTotal) {
+            if (!history || history.length === 0) return;
+            const langs = state.corpora;
+            const nLangs = langs.length;
+
+            const W = 720, H = 320;
+            const PAD_L = 44, PAD_R = 78, PAD_T = 14, PAD_B = 28;
+            const plotW = W - PAD_L - PAD_R;
+            const plotH = H - PAD_T - PAD_B;
+
+            // Fixed to the full planned merge budget (not the growing history), so the
+            // x-axis holds still and the lines simply extend rightward as training runs.
+            const maxMerge = maxMergesTotal || history[history.length - 1].merge || 1;
+            let maxVal = 0;
+            for (const pt of history) for (const v of pt.ratios) if (v > maxVal) maxVal = v;
+            maxVal = maxVal * 1.1 || 1;
+
+            const xOf = m => PAD_L + (m / maxMerge) * plotW;
+            const yOf = v => PAD_T + plotH - (v / maxVal) * plotH;
+
+            curveSvg.innerHTML = '';
+            const svgEl = ns => document.createElementNS(SVG_NS, ns);
+
+            // Gridlines + y-axis ticks (recessive, hairline).
+            const tickStep = maxVal > 0.5 ? 0.2 : maxVal > 0.2 ? 0.1 : 0.05;
+            for (let t = 0; t <= maxVal; t += tickStep) {
+                const y = yOf(t);
+                const grid = svgEl('line');
+                grid.setAttribute('x1', PAD_L); grid.setAttribute('x2', W - PAD_R);
+                grid.setAttribute('y1', y); grid.setAttribute('y2', y);
+                grid.setAttribute('class', 'chart-gridline');
+                curveSvg.appendChild(grid);
+
+                const label = svgEl('text');
+                label.setAttribute('x', PAD_L - 8); label.setAttribute('y', y + 3);
+                label.setAttribute('class', 'chart-axis-label'); label.setAttribute('text-anchor', 'end');
+                label.textContent = t.toFixed(2);
+                curveSvg.appendChild(label);
+            }
+
+            // Baseline x-axis.
+            const baseline = svgEl('line');
+            baseline.setAttribute('x1', PAD_L); baseline.setAttribute('x2', W - PAD_R);
+            baseline.setAttribute('y1', PAD_T + plotH); baseline.setAttribute('y2', PAD_T + plotH);
+            baseline.setAttribute('class', 'chart-axis-line');
+            curveSvg.appendChild(baseline);
+
+            const xLabel = svgEl('text');
+            xLabel.setAttribute('x', PAD_L + plotW / 2); xLabel.setAttribute('y', H - 4);
+            xLabel.setAttribute('class', 'chart-axis-label'); xLabel.setAttribute('text-anchor', 'middle');
+            xLabel.textContent = `merges (0 → ${maxMerge.toLocaleString()})`;
+            curveSvg.appendChild(xLabel);
+
+            // One polyline per language.
+            const endPoints = [];
+            for (let l = 0; l < nLangs; l++) {
+                const points = history.map(pt => `${xOf(pt.merge)},${yOf(pt.ratios[l])}`).join(' ');
+                const line = svgEl('polyline');
+                line.setAttribute('points', points);
+                line.setAttribute('class', 'chart-line');
+                line.style.stroke = CURVE_COLORS[l];
+                curveSvg.appendChild(line);
+
+                const last = history[history.length - 1];
+                endPoints.push({ l, y: yOf(last.ratios[l]) });
+            }
+
+            // Direct end-labels, nudged apart (with leader lines) if they'd collide.
+            endPoints.sort((a, b) => a.y - b.y);
+            const MIN_GAP = 15;
+            for (let i = 1; i < endPoints.length; i++) {
+                if (endPoints[i].y - endPoints[i - 1].y < MIN_GAP) {
+                    endPoints[i].y = endPoints[i - 1].y + MIN_GAP;
+                }
+            }
+            for (const ep of endPoints) {
+                const trueY = yOf(history[history.length - 1].ratios[ep.l]);
+                if (Math.abs(ep.y - trueY) > 1) {
+                    const leader = svgEl('line');
+                    leader.setAttribute('x1', W - PAD_R); leader.setAttribute('x2', W - PAD_R + 6);
+                    leader.setAttribute('y1', trueY); leader.setAttribute('y2', ep.y);
+                    leader.setAttribute('class', 'chart-leader');
+                    curveSvg.appendChild(leader);
+                }
+                const label = svgEl('text');
+                label.setAttribute('x', W - PAD_R + 8); label.setAttribute('y', ep.y + 3);
+                label.setAttribute('class', 'chart-end-label');
+                label.textContent = langs[ep.l].name;
+                curveSvg.appendChild(label);
+            }
+
+            // Crosshair (hidden until hover) + hit layer.
+            const crosshair = svgEl('line');
+            crosshair.setAttribute('y1', PAD_T); crosshair.setAttribute('y2', PAD_T + plotH);
+            crosshair.setAttribute('class', 'chart-crosshair'); crosshair.style.display = 'none';
+            curveSvg.appendChild(crosshair);
+
+            const hitRect = svgEl('rect');
+            hitRect.setAttribute('x', PAD_L); hitRect.setAttribute('y', PAD_T);
+            hitRect.setAttribute('width', plotW); hitRect.setAttribute('height', plotH);
+            hitRect.setAttribute('class', 'chart-hit-layer');
+            curveSvg.appendChild(hitRect);
+
+            function nearestIndex(clientX) {
+                const rect = curveSvg.getBoundingClientRect();
+                const svgX = ((clientX - rect.left) / rect.width) * W;
+                const merge = Math.max(0, Math.min(maxMerge, ((svgX - PAD_L) / plotW) * maxMerge));
+                let lo = 0, hi = history.length - 1;
+                while (lo < hi) {
+                    const mid = (lo + hi) >> 1;
+                    if (history[mid].merge < merge) lo = mid + 1; else hi = mid;
+                }
+                return lo;
+            }
+
+            hitRect.addEventListener('mousemove', e => {
+                const idx = nearestIndex(e.clientX);
+                const pt = history[idx];
+                const x = xOf(pt.merge);
+                crosshair.setAttribute('x1', x); crosshair.setAttribute('x2', x);
+                crosshair.style.display = '';
+
+                curveTooltip.innerHTML = `<div class="chart-tooltip-title">Merge ${pt.merge.toLocaleString()}</div>` +
+                    langs.map((lang, l) =>
+                        `<div class="chart-tooltip-row"><span class="chart-tooltip-key" style="background:${CURVE_COLORS[l]}"></span>` +
+                        `<span class="chart-tooltip-value">${pt.ratios[l].toFixed(4)}</span>` +
+                        `<span class="chart-tooltip-name">${lang.name}</span></div>`
+                    ).join('');
+
+                const wrapRect = curveSvgWrap.getBoundingClientRect();
+                const left = ((x / W) * wrapRect.width);
+                curveTooltip.style.display = 'block';
+                curveTooltip.style.left = Math.min(left + 12, wrapRect.width - 150) + 'px';
+                curveTooltip.style.top = '8px';
+            });
+            hitRect.addEventListener('mouseleave', () => {
+                crosshair.style.display = 'none';
+                curveTooltip.style.display = 'none';
+            });
+
+            // Legend (line-key + name, in fixed categorical order).
+            curveLegend.innerHTML = '';
+            langs.forEach((lang, l) => {
+                const item = document.createElement('span');
+                item.className = 'chart-legend-item';
+                const key = document.createElement('span');
+                key.className = 'chart-legend-key';
+                key.style.background = CURVE_COLORS[l];
+                item.appendChild(key);
+                item.appendChild(document.createTextNode(lang.name));
+                curveLegend.appendChild(item);
+            });
+
+            curvePanel.style.display = '';
         }
 
         function setupVocabBrowser() {
-            state.vocabFiltered = state.vocabDecoded.map((_, i) => i);
-            state.vocabPage = 0;
             vocabPanel.style.display = '';
-            renderVocabPage();
+            renderVocabColumns();
         }
 
         function applyVocabSearch() {
-            const q = vocabSearch.value.trim().toLowerCase();
-            if (!q) {
-                state.vocabFiltered = state.vocabDecoded.map((_, i) => i);
-            } else {
-                state.vocabFiltered = [];
-                for (let i = 0; i < state.vocabDecoded.length; i++) {
-                    if (state.vocabDecoded[i].toLowerCase().includes(q)) state.vocabFiltered.push(i);
-                }
-            }
-            state.vocabPage = 0;
-            renderVocabPage();
+            renderVocabColumns();
         }
 
-        function renderVocabPage() {
-            const total = state.vocabFiltered.length;
-            const pageCount = Math.max(1, Math.ceil(total / VOCAB_PAGE_SIZE));
-            state.vocabPage = Math.min(state.vocabPage, pageCount - 1);
-            const start = state.vocabPage * VOCAB_PAGE_SIZE;
-            const pageIds = state.vocabFiltered.slice(start, start + VOCAB_PAGE_SIZE);
+        function renderVocabColumns() {
+            const q = vocabSearch.value.trim().toLowerCase();
 
-            vocabList.innerHTML = '';
-            for (const id of pageIds) {
-                const row = document.createElement('div');
-                row.className = 'vocab-row';
-                row.innerHTML = `<span class="vocab-id">#${id}</span>` +
-                    `<span class="vocab-piece">${escapeHtml(state.vocabDecoded[id])}</span>`;
-                vocabList.appendChild(row);
+            vocabColumns.innerHTML = '';
+            for (const lang of state.langUsedIds) {
+                const ids = q
+                    ? lang.ids.filter(id => state.vocabDecoded[id].toLowerCase().includes(q))
+                    : lang.ids;
+
+                const col = document.createElement('div');
+                col.className = 'vocab-column';
+
+                const title = document.createElement('div');
+                title.className = 'vocab-column-title';
+                title.innerHTML = `${lang.name}<span class="vocab-column-count">` +
+                    `${ids.length.toLocaleString()} / ${lang.ids.length.toLocaleString()} tokens used</span>` +
+                    `<span class="vocab-column-count">${lang.uniqueWords.toLocaleString()} unique words in article</span>`;
+                col.appendChild(title);
+
+                const list = document.createElement('div');
+                list.className = 'vocab-list';
+                const frag = document.createDocumentFragment();
+                for (const id of ids) {
+                    const row = document.createElement('div');
+                    row.className = 'vocab-row';
+                    row.innerHTML = `<span class="vocab-id">#${id}</span>` +
+                        `<span class="vocab-piece">${escapeHtml(state.vocabDecoded[id])}</span>`;
+                    frag.appendChild(row);
+                }
+                list.appendChild(frag);
+                col.appendChild(list);
+
+                vocabColumns.appendChild(col);
             }
-            vocabPageLabel.textContent = `Page ${state.vocabPage + 1} / ${pageCount} (${total.toLocaleString()} tokens)`;
         }
 
         function escapeHtml(s) {
@@ -319,21 +560,43 @@
         function tryTokenize() {
             const text = tryInput.value;
             if (!text || !state.merges) { tryOutput.innerHTML = ''; return; }
-            const bytes = textToBytes(text);
-            const tokens = encodeBytes(bytes, state.merges);
-            const pieces = tokens.map(id => escapeHtml(state.vocabDecoded[id]));
-            tryOutput.innerHTML = `${tokens.length} tokens: ` +
-                pieces.map(p => `<span class="encode-token">${p}</span>`).join('');
+
+            // The tokenizer only ever learned lowercase byte patterns, so encode the
+            // lowercase form — but redraw each token using the original bytes the user
+            // typed, so casing is preserved on screen even though matching was case-blind.
+            const originalBytes = textToBytes(text);
+            const lowerBytes = textToBytes(text.toLowerCase());
+            const tokens = encodeBytes(lowerBytes, state.merges);
+
+            let pieces;
+            if (lowerBytes.length === originalBytes.length) {
+                pieces = [];
+                let offset = 0;
+                for (const id of tokens) {
+                    const len = state.vocab[id].length;
+                    const slice = originalBytes.slice(offset, offset + len);
+                    pieces.push(escapeHtml(escapeControlChars(decoder.decode(new Uint8Array(slice)))));
+                    offset += len;
+                }
+            } else {
+                // Rare case-folding edge case where lowercasing changed byte length —
+                // fall back to showing the lowercase form itself.
+                pieces = tokens.map(id => escapeHtml(state.vocabDecoded[id]));
+            }
+
+            tryOutput.innerHTML = `<div>${tokens.length} tokens: ` +
+                pieces.map(p => `<span class="encode-token">${p}</span>`).join('') + `</div>` +
+                `<div class="encode-ids-line">Token IDs: ` +
+                tokens.map(id => `<span class="encode-id-token">#${id}</span>`).join('') + `</div>`;
         }
 
         trainBtn.addEventListener('click', train);
         retrainBtn.addEventListener('click', train);
         vocabSearch.addEventListener('input', applyVocabSearch);
-        vocabPrev.addEventListener('click', () => { state.vocabPage--; renderVocabPage(); });
-        vocabNext.addEventListener('click', () => { state.vocabPage++; renderVocabPage(); });
         tryInput.addEventListener('input', tryTokenize);
 
         window.PAGE_ID = 'tokenizer';
+        window.ROOT_PATH = '../';
         loadCorpora();
     </script>
     <script src="../shared.js"></script>
