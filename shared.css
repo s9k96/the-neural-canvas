@@ -727,6 +727,18 @@ canvas {
     font-weight: 700;
 }
 
+.muted-note {
+    color: var(--muted);
+    font-size: 0.85em;
+}
+
+.architecture code {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0 4px;
+    border-radius: 4px;
+}
+
 .score-banner {
     text-align: center;
     margin-top: 18px;

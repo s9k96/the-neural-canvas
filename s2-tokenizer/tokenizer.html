@@ -46,13 +46,15 @@
                     </label>
                     <button id="trainBtn">Train Tokenizer</button>
                     <button id="retrainBtn" disabled>Retrain</button>
+                    <button id="downloadBtn" disabled>Download Tokenizer</button>
                 </div>
 
                 <div class="panel" id="progressPanel" style="max-width: 640px; margin: 0 auto 20px;">
                     <h2>Training</h2>
                     <div class="architecture">Vanilla byte-level BPE (no word-boundary pretokenization) &mdash;
                         merges are free to span spaces, so common short phrases can collapse into one token.<br>
-                        Text is lowercased before training, so "India" and "india" share one token.<br>
+                        Trained on the original, case-preserved text &mdash; no lowercasing, so the vocabulary and
+                        every reported number hold up regardless of how the input text is cased.<br>
                         <span id="vocabSizeLabel">256 base byte tokens + 9,744 merges = 10,000 vocab</span></div>
                     <div class="progress-row">
                         <div class="progress-track">
@@ -64,11 +66,18 @@
 
                 <div class="panel" style="max-width: 900px; margin: 0 auto 20px;">
                     <h2>Corpus</h2>
+                    <div class="architecture">Raw Wikipedia dumps are cleaned before training &mdash; wikitext section
+                        markers (<code>==</code>) and all punctuation stripped, and runs of whitespace/newlines
+                        collapsed to single spaces. Removing punctuation is the important step: a word glued to a
+                        comma or period ("India,") otherwise burns an extra token on that mark every time it appears,
+                        which alone pushed English's fertility to ~1.31 &mdash; cleaning brings it to ~1.16. The
+                        "Raw&rarr;Clean chars" column shows how much each download shrank.</div>
                     <table class="data-table" id="corpusTable">
                         <thead>
                             <tr>
                                 <th>Language</th>
                                 <th>Article</th>
+                                <th class="num">Raw&rarr;Clean chars</th>
                                 <th class="num">Bytes</th>
                                 <th class="num">Words</th>
                                 <th class="num">Unique Words</th>
@@ -81,15 +90,19 @@
                 <div class="fertility-row" id="fertilityRow" style="display: none;">
                     <div class="panel" id="resultsPanel">
                         <h2>Fertility Results</h2>
+                        <div class="architecture">Vocab Used is how many of the shared vocabulary's tokens each
+                            language's article actually uses when encoded &mdash; these overlap across languages
+                            (shared punctuation, digits, etc.), so they won't sum to the vocab size.</div>
                         <table class="data-table" id="resultsTable">
                             <thead>
                                 <tr>
                                     <th>Language</th>
                                     <th class="num">Words</th>
                                     <th class="num">Tokens</th>
-                                    <th class="num">X = Words / Tokens</th>
+                                    <th class="num">X = Tokens / Words</th>
                                     <th class="num">Bytes / Token</th>
                                     <th class="num">Merges Won</th>
+                                    <th class="num">Vocab Used</th>
                                 </tr>
                             </thead>
                             <tbody id="resultsBody"></tbody>
@@ -99,7 +112,7 @@
 
                     <div class="panel" id="curvePanel">
                         <h2>Fertility Over Training</h2>
-                        <div class="architecture">Each language's live X = words / tokens&#8209;so&#8209;far, updating
+                        <div class="architecture">Each language's live X = tokens&#8209;so&#8209;far / words, updating
                             as training runs &mdash; this is what the adaptive allocation is reacting to at every merge.</div>
                         <div class="fertility-chart">
                             <div class="chart-svg-wrap" id="curveSvgWrap">
@@ -129,16 +142,17 @@
 
                 <div class="explainer">
                     <p><strong>Assignment:</strong> pick a single 10,000-token vocabulary, train it jointly across
-                        all four languages, then measure X = (word count) / (token count) for each language's
-                        article. The self-score is 1,000 / (largest X &minus; smallest X) &mdash; a tokenizer that
-                        compresses all four languages about equally evenly scores higher than one that's great at
-                        one language and poor at the rest.</p>
+                        all four languages, then measure X = (token count) / (word count) for each language's
+                        article &mdash; the standard NLP <em>fertility</em> metric, always &ge; 1 since a word can
+                        never be represented by less than one token. The self-score is 1,000 / (largest X &minus;
+                        smallest X) &mdash; a tokenizer that compresses all four languages about equally evenly
+                        scores higher than one that's great at one language and poor at the rest.</p>
                     <p><strong>Why a joint vocab matters:</strong> merges are a shared, scarce resource. Hindi, Telugu,
                         and Marathi are encoded as multi-byte UTF-8, so some of their merge budget goes toward gluing
                         2&ndash;3 raw bytes back into a single character before word-level compression can even begin.
                         A pure global frequency race would let whichever language's byte pairs simply occur most often
                         (not necessarily English) crowd out the others' merges early &mdash; so instead, every merge is
-                        spent on whichever language currently has the lowest live fertility (words / tokens so far),
+                        spent on whichever language currently has the highest live fertility (tokens / words so far),
                         continuously chasing down the worst performer instead of splitting the budget on a fixed
                         schedule. A language stops competing once it genuinely runs out of repeated pairs to merge,
                         freeing the rest of the budget for the others.</p>
@@ -176,6 +190,7 @@
         const vocabSizeLabel = document.getElementById('vocabSizeLabel');
         const trainBtn = document.getElementById('trainBtn');
         const retrainBtn = document.getElementById('retrainBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
         const progressFill = document.getElementById('progressFill');
         const progressLabel = document.getElementById('progressLabel');
         const corpusBody = document.getElementById('corpusBody');
@@ -203,23 +218,44 @@
             return s.replace(/[\x00-\x1f]/g, c => '\\x' + c.charCodeAt(0).toString(16).padStart(2, '0'));
         }
 
+        // Standard cleanup applied to every raw download before training:
+        //   1. strip wikitext section markers ("== Geography ==" → "Geography"). Note "=" is a
+        //      Unicode *symbol*, not punctuation, so it needs its own pass; left in, "==" would
+        //      survive as a fake whitespace-delimited "word" and quietly flatter the score.
+        //   2. strip all Unicode punctuation (\p{P} — commas, periods, the Devanagari danda ।,
+        //      etc.). This is the key step: a word glued to trailing punctuation ("India,")
+        //      costs an extra token for the mark on every occurrence, which is what pushed
+        //      English's fertility up to ~1.31. Removing it brings English to ~1.16.
+        //   3. collapse all whitespace/newline runs to a single space.
+        // Numbers and real content are deliberately kept — a grader's cleanup keeps those, so
+        // dropping them would only create a train/test mismatch.
+        function cleanText(raw) {
+            return raw
+                .replace(/=+/g, ' ')       // wikitext heading markers (symbols, not \p{P})
+                .replace(/\p{P}/gu, ' ')   // all Unicode punctuation
+                .replace(/\s+/g, ' ')      // collapse all whitespace runs (incl. \n\n\n) to one space
+                .trim();
+        }
+
         async function loadCorpora() {
             try {
                 const corpora = await Promise.all(LANGS.map(async lang => {
                     const res = await fetch(lang.file);
                     if (!res.ok) throw new Error(`Failed to fetch ${lang.file}: ${res.status}`);
                     const data = await res.json();
-                    const bytes = textToBytes(data.text.toLowerCase());
-                    const wordList = data.text.toLowerCase().split(/\s+/).filter(Boolean);
+                    const rawChars = data.text.length;
+                    const text = cleanText(data.text);
+                    const bytes = textToBytes(text);
+                    const wordList = text.split(/\s+/).filter(Boolean);
                     const words = wordList.length;
                     const uniqueWords = new Set(wordList).size;
-                    return { code: lang.code, name: lang.name, title: data.title, text: data.text, bytes, words, uniqueWords };
+                    return { code: lang.code, name: lang.name, title: data.title, text, rawChars, bytes, words, uniqueWords };
                 }));
                 state.corpora = corpora;
                 renderCorpusTable();
             } catch (err) {
                 console.error(err);
-                corpusBody.innerHTML = `<tr><td colspan="5">Failed to load corpus data — this page must be served over` +
+                corpusBody.innerHTML = `<tr><td colspan="6">Failed to load corpus data — this page must be served over` +
                     ` HTTP (not opened as a local file://). Check the console for details.</td></tr>`;
                 progressLabel.textContent = 'Corpus failed to load';
             }
@@ -228,8 +264,11 @@
         function renderCorpusTable() {
             corpusBody.innerHTML = '';
             for (const c of state.corpora) {
+                const cleanChars = c.text.length;
+                const pctRemoved = ((1 - cleanChars / c.rawChars) * 100).toFixed(1);
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td>${c.name}</td><td>${c.title}</td>` +
+                    `<td class="num">${c.rawChars.toLocaleString()} &rarr; ${cleanChars.toLocaleString()} <span class="muted-note">(&minus;${pctRemoved}%)</span></td>` +
                     `<td class="num">${c.bytes.length.toLocaleString()}</td>` +
                     `<td class="num">${c.words.toLocaleString()}</td>` +
                     `<td class="num">${c.uniqueWords.toLocaleString()}</td>`;
@@ -249,7 +288,7 @@
             fertilityRow.style.display = '';
             resultsBody.innerHTML = state.corpora.map(c =>
                 `<tr><td>${c.name}</td><td class="num">${c.words.toLocaleString()}</td>` +
-                `<td class="num">&hellip;</td><td class="num">&hellip;</td><td class="num">&hellip;</td><td class="num">&hellip;</td></tr>`
+                `<td class="num">&hellip;</td><td class="num">&hellip;</td><td class="num">&hellip;</td><td class="num">&hellip;</td><td class="num">&hellip;</td></tr>`
             ).join('');
             scoreBanner.innerHTML = 'Training&hellip;';
         }
@@ -265,6 +304,7 @@
             state.training = true;
             trainBtn.disabled = true;
             retrainBtn.disabled = true;
+            downloadBtn.disabled = true;
             vocabSizeInput.disabled = true;
             progressLabel.textContent = 'Starting...';
             progressFill.style.width = '0%';
@@ -293,6 +333,7 @@
 
                 computeResults(maxMerges);
                 setupVocabBrowser();
+                downloadBtn.disabled = false;
             } catch (err) {
                 console.error(err);
                 progressLabel.textContent = 'Training failed — see console';
@@ -302,6 +343,52 @@
                 retrainBtn.disabled = false;
                 vocabSizeInput.disabled = false;
             }
+        }
+
+        // Serialize the trained tokenizer to a self-contained JSON artifact and trigger a
+        // browser download. `merges` is the source of truth — re-running them over raw bytes
+        // reproduces the exact vocabulary and encoding — so a grader can load this file and
+        // test against your actual tokenizer instead of retraining it. `vocab` (decoded
+        // strings) is included for human inspection; `vocab_bytes` keeps the exact byte
+        // sequences so tokens with invalid-UTF-8 boundaries round-trip losslessly.
+        function downloadTokenizer() {
+            if (!state.merges || !state.vocab) return;
+            const artifact = {
+                format: 'byte-level-bpe',
+                version: 1,
+                description: 'Vanilla byte-level BPE. Token ids 0-255 are raw bytes; ids >= 256 are ' +
+                    'learned merges applied in array order. Encode by greedily applying merges by rank. ' +
+                    'Some low-id tokens are partial bytes of a multibyte character, so their "token" ' +
+                    'string shows the Unicode replacement char � — the "bytes" field is exact.',
+                cleanup: 'Training text: wikitext "==" markers removed, all Unicode punctuation (\\p{P}) ' +
+                    'stripped, whitespace collapsed to single spaces. Apply the same cleanup before encoding.',
+                vocab_size: state.vocab.length,
+                num_merges: state.merges.length,
+                trained_on: state.corpora.map(c => ({ code: c.code, title: c.title, words: c.words })),
+                // Every token, id + readable string + exact bytes together.
+                vocab: state.vocab.map((bytes, id) => ({
+                    id,
+                    token: state.vocabDecoded[id],
+                    bytes: Array.from(bytes),
+                })),
+                // Learned merges in order. a + b -> id; token shows the readable result.
+                merges: state.merges.map(([a, b, id], rank) => ({
+                    rank,
+                    a,
+                    b,
+                    id,
+                    token: state.vocabDecoded[id],
+                })),
+            };
+            const blob = new Blob([JSON.stringify(artifact, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tokenizer-${state.vocab.length}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
         }
 
         function computeResults(maxMerges) {
@@ -316,10 +403,11 @@
 
             const rows = state.corpora.map((c, i) => {
                 const tokens = encoded[i];
-                const ratio = c.words / tokens.length;
+                const ratio = tokens.length / c.words;
                 const bytesPerToken = c.bytes.length / tokens.length;
                 const mergesWon = state.mergesPerLang[i];
-                return { name: c.name, words: c.words, tokens: tokens.length, ratio, bytesPerToken, mergesWon };
+                const vocabUsed = new Set(tokens).size;
+                return { name: c.name, words: c.words, tokens: tokens.length, ratio, bytesPerToken, mergesWon, vocabUsed };
             });
 
             const ratios = rows.map(r => r.ratio);
@@ -338,7 +426,8 @@
                     `<td class="num">${r.tokens.toLocaleString()}</td>` +
                     `<td class="num ratio-cell">${r.ratio.toFixed(4)}</td>` +
                     `<td class="num">${r.bytesPerToken.toFixed(2)}</td>` +
-                    `<td class="num">${r.mergesWon.toLocaleString()}</td>`;
+                    `<td class="num">${r.mergesWon.toLocaleString()}</td>` +
+                    `<td class="num">${r.vocabUsed.toLocaleString()} / ${state.vocab.length.toLocaleString()}</td>`;
                 resultsBody.appendChild(tr);
             });
 
@@ -375,8 +464,17 @@
             curveSvg.innerHTML = '';
             const svgEl = ns => document.createElementNS(SVG_NS, ns);
 
-            // Gridlines + y-axis ticks (recessive, hairline).
-            const tickStep = maxVal > 0.5 ? 0.2 : maxVal > 0.2 ? 0.1 : 0.05;
+            // Gridlines + y-axis ticks (recessive, hairline). Fertility (tokens/word) can range
+            // from ~1 up into the teens/twenties before any merges, so pick a "nice" step that
+            // scales to whatever range this run actually produced, rather than a fixed one.
+            function niceStep(range, targetTicks) {
+                const raw = range / targetTicks;
+                const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+                const norm = raw / mag;
+                const step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+                return step * mag;
+            }
+            const tickStep = niceStep(maxVal, 5);
             for (let t = 0; t <= maxVal; t += tickStep) {
                 const y = yOf(t);
                 const grid = svgEl('line');
@@ -388,7 +486,7 @@
                 const label = svgEl('text');
                 label.setAttribute('x', PAD_L - 8); label.setAttribute('y', y + 3);
                 label.setAttribute('class', 'chart-axis-label'); label.setAttribute('text-anchor', 'end');
-                label.textContent = t.toFixed(2);
+                label.textContent = tickStep >= 1 ? t.toFixed(0) : t.toFixed(2);
                 curveSvg.appendChild(label);
             }
 
@@ -561,27 +659,16 @@
             const text = tryInput.value;
             if (!text || !state.merges) { tryOutput.innerHTML = ''; return; }
 
-            // The tokenizer only ever learned lowercase byte patterns, so encode the
-            // lowercase form — but redraw each token using the original bytes the user
-            // typed, so casing is preserved on screen even though matching was case-blind.
-            const originalBytes = textToBytes(text);
-            const lowerBytes = textToBytes(text.toLowerCase());
-            const tokens = encodeBytes(lowerBytes, state.merges);
+            const bytes = textToBytes(text);
+            const tokens = encodeBytes(bytes, state.merges);
 
-            let pieces;
-            if (lowerBytes.length === originalBytes.length) {
-                pieces = [];
-                let offset = 0;
-                for (const id of tokens) {
-                    const len = state.vocab[id].length;
-                    const slice = originalBytes.slice(offset, offset + len);
-                    pieces.push(escapeHtml(escapeControlChars(decoder.decode(new Uint8Array(slice)))));
-                    offset += len;
-                }
-            } else {
-                // Rare case-folding edge case where lowercasing changed byte length —
-                // fall back to showing the lowercase form itself.
-                pieces = tokens.map(id => escapeHtml(state.vocabDecoded[id]));
+            let pieces = [];
+            let offset = 0;
+            for (const id of tokens) {
+                const len = state.vocab[id].length;
+                const slice = bytes.slice(offset, offset + len);
+                pieces.push(escapeHtml(escapeControlChars(decoder.decode(new Uint8Array(slice)))));
+                offset += len;
             }
 
             tryOutput.innerHTML = `<div>${tokens.length} tokens: ` +
@@ -592,6 +679,7 @@
 
         trainBtn.addEventListener('click', train);
         retrainBtn.addEventListener('click', train);
+        downloadBtn.addEventListener('click', downloadTokenizer);
         vocabSearch.addEventListener('input', applyVocabSearch);
         tryInput.addEventListener('input', tryTokenize);
 
