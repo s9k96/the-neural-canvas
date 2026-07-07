@@ -90,9 +90,9 @@
                 <div class="fertility-row" id="fertilityRow" style="display: none;">
                     <div class="panel" id="resultsPanel">
                         <h2>Fertility Results</h2>
-                        <div class="architecture">Vocab Used is how many of the shared vocabulary's tokens each
+                        <div class="architecture">Vocab Used is the share of the shared vocabulary's tokens each
                             language's article actually uses when encoded &mdash; these overlap across languages
-                            (shared punctuation, digits, etc.), so they won't sum to the vocab size.</div>
+                            (shared punctuation, digits, etc.), so they won't sum to 100%.</div>
                         <table class="data-table" id="resultsTable">
                             <thead>
                                 <tr>
@@ -427,7 +427,7 @@
                     `<td class="num ratio-cell">${r.ratio.toFixed(4)}</td>` +
                     `<td class="num">${r.bytesPerToken.toFixed(2)}</td>` +
                     `<td class="num">${r.mergesWon.toLocaleString()}</td>` +
-                    `<td class="num">${r.vocabUsed.toLocaleString()} / ${state.vocab.length.toLocaleString()}</td>`;
+                    `<td class="num">${(r.vocabUsed / state.vocab.length * 100).toFixed(1)}%</td>`;
                 resultsBody.appendChild(tr);
             });
 
