@@ -180,6 +180,10 @@
                         5:1 local/global attention, RoPE, RMSNorm, 128k context), tied embeddings, 256k vocab,
                         ~16T pre-training tokens (deliberately over-trained ~20&times; past Chinchilla for cheap
                         inference at Indian scale).</p>
+                    <p class="muted-note" style="margin-top:8px;">Every number below &mdash; vocab size, fertility
+                        targets, mix shares, filter thresholds &mdash; is first validated by ablation on small proxy
+                        models before it governs a trillion-token run: a recipe change should rank against
+                        alternatives, not follow intuition.</p>
                 </div>
 
                 <!-- 1. LANGUAGES -->
@@ -334,11 +338,16 @@
                     <h2><span class="num">03</span>Data: what we collect &amp; why</h2>
                     <h3>Pre-training (~16T tokens)</h3>
                     <p>The defining constraint: <strong>all clean Indic text in existence (AI4Bharat Sangraha) is
-                            ~251B tokens</strong>, yet 22% of 16T is <strong>~3.5T</strong>. Sangraha up-sampled
-                        &le;4 epochs yields ~1T; the remaining <strong>~2.5T is a hard budget</strong> &mdash; OCR
-                        (books/PDFs) and ASR (audio/AIR archives) filled to the realistic ceiling of India's non-web
-                        knowledge, then capped synthesis. If the synthesis cap binds before 22%, we <em>lower the Indic
-                            share rather than trade quality for it</em>: availability sets the ceiling, not the target.</p>
+                            ~251B tokens</strong> &mdash; and treat that as an upper bound, not a floor: Sangraha's own
+                        verified-human-origin split runs far below its headline total (e.g. Telugu falls from 16.3B to
+                        3.7B, Odia from 12.5B to 1.2B, once machine-translated text is excluded). Yet 22% of 16T is
+                        <strong>~3.5T</strong>. Verified Sangraha up-sampled &le;4 epochs yields ~1T; OCR (books/PDFs)
+                        and ASR (audio/AIR archives) add a bounded slice of India's non-web knowledge; a
+                        <strong>DeepSeekMath-style mining loop</strong> &mdash; a classifier seeded on verified Indic
+                        text mines more Indic pages out of raw CC at scale, the same seed-to-120B-tokens pattern used
+                        for math &mdash; extends this further; capped synthesis fills the residue. If the total still
+                        falls short of 3.5T, we <em>lower the Indic share rather than trade quality for it</em>:
+                        availability sets the ceiling, not the target.</p>
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -359,7 +368,8 @@
                                 <td class="num">~22%</td>
                                 <td>The Stack v2 (900B unique, 600+ langs) + GitHub issues/PRs/notebooks +
                                     execution-verified synthetic. Over-weighted &mdash; code transfers strongly to
-                                    reasoning and agency.</td>
+                                    reasoning and agency, but excess share measurably regresses non-code performance,
+                                    so 22% is capped and watched by the general/coding guardrails in &sect;5.</td>
                             </tr>
                             <tr>
                                 <td>Indic (all sources)</td>
@@ -395,6 +405,13 @@
                             </tr>
                         </tbody>
                     </table>
+                    <p class="muted-note" style="margin-top:12px;"><strong>Batching, not just filtering:</strong> the
+                        mix above is a target, not a promise a quality selector keeps on its own &mdash; English-tuned
+                        scoring systematically undervalues Brahmic-script and code-mixed text even with per-script
+                        classifiers. Indic and India-first data instead ride a fixed <strong>always-on floor</strong>
+                        (&asymp;8% of every batch, independent of any selector's relative scoring), while a small
+                        <strong>golden-proxy</strong> slice of benchmark-adjacent text sets the classifiers' target
+                        direction and never itself enters a training batch.</p>
                     <p class="muted-note" style="margin-top:12px;"><strong>Synthetic guardrail:</strong> synthetic Indic
                         bridges the quality gap but is capped and filtered for translationese and model-collapse;
                         factuality is checked by round-trip translation and teacher-consistency.</p>
@@ -440,6 +457,11 @@
                     <p>The recurring theme: <strong>English pipelines do not transfer to Indic.</strong> Classifiers,
                         thresholds, PII patterns, and even Unicode need Indic-specific treatment &mdash; and aggressive
                         filters tuned on abundant English silently delete scarce Indic.</p>
+                    <p class="muted-note"><strong>Provenance &amp; licence</strong> are captured at ingestion, before
+                        merge/shuffle/sharding makes them unrecoverable: source, transformations, and licence class
+                        (permissive / attribution / share-alike / unknown) travel with every document. One
+                        unknown-provenance source is enough to flag a mixture unusable, so such sources are excluded at
+                        collection, not filtered out later.</p>
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -638,8 +660,9 @@
                             </tr>
                             <tr>
                                 <td><strong>Risk:</strong> Indic data scarcity (~2.5T gap)</td>
-                                <td>Budgeted in &sect;3 (OCR/ASR then capped synthesis); residual lever = lower the Indic
-                                    share before the quality bar. Watch collapse &amp; translationese.</td>
+                                <td>Budgeted in &sect;3 (OCR/ASR, then a DeepSeekMath-style mining loop, then capped
+                                    synthesis); residual lever = lower the Indic share before the quality bar. Watch
+                                    collapse &amp; translationese.</td>
                             </tr>
                             <tr>
                                 <td><strong>Risk:</strong> Indic over-indexing regresses English/global</td>
@@ -665,9 +688,10 @@
                         GQA, 5:1 local/global) &middot; Sarvam-1 / Sarvam-30B (68k/262k vocab, 1.4&ndash;2.1 Indic
                         fertility) &middot; IndicSuperTokenizer (grapheme-aware, SOTA fertility) &middot; AI4Bharat
                         Sangraha (251B tokens, 22 langs) &amp; IndicLLMSuite &middot; The Stack v2 / StarCoder2 (900B
-                        code tokens) &middot; FineWeb-Edu &middot; DCLM &middot; Nemotron-CC &middot; "Scaling Laws with
-                        Vocabulary" (Tao et al., 2024) &middot; MILU &middot; IndicGenBench &middot; IndicXTREME &middot;
-                        SWE-bench Verified &middot; terminal-bench &middot; RLVR/GRPO (verl), SWE-RM.</p>
+                        code tokens) &middot; FineWeb-Edu &middot; DCLM &middot; Nemotron-CC &middot; DeepSeekMath
+                        (seed-classifier web mining) &middot; Epoch AI (public human-text stock) &middot; "Scaling Laws
+                        with Vocabulary" (Tao et al., 2024) &middot; MILU &middot; IndicGenBench &middot; IndicXTREME
+                        &middot; SWE-bench Verified &middot; terminal-bench &middot; RLVR/GRPO (verl), SWE-RM.</p>
                 </div>
             </div>
         </main>
