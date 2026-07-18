@@ -1,0 +1,13 @@
+demo: all self-checks passed
+
+stage              docs       tokens    -docs    -tokens
+raw              60,000   38,541,451        0          0
+normalize        60,000   38,446,046        0          0
+ghost_tags       60,000   38,446,046        0          0
+language_id      59,855   38,372,721      145     73,325
+quality          59,147   37,825,582      708    547,139
+pii              59,147   37,825,582        0          0
+dedup            57,818   36,335,906    1,329  1,489,676
+decontam         57,813   36,328,548        5          0
+
+retained 96.4% docs, 94.3% tokens | manifest ALLOWED | 1131.1s

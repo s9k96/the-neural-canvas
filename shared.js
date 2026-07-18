@@ -5,7 +5,8 @@ const NAV_PAGES = [
     { id: 'embedding-clustering', label: 'The Company We Keep', href: 'S1-understanding-network-components/embedding-clustering.html' },
     { id: 'generalization-gap', label: 'Experience Shapes Understanding', href: 'S1-understanding-network-components/generalization-gap.html' },
     { id: 'tokenizer', label: 'One Vocab, Four Languages', href: 's2-tokenizer/tokenizer.html' },
-    { id: 'india-first-llm', label: 'The World, Viewed From India', href: 's3-india-first-llm/india-first-llm.html' }
+    { id: 'india-first-llm', label: 'The World, Viewed From India', href: 's3-india-first-llm/india-first-llm.html' },
+    { id: 'data-cleaning', label: 'Raw Data Is Not Training Data', href: 's4-data-cleaning/data-cleaning.html' }
 ];
 
 function renderSidebarNav() {

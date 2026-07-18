@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neural Canvas — Raw Data Is Not Training Data</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <link rel="stylesheet" href="../shared.css" />
+    <style>
+        .report-section { margin: 0 auto 20px; max-width: 1000px; text-align: left; }
+        .report-section h2 { text-align: left; font-size: 20px; margin: 0 0 8px; letter-spacing: 0; }
+        .report-section h2 .num { color: var(--accent); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 15px; margin-right: 10px; }
+        .report-section h3 { font-size: 14px; color: var(--text); margin: 20px 0 6px; }
+        .report-section p { color: var(--muted); font-size: 14.5px; line-height: 1.7; margin: 0 0 12px; }
+        .report-section p:last-child { margin-bottom: 0; }
+        .report-section strong { color: var(--text); font-weight: 600; }
+        .report-section em { color: var(--text); font-style: italic; }
+        .report-lead { font-size: 15.5px !important; color: var(--text) !important; }
+
+        /* stat tiles */
+        .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 14px 0 4px; }
+        .tile { background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px 16px; }
+        .tile .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+        .tile .v { font-size: 26px; font-weight: 700; color: var(--text); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; margin-top: 4px; }
+        .tile .v small { font-size: 13px; color: var(--muted); font-weight: 600; }
+        .tile.accent .v { color: var(--accent); }
+
+        /* strategy grid */
+        .strat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 14px; }
+        .strat-card { background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px 16px; position: relative; }
+        .strat-card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); display: flex; align-items: baseline; gap: 8px; }
+        .strat-card h4 .sn { font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--muted); }
+        .strat-card p { margin: 0 0 8px; font-size: 13px; line-height: 1.55; }
+        .strat-card .fix { font-size: 11.5px; color: var(--muted); border-top: 1px dashed var(--panel-border); padding-top: 7px; margin-top: 4px; }
+        .strat-card .fix b { color: var(--text); }
+        .sov { border-left: 3px solid var(--accent); }
+
+        /* funnel */
+        .funnel-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+        .fstep { font-size: 12px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.03); color: var(--muted); cursor: pointer; transition: all .15s; font-family: ui-monospace, Consolas, monospace; }
+        .fstep:hover { color: var(--text); border-color: var(--accent); }
+        .fstep.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .fstep.done { color: var(--text); }
+        .surv-wrap { margin: 10px 0; }
+        .surv-track { height: 46px; border-radius: 10px; border: 1px solid var(--panel-border); background: repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 8px, transparent 8px 16px); overflow: hidden; position: relative; }
+        .surv-fill { height: 100%; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #7c5cff)); border-radius: 9px 0 0 9px; transition: width .5s cubic-bezier(.2,.7,.2,1); display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .surv-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 5px; font-family: ui-monospace, Consolas, monospace; }
+        .fdetail { background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px 16px; margin-top: 12px; min-height: 92px; }
+        .fdetail .fd-note { color: var(--text); font-size: 14px; margin: 0 0 8px; }
+        .fdetail .fd-stat { display: inline-block; margin: 0 16px 6px 0; font-size: 12.5px; color: var(--muted); }
+        .fdetail .fd-stat b { color: var(--accent); font-family: ui-monospace, Consolas, monospace; }
+        .beforeafter { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .beforeafter .ba { border: 1px solid var(--panel-border); border-radius: 8px; padding: 10px; font-size: 12px; line-height: 1.5; word-break: break-word; background: var(--panel); }
+        .beforeafter .ba .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 5px; }
+        code.mono { font-family: ui-monospace, Consolas, monospace; background: rgba(255,255,255,0.05); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+        .manifest { font-family: ui-monospace, Consolas, monospace; font-size: 12px; line-height: 1.6; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 14px 16px; overflow-x: auto; white-space: pre; color: var(--muted); }
+        .manifest .allow { color: #38b000; font-weight: 700; }
+        .pill { display: inline-block; font-size: 10px; font-weight: 700; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 1px 8px; letter-spacing: .04em; text-transform: uppercase; }
+        .cmp-bars { margin-top: 12px; }
+        .cmp-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 12.5px; }
+        .cmp-row .cmp-name { width: 130px; color: var(--muted); flex-shrink: 0; }
+        .cmp-row .cmp-track { flex: 1; height: 22px; background: rgba(255,255,255,0.04); border-radius: 6px; overflow: hidden; }
+        .cmp-row .cmp-bar { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; color: #fff; font-size: 11px; font-weight: 700; }
+        .muted-note { color: var(--muted); font-size: 12.5px; }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <button class="nav-toggle" id="sidebarToggle" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="7" x2="20" y2="7"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="17" x2="20" y2="17"></line>
+            </svg>
+        </button>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Sections</h3>
+                <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">&times;</button>
+            </div>
+            <div class="nav-list"></div>
+        </aside>
+
+        <main class="content">
+            <div class="wrapper">
+                <h1>Raw Data Is Not Training Data</h1>
+                <div class="subtitle">The <strong>8 cleaning strategies</strong> of Session 4, run for real on
+                    <strong>AI4Bharat Sangraha</strong> (verified Hindi). Every stage is script-aware, because an
+                    English-tuned cleaner deletes the very Indic text it is meant to keep.</div>
+
+                <!-- FINAL STAT TILES (top summary) -->
+                <div class="panel report-section">
+                    <p class="report-lead">A slice of raw Hindi web+PDF crawl, pushed through the full pipeline until
+                        what comes out the far end is training text with a provenance stamp.</p>
+                    <div class="tiles" id="topTiles"></div>
+                    <p class="muted-note" id="topLine" style="margin-top:10px;"></p>
+                </div>
+
+                <!-- 1. HOW MANY STRATEGIES -->
+                <div class="panel report-section">
+                    <h2><span class="num">01</span>How many strategies &mdash; and what they are</h2>
+                    <p>The session builds the pipeline that turns collected data into training data. Counting
+                        deduplication as one strategy (taught in two parts &mdash; the MinHash/LSH mechanism, then why it
+                        must run globally) and treating extraction as inherited from Session 3, the session lists
+                        <strong>8 cleaning strategies</strong>. The sovereign thread &mdash; protecting low-resource
+                        Indic text &mdash; runs through four of them (marked <span class="pill">Indic</span>).</p>
+                    <div class="strat-grid" id="stratGrid"></div>
+                </div>
+
+                <!-- 2. DATASET -->
+                <div class="panel report-section">
+                    <h2><span class="num">02</span>The dataset we picked</h2>
+                    <p><strong>AI4Bharat / Sangraha</strong>, the <code class="mono">verified/hin</code> split &mdash; the
+                        largest verified-human Indic corpus, and the same source Session 3 held up as the honest measure
+                        of real Indic coverage. It is exactly the kind of asset the session keeps pointing back to:
+                        <em>"our previous Indic crawl had no deduplication at any level."</em> So we clean the crawl the
+                        course said was never cleaned.</p>
+                    <div class="tiles" id="dsTiles"></div>
+                    <p class="muted-note" style="margin-top:10px;">Token counts use the <strong>sarvam-1</strong>
+                        Indic tokenizer, not a naive character ratio &mdash; the manifest bug Session 3 flagged, where a
+                        token count "estimated with a ratio that is wrong for Indic by several times" corrupts every
+                        downstream budget. Naive <code class="mono">chars/4</code> here would report
+                        <span id="naiveTok"></span> tokens; the real count is <span id="realTok"></span>.</p>
+                </div>
+
+                <!-- 3. THE FUNNEL (interactive) -->
+                <div class="panel report-section">
+                    <h2><span class="num">03</span>What was cleaned, why, and how</h2>
+                    <p>Step through the pipeline. Each stage names what it removes and why; the bar is the share of the
+                        raw <strong>token</strong> budget still surviving. Cleaning is not a light touch &mdash; it is a
+                        large, deliberate reduction.</p>
+                    <div class="funnel-steps" id="funnelSteps"></div>
+                    <div class="surv-wrap">
+                        <div class="surv-track"><div class="surv-fill" id="survFill"></div></div>
+                        <div class="surv-labels"><span id="survLeft"></span><span id="survRight"></span></div>
+                    </div>
+                    <div class="fdetail" id="fdetail"></div>
+                </div>
+
+                <!-- 4. THE OTHER CONCERN: SOVEREIGN THREAD -->
+                <div class="panel report-section">
+                    <h2><span class="num">04</span>The other concern we cleaned up: Indic erasure</h2>
+                    <p>The dangerous failure in a cleaning pipeline is not leaving dirt in &mdash; it is quietly deleting
+                        good low-resource text with filters tuned on English. We ran <em>both</em> quality filters over
+                        the same Hindi documents to measure it.</p>
+                    <div class="cmp-bars" id="cmpBars"></div>
+                    <p class="muted-note" id="erasureLine" style="margin-top:12px;"></p>
+                    <h3>Three places the sovereign fix lives</h3>
+                    <p style="margin:0;">
+                        <strong>Normalization</strong> keeps the zero-width joiner and non-joiner (real letters in
+                        Brahmic scripts) while stripping true noise &mdash; <span id="joinerLine"></span>.
+                        <strong>Language ID</strong> detects script at runtime instead of trusting the folder, dropping
+                        <span id="langLine"></span> mislabeled non-Hindi docs.
+                        <strong>Quality filtering</strong> treats the danda (&#2404;) as a sentence terminator and drops the
+                        English stop-word rule that would fail perfectly good Hindi.</p>
+                </div>
+
+                <!-- 5. DEDUP LOCAL VS GLOBAL -->
+                <div class="panel report-section">
+                    <h2><span class="num">05</span>Why deduplication must be global</h2>
+                    <p>Duplication is global. We split the corpus into 4 shards, deduplicated each one locally so every
+                        shard looked clean, then ran a single global pass over all of them. The gap is the point.</p>
+                    <div class="tiles" id="dedupTiles"></div>
+                    <p class="muted-note" style="margin-top:10px;" id="dedupLine"></p>
+                </div>
+
+                <!-- 6. MANIFEST -->
+                <div class="panel report-section">
+                    <h2><span class="num">06</span>Provenance: no shard enters without a manifest</h2>
+                    <p>Cleaning happens <em>before</em> the content hash, so the hash reflects the cleaned text. Identifiers
+                        come from content, not a counter, so the same input always reproduces the same output. Every shard
+                        carries this, or it is blocked from the corpus.</p>
+                    <div class="manifest" id="manifestBox"></div>
+                </div>
+
+                <!-- 7. FINAL STATS -->
+                <div class="panel report-section">
+                    <h2><span class="num">07</span>Final statistics</h2>
+                    <table class="data-table" id="finalTable"></table>
+                    <p class="muted-note" style="margin-top:12px;">Reproduce:
+                        <code class="mono">.venv/Scripts/python s4-data-cleaning/clean.py</code>.
+                        Same input &rarr; same content hash &rarr; same numbers.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>window.PAGE_ID = 'data-cleaning'; window.ROOT_PATH = '../';</script>
+    <script src="../shared.js"></script>
+    <script>
+        const DATA = {"dataset": "ai4bharat/sangraha : verified/hin/data-0.parquet", "tokenizer": "sarvamai/sarvam-1 (vocab 68096)", "raw": {"docs": 60000, "tokens": 38541451}, "final": {"docs": 57813, "tokens": 36328548}, "retained_docs_pct": 96.4, "retained_tokens_pct": 94.3, "fertility_chars_per_token": 3.48, "naive_token_estimate": 33510729, "runtime_sec": 1131.1, "funnel": [{"stage": "raw", "note": "Sangraha verified/hin slice loaded", "docs": 60000, "tokens": 38541451, "removed_docs": 0, "removed_tokens": 0, "source_types": {"web": 52705, "pdf": 7201, "speech": 94}}, {"stage": "normalize", "note": "NFC + strip noise-invisibles (kept ZWNJ/ZWJ) + unescape + ws", "docs": 60000, "tokens": 38446046, "removed_docs": 0, "removed_tokens": 0, "garbage_chars_removed": 60, "docs_touched": 53904, "docs_with_preserved_joiners": 0, "tokens_reclaimed": 95405}, {"stage": "ghost_tags", "note": "rewrote literal conversation/special-token markers", "docs": 60000, "tokens": 38446046, "removed_docs": 0, "removed_tokens": 0, "docs_with_markers": 0, "markers_removed": 0}, {"stage": "language_id", "note": "runtime script detection; dropped mislabeled non-Hindi", "docs": 59855, "tokens": 38372721, "removed_docs": 145, "removed_tokens": 73325, "reasons": {"other_script": 138, "mostly_latin": 7}}, {"stage": "quality", "note": "script-aware heuristics (danda-aware, no EN stop-word rule)", "docs": 59147, "tokens": 37825582, "removed_docs": 708, "removed_tokens": 547139, "script_aware_dropped": 708, "english_tuned_would_drop": 56777, "indic_erasure_prevented": 56069, "reasons": {"dup_lines": 76, "no_terminal_punct": 625, "symbol_ratio": 5, "word_len": 2}}, {"stage": "pii", "note": "regex layer masks structured identifiers (ML name-layer described)", "docs": 59147, "tokens": 37825582, "removed_docs": 0, "removed_tokens": 0, "docs_with_pii": 157, "spans_masked": {"PHONE": 158, "EMAIL": 49, "IP": 60, "AADHAAR": 17}}, {"stage": "dedup", "note": "MinHash/LSH near-dup, global not local (+ exact)", "docs": 57818, "tokens": 36335906, "removed_docs": 1329, "removed_tokens": 1489676, "exact_dupes": 963, "near_dupes_global": 1329, "near_dupes_local_only": 1212, "cross_shard_missed_by_local": 117}, {"stage": "decontam", "note": "fingerprint scan removes eval overlap; canary planted", "docs": 57813, "tokens": 36328548, "removed_docs": 5, "removed_tokens": 0, "eval_overlaps_detected_in_probe": 6, "canary_detected": true}], "manifest": {"source": "ai4bharat/sangraha : verified/hin/data-0.parquet", "license": "CC-BY-4.0", "contributor": "s9k96", "cleaning_script_sha256": "a136b99c5032c507ff0946fa8adc87ed7d9da693ade0b658d067ac4a4779c87f", "content_sha256": "c7c483ef2e4dbc2a52eed69c5bb1c336aa7f629a4edaa760e5c15016b3b964fd", "doc_count": 57813, "token_count": 36328548, "tokenizer": "sarvamai/sarvam-1", "language": {"hin_Deva": 1.0}, "token_count_naive_ratio": 33510729, "doc_ids_deterministic": true, "created_utc": "2026-07-18T16:39:42Z", "status": "ALLOWED"}, "samples": {"normalize": {"before": "स्वतन्त्रता पूर्व से ही प्रान्त में महिला षिक्षा के प्रति उदासीनता रही है, जिसको ध्यान में रखते हुए सरकार की �\"र से महिला महाविद्यालयों की स्थापना समय-समय पर की जाती रही है। मात्र 6 वर्ष पहले शुरू हुए कॉलेज को सरवाड़ में होना ही इस क्षेत्र के लिए किसी वरदान से कम नही है। जरूरत है राज्य सरकार की इस पहल का भरपूर लाभ उठाने की। सामान्य तौर पर ग्रामीण क्षेत्रों में अभिभावक इस कारण भी अपनी बेटियों को उच", "after": "स्वतन्त्रता पूर्व से ही प्रान्त में महिला षिक्षा के प्रति उदासीनता रही है, जिसको ध्यान में रखते हुए सरकार की \"र से महिला महाविद्यालयों की स्थापना समय-समय पर की जाती रही है। मात्र 6 वर्ष पहले शुरू हुए कॉलेज को सरवाड़ में होना ही इस क्षेत्र के लिए किसी वरदान से कम नही है। जरूरत है राज्य सरकार की इस पहल का भरपूर लाभ उठाने की। सामान्य तौर पर ग्रामीण क्षेत्रों में अभिभावक इस कारण भी अपनी बेटियों को उच्", "garbage_chars": 6}, "langdrop": {"deva_ratio": 0.48, "snippet": "पाकिस्तानी सेना ने कहा है कि वह भारत के साथ किसी भी प्रकार का युद्ध नहीं चाहती। लेकिन साथ ही चेतावनी भरे लहजे में यह भी कहा कि शांति की हमारी इस इच्छा को भारत कमजोरी नहीं समझे।\n Get latest World News "}, "pii": {"types": {"PHONE": 2}, "snippet": "Himachal Pradesh 17 August 2023 School Holiday । 17 August 2023 School Holiday, Mandi Dm Order: हिमांचल प्रदेश के कई जिलों में बारिश और भूस्खलन के कारण लोगो का जीवन अस्त- व्यस्त हो गया है. जहां देश में 15 अगस्त धूमधाम से मनाया गया वही हिमां"}}};
+
+        // static strategy copy (numbers come from DATA where relevant)
+        const STRATS = [
+            { n: '01', t: 'Normalization', indic: true,
+              d: 'NFC Unicode, strip invisible control chars, unescape HTML entities, collapse whitespace &mdash; before anything else touches the doc.',
+              fix: 'Fixes the <b>46 garbage tokens</b> V4 baked into its vocab. Keeps ZWNJ/ZWJ, which are real letters in Brahmic scripts.' },
+            { n: '02', t: 'Format discipline', indic: false,
+              d: 'Rewrite every source&rsquo;s conversation markers into one canonical special-token format at ingestion.',
+              fix: 'The priority-0 <b>ghost-tag</b> bug: 4 sources, 4 formats leaking literal markers into pretraining.' },
+            { n: '03', t: 'Quality filtering', indic: true,
+              d: 'Heuristic rules (word length, symbol ratio, terminal punctuation, duplicate lines) then an educational-value classifier.',
+              fix: 'English-tuned rules score good Telugu/Hindi as garbage. We judge on <b>script-aware</b> thresholds.' },
+            { n: '04', t: 'Deduplication', indic: false,
+              d: 'Shingles &rarr; MinHash signatures &rarr; LSH banding to catch near-duplicates, run <b>globally</b>, not per-shard.',
+              fix: 'The Indic crawl had <b>no dedup at any level</b> &mdash; wasted compute and a memorization risk at scale.' },
+            { n: '05', t: 'Language ID &amp; validation', indic: true,
+              d: 'Detect each document&rsquo;s language at runtime instead of trusting the folder it arrived in.',
+              fix: 'Mislabeled docs pollute per-language pools and skew fertility budgets. Catches the silent Telugu code bug.' },
+            { n: '06', t: 'PII removal', indic: true,
+              d: 'Regex layer masks structured identifiers (emails, phones, IPs, Aadhaar); an ML layer catches names.',
+              fix: 'Precision/recall tension is sharper for Indic names, where a common name doubles as a place.' },
+            { n: '07', t: 'Decontamination', indic: false,
+              d: 'Fingerprint the eval sets, scan every shard for overlap, remove any training doc carrying a test item, plant canaries.',
+              fix: 'Once a test item trains the model, the score it produces is no longer real.' },
+            { n: '08', t: 'Manifest / provenance', indic: false,
+              d: 'Deterministic content-hash IDs plus a per-shard manifest: source, license, cleaning-script hash, token count, language.',
+              fix: 'Catches the copy-pasted file sizes, non-deterministic IDs, and wrong-for-Indic token counts the audit found.' },
+        ];
+
+        const fmt = n => n.toLocaleString('en-US');
+        const abbr = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(0)+'k' : ''+n;
+        const F = DATA.funnel;
+        const raw = F[0];
+        const stageByName = Object.fromEntries(F.map(f => [f.stage, f]));
+
+        // ---- top tiles
+        document.getElementById('topTiles').innerHTML = [
+            ['Raw docs', fmt(DATA.raw.docs)],
+            ['Raw tokens', abbr(DATA.raw.tokens)],
+            ['Clean docs', fmt(DATA.final.docs)],
+            ['Clean tokens', abbr(DATA.final.tokens)],
+            ['Tokens kept', DATA.retained_tokens_pct + '%', true],
+        ].map(([k,v,a]) => `<div class="tile ${a?'accent':''}"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+        document.getElementById('topLine').textContent =
+            `${DATA.retained_docs_pct}% of documents and ${DATA.retained_tokens_pct}% of tokens survived all 8 stages — cleaning removed the rest. Pipeline ran in ${DATA.runtime_sec}s.`;
+
+        // ---- strategy grid
+        document.getElementById('stratGrid').innerHTML = STRATS.map(s => `
+            <div class="strat-card ${s.indic?'sov':''}">
+              <h4><span class="sn">${s.n}</span>${s.t} ${s.indic?'<span class="pill" style="margin-left:auto">Indic</span>':''}</h4>
+              <p>${s.d}</p>
+              <div class="fix">${s.fix}</div>
+            </div>`).join('');
+
+        // ---- dataset tiles
+        const st = raw.source_types || {};
+        document.getElementById('dsTiles').innerHTML = [
+            ['Source', 'Sangraha'],
+            ['Split', 'verified/hin'],
+            ['Documents', fmt(DATA.raw.docs)],
+            ['Tokens (sarvam-1)', abbr(DATA.raw.tokens)],
+            ['Fertility', DATA.fertility_chars_per_token + ' ch/tok'],
+        ].map(([k,v]) => `<div class="tile"><div class="k">${k}</div><div class="v" style="font-size:${v.length>9?'18':'26'}px">${v}</div></div>`).join('');
+        document.getElementById('naiveTok').innerHTML = '<code class="mono">'+abbr(DATA.naive_token_estimate)+'</code>';
+        document.getElementById('realTok').innerHTML = '<code class="mono">'+abbr(DATA.final.tokens)+'</code> (raw '+abbr(DATA.raw.tokens)+')';
+
+        // ---- funnel
+        const steps = document.getElementById('funnelSteps');
+        const survFill = document.getElementById('survFill');
+        const survL = document.getElementById('survLeft'), survR = document.getElementById('survRight');
+        const fdetail = document.getElementById('fdetail');
+        const NOTE = {
+            raw: 'Raw Sangraha slice loaded — nothing removed yet.',
+            normalize: 'Canonicalized every document: NFC, HTML entities unescaped, invisible noise stripped, whitespace collapsed — while preserving the Indic joiners.',
+            ghost_tags: 'Rewrote literal conversation / special-token markers so pretraining never learns fake chat structure.',
+            language_id: 'Detected script at runtime and dropped documents that were not actually Hindi.',
+            quality: 'Applied script-aware quality heuristics; dropped broken, spammy, and duplicate-line documents.',
+            pii: 'Masked structured personal identifiers with a regex layer.',
+            dedup: 'Removed exact and near-duplicate documents with a global MinHash/LSH pass.',
+            decontam: 'Scanned for evaluation-set overlap and removed contaminated documents.',
+        };
+        function extraStats(f) {
+            const skip = new Set(['stage','note','docs','tokens','removed_docs','removed_tokens','source_types','reasons']);
+            let out = [];
+            if (f.removed_docs) out.push(['removed docs', fmt(f.removed_docs)]);
+            if (f.removed_tokens) out.push(['removed tokens', abbr(f.removed_tokens)]);
+            for (const [k,v] of Object.entries(f)) {
+                if (skip.has(k) || typeof v === 'object') continue;
+                out.push([k.replace(/_/g,' '), typeof v==='number'?fmt(v):v]);
+            }
+            return out;
+        }
+        function sampleFor(stage) {
+            const S = DATA.samples || {};
+            if (stage==='normalize' && S.normalize) return baBlock('before', S.normalize.before, 'after', S.normalize.after);
+            if (stage==='language_id' && S.langdrop) return `<div class="beforeafter"><div class="ba"><div class="lbl">dropped — deva ratio ${S.langdrop.deva_ratio}</div>${esc(S.langdrop.snippet)}</div></div>`;
+            if (stage==='pii' && S.pii) return `<div class="beforeafter"><div class="ba"><div class="lbl">masked</div>${esc(S.pii.snippet)}</div></div>`;
+            if (stage==='ghost_tags' && S.ghost) return `<div class="beforeafter"><div class="ba"><div class="lbl">markers found</div>${esc(S.ghost.snippet)}</div></div>`;
+            return '';
+        }
+        const esc = s => (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+        const baBlock = (l1,v1,l2,v2) => `<div class="beforeafter"><div class="ba"><div class="lbl">${l1}</div>${esc(v1)}</div><div class="ba"><div class="lbl">${l2}</div>${esc(v2)}</div></div>`;
+
+        let cur = 0;
+        function render(i) {
+            cur = i;
+            const f = F[i];
+            [...steps.children].forEach((c,j) => { c.classList.toggle('active', j===i); c.classList.toggle('done', j<i); });
+            const pct = 100 * f.tokens / raw.tokens;
+            survFill.style.width = Math.max(pct, 2) + '%';
+            survFill.textContent = pct.toFixed(0) + '%';
+            survL.textContent = `${abbr(f.tokens)} tokens surviving`;
+            survR.textContent = `${abbr(raw.tokens - f.tokens)} removed cumulatively`;
+            const stats = extraStats(f).map(([k,v]) => `<span class="fd-stat">${k}: <b>${v}</b></span>`).join('');
+            fdetail.innerHTML = `<p class="fd-note">${NOTE[f.stage] || f.note}</p>${stats}${sampleFor(f.stage)}`;
+        }
+        steps.innerHTML = F.map((f,i) => `<button class="fstep">${i}. ${f.stage}</button>`).join('');
+        [...steps.children].forEach((c,i) => c.addEventListener('click', () => render(i)));
+        render(0);
+
+        // ---- sovereign compare bars
+        const q = stageByName.quality;
+        const total = stageByName.language_id.docs; // docs entering quality filter
+        const saKept = total - q.script_aware_dropped;
+        const enKept = total - q.english_tuned_would_drop;
+        document.getElementById('cmpBars').innerHTML = [
+            ['Script-aware filter', saKept, 'var(--accent)'],
+            ['English-tuned filter', enKept, '#c05555'],
+        ].map(([name,val,col]) => `
+            <div class="cmp-row"><div class="cmp-name">${name}</div>
+              <div class="cmp-track"><div class="cmp-bar" style="width:${100*val/total}%;background:${col}">${fmt(val)} kept</div></div></div>`).join('')
+            + `<div class="cmp-row"><div class="cmp-name" style="color:var(--text)">Same ${fmt(total)} Hindi docs</div><div class="cmp-track"></div></div>`;
+        document.getElementById('erasureLine').innerHTML =
+            `An English-tuned filter would have thrown away <b style="color:var(--text)">${fmt(q.english_tuned_would_drop)}</b> documents; ` +
+            `<b style="color:var(--accent)">${fmt(q.indic_erasure_prevented)}</b> of them are good Hindi the script-aware filter keeps. ` +
+            `That is the difference between a cleaner built for these languages and one that was not.`;
+        const nz = stageByName.normalize;
+        document.getElementById('joinerLine').innerHTML = nz.docs_with_preserved_joiners
+            ? `<b>${fmt(nz.docs_with_preserved_joiners)}</b> docs carried joiners we kept`
+            : `this Hindi slice carried none, while <b>${fmt(nz.garbage_chars_removed)}</b> true garbage characters (a replacement char, stray entities, control chars) were removed across <b>${fmt(nz.docs_touched)}</b> touched docs`;
+        document.getElementById('langLine').textContent = fmt(stageByName.language_id.removed_docs);
+
+        // ---- dedup tiles
+        const dd = stageByName.dedup;
+        document.getElementById('dedupTiles').innerHTML = [
+            ['Exact dupes', fmt(dd.exact_dupes)],
+            ['Near-dupes (global)', fmt(dd.near_dupes_global)],
+            ['Caught by local only', fmt(dd.near_dupes_local_only)],
+            ['Missed by local', fmt(dd.cross_shard_missed_by_local), true],
+        ].map(([k,v,a]) => `<div class="tile ${a?'accent':''}"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+        document.getElementById('dedupLine').innerHTML =
+            `<b style="color:var(--accent)">${fmt(dd.cross_shard_missed_by_local)}</b> cross-shard duplicates every local pass called clean — invisible until one machine holds the whole corpus. That is why the course provisions a single central dedup machine.`;
+
+        // ---- manifest
+        const M = DATA.manifest;
+        const mline = (k,v) => `  "${k}": ${JSON.stringify(v)}`;
+        document.getElementById('manifestBox').innerHTML =
+            '{\n' + [
+                mline('source', M.source), mline('license', M.license),
+                mline('content_sha256', M.content_sha256.slice(0,32)+'…'),
+                mline('cleaning_script_sha256', M.cleaning_script_sha256.slice(0,32)+'…'),
+                mline('doc_count', M.doc_count), mline('token_count', M.token_count),
+                mline('tokenizer', M.tokenizer),
+                '  "token_count_naive_ratio": ' + M.token_count_naive_ratio + '   ← wrong-for-Indic, not used',
+                mline('doc_ids_deterministic', M.doc_ids_deterministic),
+            ].join(',\n') + ',\n  "status": ' + `<span class="allow">"${M.status}"</span>` + '\n}';
+
+        // ---- final table
+        document.getElementById('finalTable').innerHTML = `
+            <thead><tr><th>Metric</th><th>Raw</th><th>Cleaned</th><th>Retained</th></tr></thead>
+            <tbody>
+              <tr><td>Documents</td><td>${fmt(DATA.raw.docs)}</td><td>${fmt(DATA.final.docs)}</td><td>${DATA.retained_docs_pct}%</td></tr>
+              <tr><td>Tokens (sarvam-1)</td><td>${fmt(DATA.raw.tokens)}</td><td>${fmt(DATA.final.tokens)}</td><td>${DATA.retained_tokens_pct}%</td></tr>
+            </tbody>`;
+    </script>
+</body>
+
+</html>
