@@ -1,0 +1,115 @@
+{
+  "dataset": "ai4bharat/sangraha : unverified/hin/data-0.parquet",
+  "tokenizer": "sarvamai/sarvam-1 (vocab 68096)",
+  "raw": {
+    "docs": 60000,
+    "tokens": 43257413
+  },
+  "final": {
+    "docs": 59283,
+    "tokens": 42514878
+  },
+  "retained_docs_pct": 98.8,
+  "retained_tokens_pct": 98.3,
+  "fertility_chars_per_token": 3.6,
+  "naive_token_estimate": 38901180,
+  "runtime_sec": 1395.4,
+  "funnel": [
+    {
+      "stage": "raw",
+      "note": "Sangraha verified/hin slice loaded",
+      "docs": 60000,
+      "tokens": 43257413,
+      "removed_docs": 0,
+      "removed_tokens": 0,
+      "source_types": {
+        "web": 60000
+      }
+    },
+    {
+      "stage": "normalize",
+      "note": "NFC + strip noise-invisibles (kept ZWNJ/ZWJ) + unescape + ws",
+      "docs": 60000,
+      "tokens": 43190005,
+      "removed_docs": 0,
+      "removed_tokens": 0,
+      "garbage_chars_removed": 232,
+      "docs_touched": 60000,
+      "docs_with_preserved_joiners": 4,
+      "tokens_reclaimed": 67408
+    },
+    {
+      "stage": "ghost_tags",
+      "note": "rewrote literal conversation/special-token markers",
+      "docs": 60000,
+      "tokens": 43190005,
+      "removed_docs": 0,
+      "removed_tokens": 0,
+      "docs_with_markers": 0,
+      "markers_removed": 0
+    },
+    {
+      "stage": "language_id",
+      "note": "runtime script detection; dropped mislabeled non-Hindi",
+      "docs": 59993,
+      "tokens": 43182886,
+      "removed_docs": 7,
+      "removed_tokens": 7119,
+      "reasons": {
+        "other_script": 7
+      }
+    },
+    {
+      "stage": "quality",
+      "note": "script-aware heuristics (danda-aware, no EN stop-word rule)",
+      "docs": 59430,
+      "tokens": 42593048,
+      "removed_docs": 563,
+      "removed_tokens": 589838,
+      "script_aware_dropped": 563,
+      "english_tuned_would_drop": 57550,
+      "indic_erasure_prevented": 56987,
+      "reasons": {
+        "no_terminal_punct": 555,
+        "dup_lines": 8
+      }
+    },
+    {
+      "stage": "pii",
+      "note": "regex layer masks structured identifiers (ML name-layer described)",
+      "docs": 59430,
+      "tokens": 42593048,
+      "removed_docs": 0,
+      "removed_tokens": 0,
+      "docs_with_pii": 334,
+      "spans_masked": {
+        "EMAIL": 187,
+        "PHONE": 245,
+        "IP": 41,
+        "AADHAAR": 19
+      }
+    },
+    {
+      "stage": "dedup",
+      "note": "MinHash/LSH near-dup, global not local (+ exact)",
+      "docs": 59288,
+      "tokens": 42516533,
+      "removed_docs": 142,
+      "removed_tokens": 76515,
+      "exact_dupes": 6,
+      "near_dupes_global": 142,
+      "near_dupes_local_only": 61,
+      "cross_shard_missed_by_local": 82
+    },
+    {
+      "stage": "decontam",
+      "note": "fingerprint scan removes eval overlap; canary planted",
+      "docs": 59283,
+      "tokens": 42514878,
+      "removed_docs": 5,
+      "removed_tokens": 0,
+      "eval_overlaps_detected_in_probe": 6,
+      "canary_detected": true
+    }
+  ]
+}

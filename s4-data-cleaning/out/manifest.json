@@ -1,0 +1,17 @@
+{
+  "source": "ai4bharat/sangraha : verified/hin/data-0.parquet",
+  "license": "CC-BY-4.0",
+  "contributor": "s9k96",
+  "cleaning_script_sha256": "a136b99c5032c507ff0946fa8adc87ed7d9da693ade0b658d067ac4a4779c87f",
+  "content_sha256": "c7c483ef2e4dbc2a52eed69c5bb1c336aa7f629a4edaa760e5c15016b3b964fd",
+  "doc_count": 57813,
+  "token_count": 36328548,
+  "tokenizer": "sarvamai/sarvam-1",
+  "language": {
+    "hin_Deva": 1.0
+  },
+  "token_count_naive_ratio": 33510729,
+  "doc_ids_deterministic": true,
+  "created_utc": "2026-07-18T16:39:42Z",
+  "status": "ALLOWED"
+}
