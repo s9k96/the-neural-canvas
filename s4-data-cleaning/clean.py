@@ -25,12 +25,14 @@ os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 HERE = Path(__file__).resolve().parent
 SCRATCH = Path(os.environ.get("S4_SCRATCH",
     r"C:/Users/BIPLOVE/AppData/Local/Temp/claude/c--shubham/58aad9cf-10df-4134-ac3f-62ffcf8a046b/scratchpad"))
-RAW = SCRATCH / "sangraha_raw" / "verified" / "hin" / "data-0.parquet"
-OUT = HERE / "out"; OUT.mkdir(exist_ok=True)
+TIER = os.environ.get("S4_TIER", "verified")   # verified | unverified
+RAW = SCRATCH / "sangraha_raw" / TIER / "hin" / "data-0.parquet"
+OUT = HERE / "out" if TIER == "verified" else HERE / "out" / TIER
+OUT.mkdir(parents=True, exist_ok=True)         # unverified writes to out/unverified/ so verified stays intact
 N_DOCS = 60_000
 SEED = 4
-SOURCE = "ai4bharat/sangraha : verified/hin/data-0.parquet"
-LICENSE = "CC-BY-4.0"          # Sangraha verified split
+SOURCE = f"ai4bharat/sangraha : {TIER}/hin/data-0.parquet"
+LICENSE = "CC-BY-4.0"          # Sangraha repo license (applies to both tiers)
 CONTRIBUTOR = "s9k96"
 
 DEVA = lambda c: 'ऀ' <= c <= 'ॿ'   # Devanagari block
@@ -168,10 +170,11 @@ def lsh_dupes(sigs, idx, bands=16, rows=4):
 # ---- pipeline -------------------------------------------------------------
 def load_docs():
     import pyarrow.parquet as pq
-    t = pq.ParquetFile(RAW).read_row_group(0).to_pydict()
-    docs = [{'id': t['doc_id'][i], 'text': t['text'][i], 'type': t['type'][i]}
-            for i in range(min(N_DOCS, len(t['text'])))]
-    return docs
+    t = next(pq.ParquetFile(RAW).iter_batches(batch_size=N_DOCS)).to_pydict()
+    n = len(t['text'])
+    types = t.get('type') or ['web'] * n                       # unverified crawl may omit 'type'
+    ids = t.get('doc_id') or [f'{TIER}-hin-{i}' for i in range(n)]
+    return [{'id': ids[i], 'text': t['text'][i], 'type': types[i]} for i in range(n)]
 
 def run():
     t0 = time.time()
