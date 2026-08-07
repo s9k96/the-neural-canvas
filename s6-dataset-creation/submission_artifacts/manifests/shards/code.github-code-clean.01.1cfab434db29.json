@@ -1,0 +1,260 @@
+{
+  "shard_id": "code.github-code-clean.01.1cfab434db29",
+  "source_ids": [
+    "github-code-clean"
+  ],
+  "doc_ids": [
+    "github-code-clean:27",
+    "github-code-clean:28",
+    "github-code-clean:29",
+    "github-code-clean:3",
+    "github-code-clean:30",
+    "github-code-clean:31",
+    "github-code-clean:32",
+    "github-code-clean:33",
+    "github-code-clean:34",
+    "github-code-clean:35",
+    "github-code-clean:36",
+    "github-code-clean:37",
+    "github-code-clean:38",
+    "github-code-clean:39",
+    "github-code-clean:4",
+    "github-code-clean:40",
+    "github-code-clean:41",
+    "github-code-clean:42",
+    "github-code-clean:43",
+    "github-code-clean:44"
+  ],
+  "tokenizer_hash": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "token_count": 15269,
+  "language_and_script": [
+    "code"
+  ],
+  "capability_lane": "code",
+  "license_and_provenance_tier": {
+    "licenses": [
+      "isc"
+    ],
+    "tiers": [
+      "B"
+    ]
+  },
+  "cleaning_pipeline_hash": "acc147c1a129c956cd862084c9b1ec4337ac4b6b331814428aeb530f50cbb72a",
+  "dedup_status": "unique",
+  "contamination_status": "clean",
+  "eval_overlap_status": "clean",
+  "content_hash": "1cfab434db296554022424a26a77ba07906e6cc0b06ca48717a15fee3d097fc6",
+  "parent_shard_ids": [],
+  "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+  "loss_bearing_token_count": 15269,
+  "n_samples": 20,
+  "docs": [
+    {
+      "doc_id": "github-code-clean:27",
+      "sample_index": 0,
+      "token_start": 0,
+      "token_end": 213,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 213
+    },
+    {
+      "doc_id": "github-code-clean:28",
+      "sample_index": 1,
+      "token_start": 213,
+      "token_end": 2343,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 2130
+    },
+    {
+      "doc_id": "github-code-clean:29",
+      "sample_index": 2,
+      "token_start": 2343,
+      "token_end": 3206,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 863
+    },
+    {
+      "doc_id": "github-code-clean:3",
+      "sample_index": 3,
+      "token_start": 3206,
+      "token_end": 3511,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 305
+    },
+    {
+      "doc_id": "github-code-clean:30",
+      "sample_index": 4,
+      "token_start": 3511,
+      "token_end": 3798,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 287
+    },
+    {
+      "doc_id": "github-code-clean:31",
+      "sample_index": 5,
+      "token_start": 3798,
+      "token_end": 4136,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 338
+    },
+    {
+      "doc_id": "github-code-clean:32",
+      "sample_index": 6,
+      "token_start": 4136,
+      "token_end": 4466,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 330
+    },
+    {
+      "doc_id": "github-code-clean:33",
+      "sample_index": 7,
+      "token_start": 4466,
+      "token_end": 6179,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 1713
+    },
+    {
+      "doc_id": "github-code-clean:34",
+      "sample_index": 8,
+      "token_start": 6179,
+      "token_end": 6242,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 63
+    },
+    {
+      "doc_id": "github-code-clean:35",
+      "sample_index": 9,
+      "token_start": 6242,
+      "token_end": 8395,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 2153
+    },
+    {
+      "doc_id": "github-code-clean:36",
+      "sample_index": 10,
+      "token_start": 8395,
+      "token_end": 8793,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 398
+    },
+    {
+      "doc_id": "github-code-clean:37",
+      "sample_index": 11,
+      "token_start": 8793,
+      "token_end": 9366,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 573
+    },
+    {
+      "doc_id": "github-code-clean:38",
+      "sample_index": 12,
+      "token_start": 9366,
+      "token_end": 9701,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 335
+    },
+    {
+      "doc_id": "github-code-clean:39",
+      "sample_index": 13,
+      "token_start": 9701,
+      "token_end": 9732,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 31
+    },
+    {
+      "doc_id": "github-code-clean:4",
+      "sample_index": 14,
+      "token_start": 9732,
+      "token_end": 9783,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 51
+    },
+    {
+      "doc_id": "github-code-clean:40",
+      "sample_index": 15,
+      "token_start": 9783,
+      "token_end": 10421,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 638
+    },
+    {
+      "doc_id": "github-code-clean:41",
+      "sample_index": 16,
+      "token_start": 10421,
+      "token_end": 12379,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 1958
+    },
+    {
+      "doc_id": "github-code-clean:42",
+      "sample_index": 17,
+      "token_start": 12379,
+      "token_end": 14172,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 1793
+    },
+    {
+      "doc_id": "github-code-clean:43",
+      "sample_index": 18,
+      "token_start": 14172,
+      "token_end": 14918,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 746
+    },
+    {
+      "doc_id": "github-code-clean:44",
+      "sample_index": 19,
+      "token_start": 14918,
+      "token_end": 15269,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 351
+    }
+  ],
+  "reserved_for_anneal": false,
+  "never_train": false,
+  "gradient_bearing": true,
+  "admission": {
+    "verdict": "ADMITTED",
+    "reasons": []
+  }
+}

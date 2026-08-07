@@ -1,0 +1,1894 @@
+{
+  "from_checkpoint": "ckpt_step0020.npz",
+  "from_step": 20,
+  "to_step": 40,
+  "record_branch": "replay-main@20",
+  "data_branch": "main",
+  "method": "restored the older checkpoint (weights, optimizer moments and OPUS score buffer), re-ran the pure planner on the same data branch, and compared batch hashes, token span ids and loss-mask hashes against the original ledger events",
+  "compared": 80,
+  "matched": 80,
+  "all_matched": true,
+  "replay_seconds": 10.0464,
+  "comparisons": [
+    {
+      "global_step": 20,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "e69f5217fdd0a8e435d510642e91bd4ae50fe6ece8a371b9f1e5cab5f855a8d2",
+      "replay_batch_hash": "e69f5217fdd0a8e435d510642e91bd4ae50fe6ece8a371b9f1e5cab5f855a8d2",
+      "hash_match": true,
+      "original_span_ids": [
+        "agentic.hermes-tools.00.251e262951d1#23646-23902",
+        "code.github-code-clean.02.3712a4d385d3#13941-14050",
+        "code.github-code-clean.02.3712a4d385d3#1808-1885",
+        "code.github-code-clean.01.1cfab434db29#6179-6242"
+      ],
+      "replay_span_ids": [
+        "agentic.hermes-tools.00.251e262951d1#23646-23902",
+        "code.github-code-clean.02.3712a4d385d3#13941-14050",
+        "code.github-code-clean.02.3712a4d385d3#1808-1885",
+        "code.github-code-clean.01.1cfab434db29#6179-6242"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        20,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 20,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "f5ee24c4ebc65d30557c8706548e4e9df7b7ba860086990a60a054463f04ad35",
+      "replay_batch_hash": "f5ee24c4ebc65d30557c8706548e4e9df7b7ba860086990a60a054463f04ad35",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#11008-11264",
+        "general_web.fineweb-edu.01.5ff773c4d560#1280-1536"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#11008-11264",
+        "general_web.fineweb-edu.01.5ff773c4d560#1280-1536"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        20,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 20,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "b47218087f6b45bec2240cf87243a9cadddb3b0f6c6ce8d7cbcc1b3907d98e1b",
+      "replay_batch_hash": "b47218087f6b45bec2240cf87243a9cadddb3b0f6c6ce8d7cbcc1b3907d98e1b",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#7936-8192",
+        "general_web.fineweb-edu.04.46aff408a9ed#11264-11520"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#7936-8192",
+        "general_web.fineweb-edu.04.46aff408a9ed#11264-11520"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        20,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 20,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "dbff91de5d87b9b41c21989a1aefae316c7b8481381ead7279fd977e68fe4861",
+      "replay_batch_hash": "dbff91de5d87b9b41c21989a1aefae316c7b8481381ead7279fd977e68fe4861",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-hi.00.4a3df50aec73#6400-6656",
+        "reasoning.openthoughts.01.04e2f872ea1c#30630-30886"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-hi.00.4a3df50aec73#6400-6656",
+        "reasoning.openthoughts.01.04e2f872ea1c#30630-30886"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        20,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 21,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "30f72852cb1628fa27920466a0cbeaf6a06aab0241d4ae3238a26a37012a88aa",
+      "replay_batch_hash": "30f72852cb1628fa27920466a0cbeaf6a06aab0241d4ae3238a26a37012a88aa",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.03.fd7014fedee6#11490-11746",
+        "code.github-code-clean.02.3712a4d385d3#0-38",
+        "code.github-code-clean.02.3712a4d385d3#18245-18440"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.03.fd7014fedee6#11490-11746",
+        "code.github-code-clean.02.3712a4d385d3#0-38",
+        "code.github-code-clean.02.3712a4d385d3#18245-18440"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        21,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 21,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "55fce08d59e1ef459197647502f07f3e213df76047024525015c7ada941850f3",
+      "replay_batch_hash": "55fce08d59e1ef459197647502f07f3e213df76047024525015c7ada941850f3",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#1024-1280",
+        "indic.wikipedia-te.01.e7277117616d#4864-5120"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#1024-1280",
+        "indic.wikipedia-te.01.e7277117616d#4864-5120"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        21,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 21,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "b13f18c68a8da20e9ba3f636d6d9592b40e9a5b2281a5ef8b40c8065d49b2a1d",
+      "replay_batch_hash": "b13f18c68a8da20e9ba3f636d6d9592b40e9a5b2281a5ef8b40c8065d49b2a1d",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#2304-2560",
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#13824-13879"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#2304-2560",
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#13824-13879"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        21,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 21,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "3128fbc969dcf2fb376959eb2eb5c8d985716a7894b4a433b3296f2c7faaadb0",
+      "replay_batch_hash": "3128fbc969dcf2fb376959eb2eb5c8d985716a7894b4a433b3296f2c7faaadb0",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-mr.01.7526345cfd36#8960-9216",
+        "stem_math.gsm8k-train.03.7db264116a35#1010-1266"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-mr.01.7526345cfd36#8960-9216",
+        "stem_math.gsm8k-train.03.7db264116a35#1010-1266"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        21,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 22,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "1287c01bfbcbdd101203deb574ef7b58f85d5169a665c20d6d1120fb88a39295",
+      "replay_batch_hash": "1287c01bfbcbdd101203deb574ef7b58f85d5169a665c20d6d1120fb88a39295",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#1885-1912",
+        "code.github-code-clean.01.1cfab434db29#0-213",
+        "code.github-code-clean.01.1cfab434db29#9366-9622"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#1885-1912",
+        "code.github-code-clean.01.1cfab434db29#0-213",
+        "code.github-code-clean.01.1cfab434db29#9366-9622"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        22,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 22,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "b64d6074ba79cc8228841f7bb58a64b4391877e1132d6613a59cfb2c159a1dce",
+      "replay_batch_hash": "b64d6074ba79cc8228841f7bb58a64b4391877e1132d6613a59cfb2c159a1dce",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#4608-4864",
+        "general_web.fineweb-edu.04.46aff408a9ed#1536-1792"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#4608-4864",
+        "general_web.fineweb-edu.04.46aff408a9ed#1536-1792"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        22,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 22,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "34512a20ce9ddd2b4bf5395e561fda24a27805c1ee77dd87e05ec475085d5ad8",
+      "replay_batch_hash": "34512a20ce9ddd2b4bf5395e561fda24a27805c1ee77dd87e05ec475085d5ad8",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#6144-6400",
+        "general_web.fineweb-edu.04.46aff408a9ed#6144-6400"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#6144-6400",
+        "general_web.fineweb-edu.04.46aff408a9ed#6144-6400"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        22,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 22,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "f47e7306284b1703e27dc77de1479b58e58151128e9819895bc238bebf352284",
+      "replay_batch_hash": "f47e7306284b1703e27dc77de1479b58e58151128e9819895bc238bebf352284",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#24064-24320",
+        "stem_math.gsm8k-train.01.ce561377bdca#1858-1993",
+        "stem_math.gsm8k-train.01.ce561377bdca#2948-3057"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#24064-24320",
+        "stem_math.gsm8k-train.01.ce561377bdca#1858-1993",
+        "stem_math.gsm8k-train.01.ce561377bdca#2948-3057"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        22,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 23,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "16e6bd19cb2942d78c901d8977cbc90837bb43da0c6562b326ecca5a4c6317c1",
+      "replay_batch_hash": "16e6bd19cb2942d78c901d8977cbc90837bb43da0c6562b326ecca5a4c6317c1",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#14106-14362",
+        "general_web.fineweb-edu.01.5ff773c4d560#0-256"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#14106-14362",
+        "general_web.fineweb-edu.01.5ff773c4d560#0-256"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        23,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 23,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "f51dfc6407f1084065f5be62b9218765ced34d7d58d7df674a531f214f9c1de1",
+      "replay_batch_hash": "f51dfc6407f1084065f5be62b9218765ced34d7d58d7df674a531f214f9c1de1",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-mr.00.1e9fff8aaef2#3328-3584",
+        "long_context.pg19-books.00.6a378dd0f883#512-768"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-mr.00.1e9fff8aaef2#3328-3584",
+        "long_context.pg19-books.00.6a378dd0f883#512-768"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        23,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 23,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "87cebba6457efc8a5d3bcfd54a7e91ed0443cc7bf0b91f9fed323149522bae07",
+      "replay_batch_hash": "87cebba6457efc8a5d3bcfd54a7e91ed0443cc7bf0b91f9fed323149522bae07",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#4864-5120",
+        "general_web.fineweb-edu.01.5ff773c4d560#256-512"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#4864-5120",
+        "general_web.fineweb-edu.01.5ff773c4d560#256-512"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        23,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 23,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "d07dd9e5756f0e547cd268cf3d22d1273119d9cba4640c5d3292996c61111e0e",
+      "replay_batch_hash": "d07dd9e5756f0e547cd268cf3d22d1273119d9cba4640c5d3292996c61111e0e",
+      "hash_match": true,
+      "original_span_ids": [
+        "reasoning.openthoughts.01.04e2f872ea1c#9729-9985",
+        "stem_math.gsm8k-train.03.7db264116a35#661-917"
+      ],
+      "replay_span_ids": [
+        "reasoning.openthoughts.01.04e2f872ea1c#9729-9985",
+        "stem_math.gsm8k-train.03.7db264116a35#661-917"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        23,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 24,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "69ac19d2cd3df2cfe9b6895fd2b9e2c81e8b7f2200bc6ee6dc6df98d11bf52a9",
+      "replay_batch_hash": "69ac19d2cd3df2cfe9b6895fd2b9e2c81e8b7f2200bc6ee6dc6df98d11bf52a9",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#0-38",
+        "code.github-code-clean.02.3712a4d385d3#14050-14106",
+        "code.github-code-clean.01.1cfab434db29#9732-9783",
+        "code.github-code-clean.01.1cfab434db29#9701-9732",
+        "code.github-code-clean.02.3712a4d385d3#1885-1912",
+        "code.github-code-clean.01.1cfab434db29#213-469"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#0-38",
+        "code.github-code-clean.02.3712a4d385d3#14050-14106",
+        "code.github-code-clean.01.1cfab434db29#9732-9783",
+        "code.github-code-clean.01.1cfab434db29#9701-9732",
+        "code.github-code-clean.02.3712a4d385d3#1885-1912",
+        "code.github-code-clean.01.1cfab434db29#213-469"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        24,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 24,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "250b0d03ac5b3c7481beaa6fc59604fc76173523c58fd6cabe0c462b7ffa909c",
+      "replay_batch_hash": "250b0d03ac5b3c7481beaa6fc59604fc76173523c58fd6cabe0c462b7ffa909c",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#8960-9216",
+        "general_web.fineweb-edu.01.5ff773c4d560#8192-8448"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#8960-9216",
+        "general_web.fineweb-edu.01.5ff773c4d560#8192-8448"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        24,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 24,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "40abfca010307d6040d3ff68ceac94dd11b9cc45214465eaf40ad6d3158e0538",
+      "replay_batch_hash": "40abfca010307d6040d3ff68ceac94dd11b9cc45214465eaf40ad6d3158e0538",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#1280-1536",
+        "general_web.fineweb-edu.01.5ff773c4d560#6400-6656"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#1280-1536",
+        "general_web.fineweb-edu.01.5ff773c4d560#6400-6656"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        24,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 24,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "85f86cd1ea4420f2be251b395faaecca922e4df45d5c1e6dc833451ffe227dcd",
+      "replay_batch_hash": "85f86cd1ea4420f2be251b395faaecca922e4df45d5c1e6dc833451ffe227dcd",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-hi.00.4a3df50aec73#1536-1792",
+        "indic.wikipedia-te.01.e7277117616d#14080-14336"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-hi.00.4a3df50aec73#1536-1792",
+        "indic.wikipedia-te.01.e7277117616d#14080-14336"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        24,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 25,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "f726f7f37da023cfd792b921f48eb0f768f59823900d22186185585d7e07fef0",
+      "replay_batch_hash": "f726f7f37da023cfd792b921f48eb0f768f59823900d22186185585d7e07fef0",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#1808-1885",
+        "code.github-code-clean.02.3712a4d385d3#18067-18245",
+        "code.github-code-clean.03.fd7014fedee6#10281-10537"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#1808-1885",
+        "code.github-code-clean.02.3712a4d385d3#18067-18245",
+        "code.github-code-clean.03.fd7014fedee6#10281-10537"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        25,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 25,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "54495f27f05f2b2e42842df1bf93deb6efef326397f9d566005132430a147a33",
+      "replay_batch_hash": "54495f27f05f2b2e42842df1bf93deb6efef326397f9d566005132430a147a33",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#5376-5632",
+        "general_web.fineweb-edu.01.5ff773c4d560#6656-6912"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#5376-5632",
+        "general_web.fineweb-edu.01.5ff773c4d560#6656-6912"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        25,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 25,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "ad4a29aafb9bb83d136925a430ca4f71b58c630f99ea45f2ef8b1df0db73b837",
+      "replay_batch_hash": "ad4a29aafb9bb83d136925a430ca4f71b58c630f99ea45f2ef8b1df0db73b837",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#6144-6400",
+        "general_web.fineweb-edu.04.46aff408a9ed#2816-3072"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#6144-6400",
+        "general_web.fineweb-edu.04.46aff408a9ed#2816-3072"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        25,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 25,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "bd60e6f08271e1128360c430e29178a27db493dbad25ceed8125721b02a2d178",
+      "replay_batch_hash": "bd60e6f08271e1128360c430e29178a27db493dbad25ceed8125721b02a2d178",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-mr.00.1e9fff8aaef2#18176-18432",
+        "stem_math.gsm8k-train.03.7db264116a35#1643-1878"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-mr.00.1e9fff8aaef2#18176-18432",
+        "stem_math.gsm8k-train.03.7db264116a35#1643-1878"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        25,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 26,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "efc6b0477e13fb3ebe41cae7b1ae53c8fe764ba49fba8423311e71cce27e623a",
+      "replay_batch_hash": "efc6b0477e13fb3ebe41cae7b1ae53c8fe764ba49fba8423311e71cce27e623a",
+      "hash_match": true,
+      "original_span_ids": [
+        "agentic.hermes-tools.00.251e262951d1#12581-12837",
+        "code.github-code-clean.02.3712a4d385d3#17558-17814"
+      ],
+      "replay_span_ids": [
+        "agentic.hermes-tools.00.251e262951d1#12581-12837",
+        "code.github-code-clean.02.3712a4d385d3#17558-17814"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        26,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 26,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "d4cb33bb67d28a8ec377641704e170803e8fde2ebbcbb6473ebf3184b5759934",
+      "replay_batch_hash": "d4cb33bb67d28a8ec377641704e170803e8fde2ebbcbb6473ebf3184b5759934",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#1536-1792",
+        "general_web.fineweb-edu.04.46aff408a9ed#768-1024"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#1536-1792",
+        "general_web.fineweb-edu.04.46aff408a9ed#768-1024"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        26,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 26,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "acb79ac7a40b6426d891ed33d596695bb25ade1ff057cb2bc064763ad23efc2d",
+      "replay_batch_hash": "acb79ac7a40b6426d891ed33d596695bb25ade1ff057cb2bc064763ad23efc2d",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#14172-14428",
+        "general_web.fineweb-edu.00.729755721d58#1536-1792"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#14172-14428",
+        "general_web.fineweb-edu.00.729755721d58#1536-1792"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        26,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 26,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "f02f55d33f3493ff705fc62c3670bbc7d7507c1e8b9e86a73b748c2c5ee779f0",
+      "replay_batch_hash": "f02f55d33f3493ff705fc62c3670bbc7d7507c1e8b9e86a73b748c2c5ee779f0",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-hi.00.4a3df50aec73#19200-19456",
+        "reasoning.openthoughts.01.04e2f872ea1c#20956-21212"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-hi.00.4a3df50aec73#19200-19456",
+        "reasoning.openthoughts.01.04e2f872ea1c#20956-21212"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        26,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 27,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "5da64f125ee099be027f6dcf5c542d9a3afceb5a6e0140eaa8ccf1bf658bdf39",
+      "replay_batch_hash": "5da64f125ee099be027f6dcf5c542d9a3afceb5a6e0140eaa8ccf1bf658bdf39",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#38-294",
+        "general_web.fineweb-edu.00.729755721d58#6656-6912"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#38-294",
+        "general_web.fineweb-edu.00.729755721d58#6656-6912"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        27,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 27,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "f62db259d1aab731598bb4203c18ae8fb462f01594ef2b63862456095d1bcd5c",
+      "replay_batch_hash": "f62db259d1aab731598bb4203c18ae8fb462f01594ef2b63862456095d1bcd5c",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-hi.00.4a3df50aec73#3072-3328",
+        "indic.wikipedia-hi.00.4a3df50aec73#13568-13824"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-hi.00.4a3df50aec73#3072-3328",
+        "indic.wikipedia-hi.00.4a3df50aec73#13568-13824"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        27,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 27,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "effaae33644ea3843b1a2de63859321236e7bdde466bdd2899e3c86f0e0f438d",
+      "replay_batch_hash": "effaae33644ea3843b1a2de63859321236e7bdde466bdd2899e3c86f0e0f438d",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#7424-7680",
+        "general_web.fineweb-edu.00.729755721d58#7424-7680"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#7424-7680",
+        "general_web.fineweb-edu.00.729755721d58#7424-7680"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        27,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 27,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "630b0c51cbfda4c54fb6b1fc8f8c68f126476829a844edfb507e094833717c57",
+      "replay_batch_hash": "630b0c51cbfda4c54fb6b1fc8f8c68f126476829a844edfb507e094833717c57",
+      "hash_match": true,
+      "original_span_ids": [
+        "long_context.pg19-books.00.6a378dd0f883#65280-65536",
+        "stem_math.gsm8k-train.01.ce561377bdca#2320-2576"
+      ],
+      "replay_span_ids": [
+        "long_context.pg19-books.00.6a378dd0f883#65280-65536",
+        "stem_math.gsm8k-train.01.ce561377bdca#2320-2576"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        27,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 28,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "5cfed9be0ab42e585e2c9fdb648906b2202a2f63aea6ddc4e4a70251741e9f47",
+      "replay_batch_hash": "5cfed9be0ab42e585e2c9fdb648906b2202a2f63aea6ddc4e4a70251741e9f47",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#0-38",
+        "code.github-code-clean.01.1cfab434db29#0-213",
+        "code.github-code-clean.02.3712a4d385d3#38-294"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#0-38",
+        "code.github-code-clean.01.1cfab434db29#0-213",
+        "code.github-code-clean.02.3712a4d385d3#38-294"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        28,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 28,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "1c697ca5b1f913f5f587298045094ebd0b08c7828b93e1a4e04ae9fbe7ee03e7",
+      "replay_batch_hash": "1c697ca5b1f913f5f587298045094ebd0b08c7828b93e1a4e04ae9fbe7ee03e7",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#1792-2048",
+        "general_web.fineweb-edu.04.46aff408a9ed#3584-3840"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#1792-2048",
+        "general_web.fineweb-edu.04.46aff408a9ed#3584-3840"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        28,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 28,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "dbb76f6bc3b22e4cc61a282fe2c974c844d44628a275a7147d42022c9beca384",
+      "replay_batch_hash": "dbb76f6bc3b22e4cc61a282fe2c974c844d44628a275a7147d42022c9beca384",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#5888-6144",
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#13056-13312"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#5888-6144",
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#13056-13312"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        28,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 28,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "7f1d6cb4e3ff5bfdb709b0b35b900cdd1bc0b3cd420dc49ed3f62d2000a168de",
+      "replay_batch_hash": "7f1d6cb4e3ff5bfdb709b0b35b900cdd1bc0b3cd420dc49ed3f62d2000a168de",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#23552-23808",
+        "stem_math.gsm8k-train.03.7db264116a35#3185-3305",
+        "stem_math.gsm8k-train.03.7db264116a35#1521-1643"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#23552-23808",
+        "stem_math.gsm8k-train.03.7db264116a35#3185-3305",
+        "stem_math.gsm8k-train.03.7db264116a35#1521-1643"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        28,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 29,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "27ea93942426b25d01b5e271a7204c8a2938cb80f3e6d5960406cb7b533bc5dc",
+      "replay_batch_hash": "27ea93942426b25d01b5e271a7204c8a2938cb80f3e6d5960406cb7b533bc5dc",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#8793-9049",
+        "code.github-code-clean.03.fd7014fedee6#14074-14330"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#8793-9049",
+        "code.github-code-clean.03.fd7014fedee6#14074-14330"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        29,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 29,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "110e8078c536e1f446093fef358b58a48ae2b17d7e16aba781b9e0485a2117f8",
+      "replay_batch_hash": "110e8078c536e1f446093fef358b58a48ae2b17d7e16aba781b9e0485a2117f8",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#3072-3328",
+        "indic.wikipedia-te.01.e7277117616d#22784-23040"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#3072-3328",
+        "indic.wikipedia-te.01.e7277117616d#22784-23040"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        29,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 29,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "7368a6b47b2a114a3ee9a09cf0ac2af787014ffe605f27527a0e0a900db3119c",
+      "replay_batch_hash": "7368a6b47b2a114a3ee9a09cf0ac2af787014ffe605f27527a0e0a900db3119c",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#12032-12288",
+        "general_web.fineweb-edu.00.729755721d58#13312-13568"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#12032-12288",
+        "general_web.fineweb-edu.00.729755721d58#13312-13568"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        29,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 29,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "cbcd4f82dbda9533b012ce7460a83d73cbb028dc792ffab8bd8b3aaf8ecdba49",
+      "replay_batch_hash": "cbcd4f82dbda9533b012ce7460a83d73cbb028dc792ffab8bd8b3aaf8ecdba49",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#18432-18688",
+        "reasoning.openthoughts.01.04e2f872ea1c#45881-46137"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#18432-18688",
+        "reasoning.openthoughts.01.04e2f872ea1c#45881-46137"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        29,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 30,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "682feb0fffce42367cb3a8f0c0e58cfaa91b324dfceac8270078d994811705ba",
+      "replay_batch_hash": "682feb0fffce42367cb3a8f0c0e58cfaa91b324dfceac8270078d994811705ba",
+      "hash_match": true,
+      "original_span_ids": [
+        "agentic.hermes-tools.00.251e262951d1#40436-40692",
+        "code.github-code-clean.01.1cfab434db29#9783-10039"
+      ],
+      "replay_span_ids": [
+        "agentic.hermes-tools.00.251e262951d1#40436-40692",
+        "code.github-code-clean.01.1cfab434db29#9783-10039"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        30,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 30,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "ecf1126a5ac9cf942498039d9bc647047fe1551fbc03dbdeb09914963360b2df",
+      "replay_batch_hash": "ecf1126a5ac9cf942498039d9bc647047fe1551fbc03dbdeb09914963360b2df",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#12288-12544",
+        "indic.wikipedia-hi.00.4a3df50aec73#17408-17664"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#12288-12544",
+        "indic.wikipedia-hi.00.4a3df50aec73#17408-17664"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        30,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 30,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "ab982a61763d5eafcac98bee1d90471ea9bad61d1dd07218b73e22a5ff733016",
+      "replay_batch_hash": "ab982a61763d5eafcac98bee1d90471ea9bad61d1dd07218b73e22a5ff733016",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#8192-8448",
+        "general_web.fineweb-edu.01.5ff773c4d560#2048-2304"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#8192-8448",
+        "general_web.fineweb-edu.01.5ff773c4d560#2048-2304"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        30,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 30,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "2fdd94237cccbca4391d2499852dc3f06bc76962fb54b8106808fd6e6b6324bb",
+      "replay_batch_hash": "2fdd94237cccbca4391d2499852dc3f06bc76962fb54b8106808fd6e6b6324bb",
+      "hash_match": true,
+      "original_span_ids": [
+        "reasoning.openthoughts.01.04e2f872ea1c#9729-9985",
+        "stem_math.gsm8k-train.00.88d5756b9e26#2031-2251"
+      ],
+      "replay_span_ids": [
+        "reasoning.openthoughts.01.04e2f872ea1c#9729-9985",
+        "stem_math.gsm8k-train.00.88d5756b9e26#2031-2251"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        30,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 31,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "892fb9429e6fa51068073bc5306a016307dd54250eb4ff12b0f2d2c8962041c2",
+      "replay_batch_hash": "892fb9429e6fa51068073bc5306a016307dd54250eb4ff12b0f2d2c8962041c2",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#6332-6588",
+        "code.github-code-clean.03.fd7014fedee6#11490-11746"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#6332-6588",
+        "code.github-code-clean.03.fd7014fedee6#11490-11746"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        31,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 31,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "6b7fe032d2941e169129f7472a46ff7c25426a26cfa7b7d5d448c209b7a8f2a9",
+      "replay_batch_hash": "6b7fe032d2941e169129f7472a46ff7c25426a26cfa7b7d5d448c209b7a8f2a9",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#14848-15104",
+        "general_web.fineweb-edu.04.46aff408a9ed#6912-7168"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#14848-15104",
+        "general_web.fineweb-edu.04.46aff408a9ed#6912-7168"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        31,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 31,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "11ca449f98233330a7300d17ef81c0b86d1f6ea555ce740177ebc4b7fda16982",
+      "replay_batch_hash": "11ca449f98233330a7300d17ef81c0b86d1f6ea555ce740177ebc4b7fda16982",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#10496-10752",
+        "general_web.fineweb-edu.01.5ff773c4d560#7168-7424"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#10496-10752",
+        "general_web.fineweb-edu.01.5ff773c4d560#7168-7424"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        31,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 31,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "46215058efa882e461cc54ef6604ba7052ff2fb848c9a5a95c316e6e80861643",
+      "replay_batch_hash": "46215058efa882e461cc54ef6604ba7052ff2fb848c9a5a95c316e6e80861643",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#11520-11776",
+        "stem_math.gsm8k-train.02.a65fbf3f19b0#1166-1377"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#11520-11776",
+        "stem_math.gsm8k-train.02.a65fbf3f19b0#1166-1377"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        31,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 32,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "94daded9d095e10030563c250a5c13b5d5be04684e436fd1d2b09ee0da058266",
+      "replay_batch_hash": "94daded9d095e10030563c250a5c13b5d5be04684e436fd1d2b09ee0da058266",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#3206-3462",
+        "code.github-code-clean.03.fd7014fedee6#5360-5616"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#3206-3462",
+        "code.github-code-clean.03.fd7014fedee6#5360-5616"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        32,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 32,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "e2395d0bd6f58432e8f2a47e686e60b871c348b0f2a2ef6974a813f3097f03e6",
+      "replay_batch_hash": "e2395d0bd6f58432e8f2a47e686e60b871c348b0f2a2ef6974a813f3097f03e6",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#11264-11520",
+        "general_web.fineweb-edu.00.729755721d58#7680-7936"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#11264-11520",
+        "general_web.fineweb-edu.00.729755721d58#7680-7936"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        32,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 32,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "165f9d1c44a9653f8d0a21d641b63819f566bae0148811f5ffa9da3d44a82b3c",
+      "replay_batch_hash": "165f9d1c44a9653f8d0a21d641b63819f566bae0148811f5ffa9da3d44a82b3c",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#10496-10752",
+        "general_web.fineweb-edu.00.729755721d58#8448-8704"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#10496-10752",
+        "general_web.fineweb-edu.00.729755721d58#8448-8704"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        32,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 32,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "a8a73f952bff1026d752a86f8bc52fd0c2daf5ced8348bd98b8f25a7cc7dbc0e",
+      "replay_batch_hash": "a8a73f952bff1026d752a86f8bc52fd0c2daf5ced8348bd98b8f25a7cc7dbc0e",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#18688-18944",
+        "indic.wikipedia-mr.00.1e9fff8aaef2#5376-5632"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#18688-18944",
+        "indic.wikipedia-mr.00.1e9fff8aaef2#5376-5632"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        32,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 33,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "e891f936f3ca2eb186622d319b92f53b23e62b768e65f7da1e1f9485f263acf7",
+      "replay_batch_hash": "e891f936f3ca2eb186622d319b92f53b23e62b768e65f7da1e1f9485f263acf7",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.03.fd7014fedee6#11490-11746",
+        "general_web.fineweb-edu.01.5ff773c4d560#6400-6656"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.03.fd7014fedee6#11490-11746",
+        "general_web.fineweb-edu.01.5ff773c4d560#6400-6656"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        33,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 33,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "ff46adc0ea93b65ed524f30ee2ed2f382b27a0a7cfd6a2cc97f3bc3cdd69d1c4",
+      "replay_batch_hash": "ff46adc0ea93b65ed524f30ee2ed2f382b27a0a7cfd6a2cc97f3bc3cdd69d1c4",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#18688-18944",
+        "long_context.pg19-books.00.6a378dd0f883#3584-3840"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#18688-18944",
+        "long_context.pg19-books.00.6a378dd0f883#3584-3840"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        33,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 33,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "0de24c40e01ae0a855e6233523b4df5dc61d35cc58404a0baa6e385a572366ed",
+      "replay_batch_hash": "0de24c40e01ae0a855e6233523b4df5dc61d35cc58404a0baa6e385a572366ed",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#10240-10496",
+        "general_web.fineweb-edu.00.729755721d58#1280-1536"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#10240-10496",
+        "general_web.fineweb-edu.00.729755721d58#1280-1536"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        33,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 33,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "96b368b4a8eb9614a6cb828d237b7cc7c1c0029ee7dc9e208744ea1227f60ac9",
+      "replay_batch_hash": "96b368b4a8eb9614a6cb828d237b7cc7c1c0029ee7dc9e208744ea1227f60ac9",
+      "hash_match": true,
+      "original_span_ids": [
+        "reasoning.openthoughts.01.04e2f872ea1c#11950-12206",
+        "stem_math.gsm8k-train.01.ce561377bdca#503-759"
+      ],
+      "replay_span_ids": [
+        "reasoning.openthoughts.01.04e2f872ea1c#11950-12206",
+        "stem_math.gsm8k-train.01.ce561377bdca#503-759"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        33,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 34,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "15fa12039f6a5f8d8faf6907a519bac2c080271da0c11edaa66a3635fb028444",
+      "replay_batch_hash": "15fa12039f6a5f8d8faf6907a519bac2c080271da0c11edaa66a3635fb028444",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#6179-6242",
+        "code.github-code-clean.02.3712a4d385d3#0-38",
+        "code.github-code-clean.01.1cfab434db29#9701-9732",
+        "code.github-code-clean.02.3712a4d385d3#1885-1912",
+        "code.github-code-clean.02.3712a4d385d3#1808-1885",
+        "code.github-code-clean.02.3712a4d385d3#14106-14362"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#6179-6242",
+        "code.github-code-clean.02.3712a4d385d3#0-38",
+        "code.github-code-clean.01.1cfab434db29#9701-9732",
+        "code.github-code-clean.02.3712a4d385d3#1885-1912",
+        "code.github-code-clean.02.3712a4d385d3#1808-1885",
+        "code.github-code-clean.02.3712a4d385d3#14106-14362"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        34,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 34,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "b4f3a1f1c1b37ef0e6d31b658372c02c0920f391d1c3aea1e39e1c44b350ff03",
+      "replay_batch_hash": "b4f3a1f1c1b37ef0e6d31b658372c02c0920f391d1c3aea1e39e1c44b350ff03",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#0-256",
+        "general_web.fineweb-edu.00.729755721d58#7168-7424"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#0-256",
+        "general_web.fineweb-edu.00.729755721d58#7168-7424"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        34,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 34,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "1320be140db3701442c310d1ae26d16393118933f6ce1bb3b6c01c32eee7d126",
+      "replay_batch_hash": "1320be140db3701442c310d1ae26d16393118933f6ce1bb3b6c01c32eee7d126",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#12379-12635",
+        "general_web.fineweb-edu.00.729755721d58#2048-2304"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#12379-12635",
+        "general_web.fineweb-edu.00.729755721d58#2048-2304"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        34,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 34,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "64f57bbd383d9cac9818d52052379379edc580e0c868c5fd49043d9c23b0b08d",
+      "replay_batch_hash": "64f57bbd383d9cac9818d52052379379edc580e0c868c5fd49043d9c23b0b08d",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#7168-7424",
+        "indic.wikipedia-te.01.e7277117616d#28928-29184"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#7168-7424",
+        "indic.wikipedia-te.01.e7277117616d#28928-29184"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        34,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 35,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "9a0ba79a7336d1fe2d1db133897e791292228928754150269d1e8ee4645ce7a0",
+      "replay_batch_hash": "9a0ba79a7336d1fe2d1db133897e791292228928754150269d1e8ee4645ce7a0",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#0-38",
+        "code.github-code-clean.01.1cfab434db29#0-213",
+        "general_web.fineweb-edu.01.5ff773c4d560#9472-9728"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.02.3712a4d385d3#0-38",
+        "code.github-code-clean.01.1cfab434db29#0-213",
+        "general_web.fineweb-edu.01.5ff773c4d560#9472-9728"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        35,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 35,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "8db82a59d5b37c530711e39a38c4b8ba719d5607fb99d240616843f389c36209",
+      "replay_batch_hash": "8db82a59d5b37c530711e39a38c4b8ba719d5607fb99d240616843f389c36209",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#2560-2816",
+        "indic.wikipedia-hi.00.4a3df50aec73#18432-18688"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#2560-2816",
+        "indic.wikipedia-hi.00.4a3df50aec73#18432-18688"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        35,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 35,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "b90052df270783281cfdf39b368c8aae27f479917c62a60d4065747859881e3b",
+      "replay_batch_hash": "b90052df270783281cfdf39b368c8aae27f479917c62a60d4065747859881e3b",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#1536-1792",
+        "general_web.fineweb-edu.01.5ff773c4d560#11008-11264"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#1536-1792",
+        "general_web.fineweb-edu.01.5ff773c4d560#11008-11264"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        35,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 35,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "31807a216e185013a62d214cd6301eff387087adc12ba277a79fdddf0cbcec7d",
+      "replay_batch_hash": "31807a216e185013a62d214cd6301eff387087adc12ba277a79fdddf0cbcec7d",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#21504-21760",
+        "stem_math.gsm8k-train.03.7db264116a35#3011-3185"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#21504-21760",
+        "stem_math.gsm8k-train.03.7db264116a35#3011-3185"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        35,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 36,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "47d0220a8721511b7dde9efc2c8e582c981a30bc6df8a3804452b2afaf4eba6c",
+      "replay_batch_hash": "47d0220a8721511b7dde9efc2c8e582c981a30bc6df8a3804452b2afaf4eba6c",
+      "hash_match": true,
+      "original_span_ids": [
+        "agentic.hermes-tools.00.251e262951d1#10679-10935",
+        "code.github-code-clean.02.3712a4d385d3#14050-14106",
+        "code.github-code-clean.03.fd7014fedee6#14903-15101"
+      ],
+      "replay_span_ids": [
+        "agentic.hermes-tools.00.251e262951d1#10679-10935",
+        "code.github-code-clean.02.3712a4d385d3#14050-14106",
+        "code.github-code-clean.03.fd7014fedee6#14903-15101"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        36,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 36,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "17ce70fe49f1a58c7f2b02d7dc957df1d658c9b30f52c8042485c4087fe25532",
+      "replay_batch_hash": "17ce70fe49f1a58c7f2b02d7dc957df1d658c9b30f52c8042485c4087fe25532",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#2560-2816",
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#2816-3072"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#2560-2816",
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#2816-3072"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        36,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 36,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "dfb1b5a80dbd7cb42f2c469e4f5ffa6cad90f1c33eb031768bac89b95979f8bc",
+      "replay_batch_hash": "dfb1b5a80dbd7cb42f2c469e4f5ffa6cad90f1c33eb031768bac89b95979f8bc",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#3798-4054",
+        "general_web.fineweb-edu.04.46aff408a9ed#9728-9984"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#3798-4054",
+        "general_web.fineweb-edu.04.46aff408a9ed#9728-9984"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        36,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 36,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "cc2e5511091bb548662b493a96b7e9a177d3f8dcdc471af2c207516f8808d989",
+      "replay_batch_hash": "cc2e5511091bb548662b493a96b7e9a177d3f8dcdc471af2c207516f8808d989",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#4608-4864",
+        "reasoning.openthoughts.01.04e2f872ea1c#16289-16545"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#4608-4864",
+        "reasoning.openthoughts.01.04e2f872ea1c#16289-16545"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        36,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 37,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "874ef8281fa7719a20e0ab3acc338d7e83fdcae808d85f3a930df8a2e5d59e44",
+      "replay_batch_hash": "874ef8281fa7719a20e0ab3acc338d7e83fdcae808d85f3a930df8a2e5d59e44",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#10421-10677",
+        "code.github-code-clean.03.fd7014fedee6#1314-1570"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#10421-10677",
+        "code.github-code-clean.03.fd7014fedee6#1314-1570"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        37,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 37,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "d15071e13aa5790e996071fb8c76fcc8bf67d19a40f6f639f22ae92c17d55b9e",
+      "replay_batch_hash": "d15071e13aa5790e996071fb8c76fcc8bf67d19a40f6f639f22ae92c17d55b9e",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#8448-8704",
+        "indic.wikipedia-te.01.e7277117616d#27136-27392"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#8448-8704",
+        "indic.wikipedia-te.01.e7277117616d#27136-27392"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        37,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 37,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "d6ea9514ae51ca43a492407b3ebf409e128f29f7e60b396e8219a532ea138c6e",
+      "replay_batch_hash": "d6ea9514ae51ca43a492407b3ebf409e128f29f7e60b396e8219a532ea138c6e",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#9984-10240",
+        "general_web.fineweb-edu.01.5ff773c4d560#10240-10496"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#9984-10240",
+        "general_web.fineweb-edu.01.5ff773c4d560#10240-10496"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        37,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 37,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "54e37d66b782f4e9b5bb76c86b8a8df2000461ba4229d7b82e29280139f7683d",
+      "replay_batch_hash": "54e37d66b782f4e9b5bb76c86b8a8df2000461ba4229d7b82e29280139f7683d",
+      "hash_match": true,
+      "original_span_ids": [
+        "long_context.pg19-books.00.6a378dd0f883#15360-15616",
+        "stem_math.gsm8k-train.02.a65fbf3f19b0#247-496"
+      ],
+      "replay_span_ids": [
+        "long_context.pg19-books.00.6a378dd0f883#15360-15616",
+        "stem_math.gsm8k-train.02.a65fbf3f19b0#247-496"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        37,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 38,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "776358f42ceb7c0437ba63030087bc033f1e1b091702844cb14452727d02b40d",
+      "replay_batch_hash": "776358f42ceb7c0437ba63030087bc033f1e1b091702844cb14452727d02b40d",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#6242-6498",
+        "general_web.fineweb-edu.01.5ff773c4d560#4352-4608"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#6242-6498",
+        "general_web.fineweb-edu.01.5ff773c4d560#4352-4608"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        38,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 38,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "149d6ae73c8340c665bc5b74955ac2958828061ee5a023768d6d8f962e685725",
+      "replay_batch_hash": "149d6ae73c8340c665bc5b74955ac2958828061ee5a023768d6d8f962e685725",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#6656-6912",
+        "indic.wikipedia-te.01.e7277117616d#21248-21504"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#6656-6912",
+        "indic.wikipedia-te.01.e7277117616d#21248-21504"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        38,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 38,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "7745000eb92d008862b0b062550ef5e9c2add0371ef1325f9bbde9d48f0e9918",
+      "replay_batch_hash": "7745000eb92d008862b0b062550ef5e9c2add0371ef1325f9bbde9d48f0e9918",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#6144-6400",
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#5376-5632"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#6144-6400",
+        "general_web.fineweb-edu.03.7ac5ef1d80ce#5376-5632"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        38,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 38,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "67c9f9658e3b1bfe96a3350e15221f80baf2c3e85755605756df835fc3467700",
+      "replay_batch_hash": "67c9f9658e3b1bfe96a3350e15221f80baf2c3e85755605756df835fc3467700",
+      "hash_match": true,
+      "original_span_ids": [
+        "indic.wikipedia-mr.00.1e9fff8aaef2#11776-12032",
+        "stem_math.gsm8k-train.03.7db264116a35#1521-1643",
+        "stem_math.gsm8k-train.00.88d5756b9e26#1067-1184"
+      ],
+      "replay_span_ids": [
+        "indic.wikipedia-mr.00.1e9fff8aaef2#11776-12032",
+        "stem_math.gsm8k-train.03.7db264116a35#1521-1643",
+        "stem_math.gsm8k-train.00.88d5756b9e26#1067-1184"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        38,
+        1,
+        1
+      ]
+    },
+    {
+      "global_step": 39,
+      "rank": 0,
+      "microbatch_id": 0,
+      "original_batch_hash": "7a594ec2f2cc518486c2c4c2c00be9d14571bd4776430adf5efd407927c3612e",
+      "replay_batch_hash": "7a594ec2f2cc518486c2c4c2c00be9d14571bd4776430adf5efd407927c3612e",
+      "hash_match": true,
+      "original_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#9366-9622",
+        "code.github-code-clean.01.1cfab434db29#12379-12635"
+      ],
+      "replay_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#9366-9622",
+        "code.github-code-clean.01.1cfab434db29#12379-12635"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        39,
+        0,
+        0
+      ]
+    },
+    {
+      "global_step": 39,
+      "rank": 0,
+      "microbatch_id": 1,
+      "original_batch_hash": "a69f3e36a7b490bdc6c0257b5161ce45e6aee03fa12144ae6ddaf93043e8b4c0",
+      "replay_batch_hash": "a69f3e36a7b490bdc6c0257b5161ce45e6aee03fa12144ae6ddaf93043e8b4c0",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#7680-7936",
+        "indic.wikipedia-mr.01.7526345cfd36#17920-18176"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#7680-7936",
+        "indic.wikipedia-mr.01.7526345cfd36#17920-18176"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        39,
+        0,
+        1
+      ]
+    },
+    {
+      "global_step": 39,
+      "rank": 1,
+      "microbatch_id": 0,
+      "original_batch_hash": "29dcf56a1ff00bcefa4e56e63c376deb52d7a9c55e2313b56f8b6e2174c4a663",
+      "replay_batch_hash": "29dcf56a1ff00bcefa4e56e63c376deb52d7a9c55e2313b56f8b6e2174c4a663",
+      "hash_match": true,
+      "original_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#1536-1792",
+        "general_web.fineweb-edu.04.46aff408a9ed#10496-10752"
+      ],
+      "replay_span_ids": [
+        "general_web.fineweb-edu.04.46aff408a9ed#1536-1792",
+        "general_web.fineweb-edu.04.46aff408a9ed#10496-10752"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        39,
+        1,
+        0
+      ]
+    },
+    {
+      "global_step": 39,
+      "rank": 1,
+      "microbatch_id": 1,
+      "original_batch_hash": "7dea30f42bbada146eee915cb225fdcb5f7efaaf969f1677f5585dc9297478bf",
+      "replay_batch_hash": "7dea30f42bbada146eee915cb225fdcb5f7efaaf969f1677f5585dc9297478bf",
+      "hash_match": true,
+      "original_span_ids": [
+        "reasoning.openthoughts.01.04e2f872ea1c#35706-35962",
+        "stem_math.gsm8k-train.01.ce561377bdca#2137-2288",
+        "stem_math.gsm8k-train.03.7db264116a35#1878-1983"
+      ],
+      "replay_span_ids": [
+        "reasoning.openthoughts.01.04e2f872ea1c#35706-35962",
+        "stem_math.gsm8k-train.01.ce561377bdca#2137-2288",
+        "stem_math.gsm8k-train.03.7db264116a35#1878-1983"
+      ],
+      "span_match": true,
+      "loss_mask_hash_match": true,
+      "original_batch_id": [
+        39,
+        1,
+        1
+      ]
+    }
+  ]
+}

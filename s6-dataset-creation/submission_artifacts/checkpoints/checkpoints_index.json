@@ -1,0 +1,448 @@
+{
+  "microbatches_per_step": 4,
+  "checkpoint_every": 20,
+  "checkpoints": [
+    {
+      "checkpoint_id": "ckpt_step0020",
+      "step": 20,
+      "ledger_offset": 82,
+      "branch_id": "main",
+      "data_branch_id": "main",
+      "effective_events_at_checkpoint": 80,
+      "expected_next_batch": {
+        "global_step": 20,
+        "slot_ids": [
+          "s00020-agentic-0",
+          "s00020-code-0",
+          "s00020-general_web-0",
+          "s00020-general_web-1",
+          "s00020-general_web-2",
+          "s00020-general_web-3",
+          "s00020-indic-0",
+          "s00020-reasoning-0"
+        ],
+        "lanes": [
+          "agentic",
+          "code",
+          "general_web",
+          "general_web",
+          "general_web",
+          "general_web",
+          "indic",
+          "reasoning"
+        ],
+        "candidate_span_ids": [
+          [
+            [
+              "agentic.hermes-tools.00.251e262951d1#23646-23902"
+            ],
+            [
+              "agentic.hermes-tools.00.251e262951d1#29412-29668"
+            ]
+          ],
+          [
+            [
+              "code.github-code-clean.02.3712a4d385d3#13941-14050",
+              "code.github-code-clean.02.3712a4d385d3#1808-1885",
+              "code.github-code-clean.01.1cfab434db29#6179-6242"
+            ],
+            [
+              "code.github-code-clean.03.fd7014fedee6#3231-3487"
+            ]
+          ],
+          [
+            [
+              "general_web.fineweb-edu.04.46aff408a9ed#7936-8192"
+            ],
+            [
+              "general_web.fineweb-edu.04.46aff408a9ed#9472-9728"
+            ]
+          ],
+          [
+            [
+              "general_web.fineweb-edu.04.46aff408a9ed#6400-6656"
+            ],
+            [
+              "general_web.fineweb-edu.04.46aff408a9ed#11264-11520"
+            ]
+          ],
+          [
+            [
+              "general_web.fineweb-edu.04.46aff408a9ed#11008-11264"
+            ],
+            [
+              "general_web.fineweb-edu.04.46aff408a9ed#13824-14080"
+            ]
+          ],
+          [
+            [
+              "general_web.fineweb-edu.01.5ff773c4d560#1280-1536"
+            ],
+            [
+              "general_web.fineweb-edu.00.729755721d58#7424-7680"
+            ]
+          ],
+          [
+            [
+              "indic.wikipedia-hi.00.4a3df50aec73#6400-6656"
+            ],
+            [
+              "indic.wikipedia-te.01.e7277117616d#9984-10240"
+            ]
+          ],
+          [
+            [
+              "reasoning.openthoughts.01.04e2f872ea1c#30630-30886"
+            ],
+            [
+              "reasoning.openthoughts.01.04e2f872ea1c#5604-5860"
+            ]
+          ]
+        ],
+        "plan_digest": "a9f9484f06f0023d766f956c0e84dac64f424b851d44907f15b817a885f942a4"
+      },
+      "parent_checkpoint": null,
+      "mean_loss": 5.245093,
+      "age_tokens": 40960
+    },
+    {
+      "checkpoint_id": "ckpt_step0040",
+      "step": 40,
+      "ledger_offset": 164,
+      "branch_id": "main",
+      "data_branch_id": "main",
+      "effective_events_at_checkpoint": 160,
+      "expected_next_batch": {
+        "global_step": 40,
+        "slot_ids": [
+          "s00040-agentic-0",
+          "s00040-code-0",
+          "s00040-code-1",
+          "s00040-general_web-0",
+          "s00040-general_web-1",
+          "s00040-general_web-2",
+          "s00040-indic-0",
+          "s00040-reasoning-0"
+        ],
+        "lanes": [
+          "agentic",
+          "code",
+          "code",
+          "general_web",
+          "general_web",
+          "general_web",
+          "indic",
+          "reasoning"
+        ],
+        "candidate_span_ids": [
+          [
+            [
+              "agentic.hermes-tools.00.251e262951d1#20813-21069"
+            ],
+            [
+              "agentic.hermes-tools.00.251e262951d1#10403-10659"
+            ]
+          ],
+          [
+            [
+              "code.github-code-clean.01.1cfab434db29#3206-3462"
+            ],
+            [
+              "code.github-code-clean.01.1cfab434db29#3511-3767"
+            ]
+          ],
+          [
+            [
+              "code.github-code-clean.01.1cfab434db29#9783-10039"
+            ],
+            [
+              "code.github-code-clean.03.fd7014fedee6#14903-15101",
+              "code.github-code-clean.02.3712a4d385d3#14050-14106"
+            ]
+          ],
+          [
+            [
+              "general_web.fineweb-edu.04.46aff408a9ed#11264-11520"
+            ],
+            [
+              "general_web.fineweb-edu.01.5ff773c4d560#2816-3072"
+            ]
+          ],
+          [
+            [
+              "general_web.fineweb-edu.01.5ff773c4d560#1024-1280"
+            ],
+            [
+              "general_web.fineweb-edu.04.46aff408a9ed#11264-11520"
+            ]
+          ],
+          [
+            [
+              "general_web.fineweb-edu.04.46aff408a9ed#5888-6144"
+            ],
+            [
+              "general_web.fineweb-edu.00.729755721d58#3328-3584"
+            ]
+          ],
+          [
+            [
+              "indic.wikipedia-hi.00.4a3df50aec73#14848-15104"
+            ],
+            [
+              "indic.wikipedia-te.01.e7277117616d#256-512"
+            ]
+          ],
+          [
+            [
+              "reasoning.openthoughts.01.04e2f872ea1c#30630-30886"
+            ],
+            [
+              "reasoning.openthoughts.01.04e2f872ea1c#23812-24068"
+            ]
+          ]
+        ],
+        "plan_digest": "159af62ad82d92337bd433a30f2f08523cfacbda7432877cb2975b7c51d1c610"
+      },
+      "parent_checkpoint": "ckpt_step0020",
+      "mean_loss": 5.057512,
+      "age_tokens": 81920
+    },
+    {
+      "checkpoint_id": "ckpt_step0060",
+      "step": 60,
+      "ledger_offset": 308,
+      "branch_id": "main",
+      "data_branch_id": "main",
+      "effective_events_at_checkpoint": 240,
+      "expected_next_batch": {
+        "global_step": 60,
+        "slot_ids": [
+          "s00060-code-0",
+          "s00060-code-1",
+          "s00060-general_web-0",
+          "s00060-general_web-1",
+          "s00060-indic-0",
+          "s00060-reasoning-0",
+          "s00060-stem_math-0",
+          "s00060-stem_math-1"
+        ],
+        "lanes": [
+          "code",
+          "code",
+          "general_web",
+          "general_web",
+          "indic",
+          "reasoning",
+          "stem_math",
+          "stem_math"
+        ],
+        "candidate_span_ids": [
+          [
+            [
+              "code.github-code-clean.01.1cfab434db29#12379-12635"
+            ],
+            [
+              "code.github-code-clean.02.3712a4d385d3#18440-18696"
+            ]
+          ],
+          [
+            [
+              "code.github-code-clean.02.3712a4d385d3#15975-16231"
+            ],
+            [
+              "code.github-code-clean.03.fd7014fedee6#2121-2377"
+            ]
+          ],
+          [
+            [
+              "general_web.fineweb-edu.00.729755721d58#2560-2816"
+            ],
+            [
+              "general_web.fineweb-edu.01.5ff773c4d560#14080-14336"
+            ]
+          ],
+          [
+            [
+              "general_web.fineweb-edu.01.5ff773c4d560#8448-8704"
+            ],
+            [
+              "general_web.fineweb-edu.01.5ff773c4d560#3072-3328"
+            ]
+          ],
+          [
+            [
+              "indic.wikipedia-te.01.e7277117616d#29696-29952"
+            ],
+            [
+              "indic.wikipedia-te.01.e7277117616d#5120-5376"
+            ]
+          ],
+          [
+            [
+              "reasoning.openthoughts.01.04e2f872ea1c#45881-46137"
+            ],
+            [
+              "reasoning.openthoughts.01.04e2f872ea1c#9729-9985"
+            ]
+          ],
+          [
+            [
+              "stem_math.gsm8k-train.01.ce561377bdca#759-960"
+            ],
+            [
+              "stem_math.gsm8k-train.00.88d5756b9e26#891-1067"
+            ]
+          ],
+          [
+            [
+              "stem_math.gsm8k-train.00.88d5756b9e26#1770-2026"
+            ],
+            [
+              "stem_math.gsm8k-train.01.ce561377bdca#1408-1624"
+            ]
+          ]
+        ],
+        "plan_digest": "b71946abff87671fa9b62688870bf011cfd09eb1a7e023ab69ce6b2b2a35796b"
+      },
+      "parent_checkpoint": "ckpt_step0040",
+      "mean_loss": 4.776799,
+      "age_tokens": 122880
+    },
+    {
+      "checkpoint_id": "ckpt_step0080",
+      "step": 80,
+      "ledger_offset": 390,
+      "branch_id": "main",
+      "data_branch_id": "main",
+      "effective_events_at_checkpoint": 320,
+      "expected_next_batch": {
+        "global_step": 80,
+        "slot_ids": [
+          "s00080-code-0",
+          "s00080-general_web-0",
+          "s00080-indic-0",
+          "s00080-indic-1",
+          "s00080-indic-2",
+          "s00080-reasoning-0",
+          "s00080-reasoning-1",
+          "s00080-stem_math-0"
+        ],
+        "lanes": [
+          "code",
+          "general_web",
+          "indic",
+          "indic",
+          "indic",
+          "reasoning",
+          "reasoning",
+          "stem_math"
+        ],
+        "candidate_span_ids": [
+          [
+            [
+              "code.github-code-clean.04.6f31f41e9ef3#20608-20864"
+            ],
+            [
+              "code.github-code-clean.02.3712a4d385d3#15975-16231"
+            ]
+          ],
+          [
+            [
+              "general_web.fineweb-edu.02.6451857ede34#3328-3584"
+            ],
+            [
+              "general_web.fineweb-edu.04.46aff408a9ed#13056-13312"
+            ]
+          ],
+          [
+            [
+              "indic.wikipedia-te.00.13f7812fc350#7936-8192"
+            ],
+            [
+              "indic.wikipedia-te.01.e7277117616d#12288-12544"
+            ]
+          ],
+          [
+            [
+              "indic.wikipedia-te.00.13f7812fc350#24320-24576"
+            ],
+            [
+              "indic.wikipedia-te.00.13f7812fc350#6912-7168"
+            ]
+          ],
+          [
+            [
+              "indic.wikipedia-hi.00.4a3df50aec73#27648-27904"
+            ],
+            [
+              "indic.wikipedia-te.00.13f7812fc350#3840-4096"
+            ]
+          ],
+          [
+            [
+              "reasoning.openthoughts.00.32096302fd5b#30556-30812"
+            ],
+            [
+              "reasoning.openthoughts.01.04e2f872ea1c#1340-1596"
+            ]
+          ],
+          [
+            [
+              "reasoning.openthoughts.00.32096302fd5b#12857-13113"
+            ],
+            [
+              "reasoning.openthoughts.00.32096302fd5b#15326-15582"
+            ]
+          ],
+          [
+            [
+              "stem_math.gsm8k-train.01.ce561377bdca#1993-2137",
+              "stem_math.gsm8k-train.03.7db264116a35#1878-1983"
+            ],
+            [
+              "stem_math.gsm8k-train.02.a65fbf3f19b0#1377-1625"
+            ]
+          ]
+        ],
+        "plan_digest": "0eff0214087bc8c0976b56906c468a832edd0a8cf0cbf9dffa9cb6c3b1c1f8ab"
+      },
+      "parent_checkpoint": "ckpt_step0060",
+      "mean_loss": 4.996965,
+      "age_tokens": 163840
+    }
+  ],
+  "offset_checks": [
+    {
+      "checkpoint_id": "ckpt_step0020",
+      "step": 20,
+      "ledger_offset": 82,
+      "effective_events_at_checkpoint": 80,
+      "expected_effective_events": 80,
+      "ledger_offset_matches_effective_count": true
+    },
+    {
+      "checkpoint_id": "ckpt_step0040",
+      "step": 40,
+      "ledger_offset": 164,
+      "effective_events_at_checkpoint": 160,
+      "expected_effective_events": 160,
+      "ledger_offset_matches_effective_count": true
+    },
+    {
+      "checkpoint_id": "ckpt_step0060",
+      "step": 60,
+      "ledger_offset": 308,
+      "effective_events_at_checkpoint": 240,
+      "expected_effective_events": 240,
+      "ledger_offset_matches_effective_count": true
+    },
+    {
+      "checkpoint_id": "ckpt_step0080",
+      "step": 80,
+      "ledger_offset": 390,
+      "effective_events_at_checkpoint": 320,
+      "expected_effective_events": 320,
+      "ledger_offset_matches_effective_count": true
+    }
+  ]
+}

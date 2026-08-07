@@ -1,0 +1,211 @@
+{
+  "schema": "s6-evidence-1",
+  "generated_by": "tds.evidence -- recomputed from artifacts on disk, never from run state",
+  "artifacts_dir": "submission_artifacts",
+  "ledger_events_read": 514,
+  "effective_events_on_main": 320,
+  "result": "PASS",
+  "passed": 9,
+  "total": 9,
+  "requirements": [
+    {
+      "requirement": "Tokenizer integrity",
+      "result": "PASS",
+      "rubric_area": "Shards, manifests and tokenizer integrity",
+      "evidence": {
+        "file": "manifests/tokenizer_manifest.json + manifests/manifest_validation.json",
+        "pointer": "$.frozen_sha256 ; $.rows[*].checks.content_hash_matches",
+        "recomputed": "35 shard manifests carry the frozen tokenizer hash; 35/35 manifests revalidated from shard bytes",
+        "method": "re-hashed the tokenizer file and recomputed every shard content hash"
+      },
+      "checks": {
+        "frozen_constant_matches_manifest": true,
+        "file_on_disk_matches_frozen": true,
+        "every_shard_carries_frozen_hash": true,
+        "all_manifests_validated": true,
+        "content_hash_recomputed_for_every_shard": true,
+        "vocab_remap_recorded": true
+      }
+    },
+    {
+      "requirement": "Evaluation firewall",
+      "result": "PASS",
+      "rubric_area": "Evaluation and validation firewall",
+      "evidence": {
+        "file": "manifests/eval_registry.json + ledgers/consumption.jsonl",
+        "pointer": "$.blocked_events ; $.never_train_shard_ids",
+        "recomputed": "3 block events; 5 never-train shards, 0 of them in 21 consumed shard ids; 6 shards rejected at the gate",
+        "method": "intersected the never-train registry with every shard id in the ledger"
+      },
+      "checks": {
+        "registry_populated": true,
+        "never_train_shards_registered": true,
+        "eval_shard_blocked_event_present": true,
+        "contamination_blocked_event_present": true,
+        "no_never_train_shard_consumed": true,
+        "no_validation_shard_consumed": true,
+        "rejected_shards_kept_reasons": true,
+        "access_logged": true
+      }
+    },
+    {
+      "requirement": "Packing correctness",
+      "result": "PASS",
+      "rubric_area": "Packing, masks and batch correctness",
+      "evidence": {
+        "file": "manifests/packed_batch_report.json",
+        "pointer": "$.batches[*] ; $.mask_invariants",
+        "recomputed": "380 packed batches; utilization recomputed from placements = 0.9818; 500 batches mask-audited",
+        "method": "re-added every placement span and re-derived utilization per batch"
+      },
+      "checks": {
+        "batches_reported": true,
+        "position_arithmetic_recomputes": true,
+        "utilization_in_range": true,
+        "placements_sum_to_used_positions": true,
+        "loss_never_on_padding": true,
+        "loss_never_on_context": true,
+        "attention_never_crosses_segments": true,
+        "position_ids_restart_per_segment": true,
+        "policy_comparison_present": true
+      }
+    },
+    {
+      "requirement": "Mixture compliance",
+      "result": "PASS",
+      "rubric_area": "Mixture schedule, protected floors and OPUS",
+      "evidence": {
+        "file": "manifests/mixture_schedule.json + ledgers/mixture_compliance.json",
+        "pointer": "$.planned_allocator_shares vs recomputed actual ; $.floor_windows[*]",
+        "recomputed": "planned vs actual max drift 0.0001; 8 floor windows checked, 0 violations",
+        "method": "recounted lane shares from every effective ledger event"
+      },
+      "checks": {
+        "schedule_compiled": true,
+        "per_step_quotas_present": true,
+        "planned_vs_actual_within_tolerance": true,
+        "integrated_stages_track_s5_headline": true,
+        "protected_floors_hold_every_window": true,
+        "floors_declared": true,
+        "anneal_reserve_declared": true,
+        "anneal_reserve_unused_before_anneal": true,
+        "supply_reconciled": true
+      }
+    },
+    {
+      "requirement": "OPUS audit trail",
+      "result": "PASS",
+      "rubric_area": "Mixture schedule, protected floors and OPUS",
+      "evidence": {
+        "file": "ledgers/opus_decisions.jsonl",
+        "pointer": "$[*].status ; $[*].protected_floor_override",
+        "recomputed": "1520 candidate decisions: accepted=925, deferred=413, protected=14, rejected=168; 640 decision ids referenced by consumption events all resolve",
+        "method": "joined every consumption event's opus_decision_id against the decision log"
+      },
+      "checks": {
+        "decisions_recorded": true,
+        "all_11_fields_present": true,
+        "four_ledgers_populated": true,
+        "rejections_carry_reasons": true,
+        "floor_override_only_on_protected_lanes": true,
+        "every_consumed_batch_traces_to_a_decision": true,
+        "scores_are_real_numbers": true,
+        "scoring_checkpoint_recorded": true
+      }
+    },
+    {
+      "requirement": "Crash recovery",
+      "result": "PASS",
+      "rubric_area": "Checkpoint, crash, resume, replay and fork",
+      "evidence": {
+        "file": "checkpoints/resume_proof.json + checkpoints/checkpoints_index.json",
+        "pointer": "$.next_batch_matched ; $.expected_next_batch.plan_digest",
+        "recomputed": "expected batch 40 matched on resume; effective stream = 320 events over steps [0, 79], 0 gaps, 0 duplicates, 60 superseded",
+        "method": "rebuilt the effective stream from the ledger and diffed it against the checkpoint's pre-crash prediction"
+      },
+      "checks": {
+        "proof_hashes_match_ledger_attempt1": true,
+        "proof_hashes_match_ledger_attempt2": true,
+        "ledger_attempts_agree": true,
+        "crash_simulated": true,
+        "resumed_from_checkpoint": true,
+        "expected_next_batch_predicted_before_crash": true,
+        "resumed_batch_matches_expected": true,
+        "resumed_plan_digest_matches": true,
+        "no_missing_steps": true,
+        "no_duplicate_batches": true,
+        "uniform_microbatches_per_step": true,
+        "superseded_events_recorded": true,
+        "checkpoint_offsets_match_ledger": true
+      }
+    },
+    {
+      "requirement": "Replay",
+      "result": "PASS",
+      "rubric_area": "Checkpoint, crash, resume, replay and fork",
+      "evidence": {
+        "file": "checkpoints/replay_proof.json + checkpoints/fork_proof.json",
+        "pointer": "$.comparisons[*].hash_match ; $.diverged",
+        "recomputed": "80/80 replayed batch hashes identical to the original run; fork fork-1 diverges at step 40 and re-runs identically",
+        "method": "re-ran the planner from the older checkpoint and compared hashes, span ids and loss-mask hashes against the original ledger events"
+      },
+      "checks": {
+        "replay_ran": true,
+        "all_batch_hashes_match": true,
+        "proof_hashes_match_ledger": true,
+        "fork_proof_hashes_match_ledger": true,
+        "all_token_spans_match": true,
+        "all_loss_mask_hashes_match": true,
+        "replayed_from_older_checkpoint": true,
+        "fork_recorded": true,
+        "fork_diverges": true,
+        "fork_reproducible": true,
+        "fork_divergence_point_recorded": true
+      }
+    },
+    {
+      "requirement": "Learning trace",
+      "result": "PASS",
+      "rubric_area": "Consumption and learning ledgers",
+      "evidence": {
+        "file": "ledgers/learning_ledger.jsonl + ledgers/token_trace.jsonl + ledgers/token_stats.json",
+        "pointer": "$[*].loss_delta_before_after ; $[*].shard_id",
+        "recomputed": "21 shard report cards + 7 lane roll-ups, every key present in the consumption ledger; 13403 token rows (3872 full-tier)",
+        "method": "joined every learning-ledger key and token-trace row back onto the shard ids in the consumption ledger"
+      },
+      "checks": {
+        "learning_ledger_written": true,
+        "all_11_fields_present": true,
+        "every_row_traces_to_consumed_shard": true,
+        "token_trace_written": true,
+        "token_trace_rows_reference_real_shards": true,
+        "full_tier_present": true,
+        "aggregate_tier_present": true,
+        "losses_are_finite": true,
+        "usefulness_classified": true
+      }
+    },
+    {
+      "requirement": "Throughput",
+      "result": "PASS",
+      "rubric_area": "Throughput and packing efficiency",
+      "evidence": {
+        "file": "performance.json + ledgers/consumption.jsonl",
+        "pointer": "$.metrics.useful_loss_bearing_tokens_per_sec ; $.metrics.packing_utilization",
+        "recomputed": "useful 153880 / 45.01s = 3418.5 tok/s (reported 3418.526); packing utilization recomputed 0.9818 (reported 0.981774)",
+        "method": "re-summed loss-bearing positions from the effective ledger stream and divided by the recorded wall time"
+      },
+      "checks": {
+        "all_10_metrics_present": true,
+        "accepted_tokens_per_sec_recomputes": true,
+        "useful_tokens_per_sec_recomputes": true,
+        "packing_utilization_recomputes": true,
+        "raw_ge_accepted_ge_useful": true,
+        "discarded_work_accounted": true,
+        "wall_time_positive": true,
+        "rejection_rate_reported_per_lane": true,
+        "cache_metrics_measured": true
+      }
+    }
+  ]
+}

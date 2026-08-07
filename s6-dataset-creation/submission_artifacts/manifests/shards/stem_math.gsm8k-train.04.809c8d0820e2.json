@@ -1,0 +1,260 @@
+{
+  "shard_id": "stem_math.gsm8k-train.04.809c8d0820e2",
+  "source_ids": [
+    "gsm8k-train"
+  ],
+  "doc_ids": [
+    "gsm8k-train:81",
+    "gsm8k-train:82",
+    "gsm8k-train:83",
+    "gsm8k-train:84",
+    "gsm8k-train:85",
+    "gsm8k-train:86",
+    "gsm8k-train:87",
+    "gsm8k-train:88",
+    "gsm8k-train:89",
+    "gsm8k-train:9",
+    "gsm8k-train:90",
+    "gsm8k-train:91",
+    "gsm8k-train:92",
+    "gsm8k-train:93",
+    "gsm8k-train:94",
+    "gsm8k-train:95",
+    "gsm8k-train:96",
+    "gsm8k-train:97",
+    "gsm8k-train:98",
+    "gsm8k-train:99"
+  ],
+  "tokenizer_hash": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "token_count": 4309,
+  "language_and_script": [
+    "eng_Latn"
+  ],
+  "capability_lane": "stem_math",
+  "license_and_provenance_tier": {
+    "licenses": [
+      "mit"
+    ],
+    "tiers": [
+      "A"
+    ]
+  },
+  "cleaning_pipeline_hash": "acc147c1a129c956cd862084c9b1ec4337ac4b6b331814428aeb530f50cbb72a",
+  "dedup_status": "unique",
+  "contamination_status": "clean",
+  "eval_overlap_status": "clean",
+  "content_hash": "809c8d0820e2687be3e675cacb4b9130a56d0703e4609341d8a2e5ea8f59ec8b",
+  "parent_shard_ids": [],
+  "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+  "loss_bearing_token_count": 2940,
+  "n_samples": 20,
+  "docs": [
+    {
+      "doc_id": "gsm8k-train:81",
+      "sample_index": 0,
+      "token_start": 0,
+      "token_end": 293,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 184
+    },
+    {
+      "doc_id": "gsm8k-train:82",
+      "sample_index": 1,
+      "token_start": 293,
+      "token_end": 479,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 137
+    },
+    {
+      "doc_id": "gsm8k-train:83",
+      "sample_index": 2,
+      "token_start": 479,
+      "token_end": 770,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 220
+    },
+    {
+      "doc_id": "gsm8k-train:84",
+      "sample_index": 3,
+      "token_start": 770,
+      "token_end": 927,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 87
+    },
+    {
+      "doc_id": "gsm8k-train:85",
+      "sample_index": 4,
+      "token_start": 927,
+      "token_end": 1061,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 65
+    },
+    {
+      "doc_id": "gsm8k-train:86",
+      "sample_index": 5,
+      "token_start": 1061,
+      "token_end": 1177,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 64
+    },
+    {
+      "doc_id": "gsm8k-train:87",
+      "sample_index": 6,
+      "token_start": 1177,
+      "token_end": 1331,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 101
+    },
+    {
+      "doc_id": "gsm8k-train:88",
+      "sample_index": 7,
+      "token_start": 1331,
+      "token_end": 1438,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 69
+    },
+    {
+      "doc_id": "gsm8k-train:89",
+      "sample_index": 8,
+      "token_start": 1438,
+      "token_end": 1646,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 144
+    },
+    {
+      "doc_id": "gsm8k-train:9",
+      "sample_index": 9,
+      "token_start": 1646,
+      "token_end": 2106,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 388
+    },
+    {
+      "doc_id": "gsm8k-train:90",
+      "sample_index": 10,
+      "token_start": 2106,
+      "token_end": 2311,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 152
+    },
+    {
+      "doc_id": "gsm8k-train:91",
+      "sample_index": 11,
+      "token_start": 2311,
+      "token_end": 2543,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 149
+    },
+    {
+      "doc_id": "gsm8k-train:92",
+      "sample_index": 12,
+      "token_start": 2543,
+      "token_end": 2829,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 211
+    },
+    {
+      "doc_id": "gsm8k-train:93",
+      "sample_index": 13,
+      "token_start": 2829,
+      "token_end": 3028,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 150
+    },
+    {
+      "doc_id": "gsm8k-train:94",
+      "sample_index": 14,
+      "token_start": 3028,
+      "token_end": 3126,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 67
+    },
+    {
+      "doc_id": "gsm8k-train:95",
+      "sample_index": 15,
+      "token_start": 3126,
+      "token_end": 3415,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 223
+    },
+    {
+      "doc_id": "gsm8k-train:96",
+      "sample_index": 16,
+      "token_start": 3415,
+      "token_end": 3569,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 86
+    },
+    {
+      "doc_id": "gsm8k-train:97",
+      "sample_index": 17,
+      "token_start": 3569,
+      "token_end": 3807,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 128
+    },
+    {
+      "doc_id": "gsm8k-train:98",
+      "sample_index": 18,
+      "token_start": 3807,
+      "token_end": 4042,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 146
+    },
+    {
+      "doc_id": "gsm8k-train:99",
+      "sample_index": 19,
+      "token_start": 4042,
+      "token_end": 4309,
+      "language_and_script": "eng_Latn",
+      "license": "MIT",
+      "provenance_tier": "A",
+      "n_target_tokens": 169
+    }
+  ],
+  "reserved_for_anneal": true,
+  "never_train": false,
+  "gradient_bearing": true,
+  "admission": {
+    "verdict": "ADMITTED",
+    "reasons": []
+  }
+}

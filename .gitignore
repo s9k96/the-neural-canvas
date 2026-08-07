@@ -4,3 +4,10 @@ __pycache__
 *.pyc   
 .claude
 */*class-notes*
+
+# s6: shard payloads are derived data — tokenizing the committed corpus/ with the frozen
+# tokenizer reproduces them byte-for-byte, and run_demo.py rebuilds them every run. The
+# corpus snapshot, the generated submission_artifacts/ bundle and out/ page data ARE
+# committed: corpus/ is the reproducibility anchor, and the assignment requires the
+# generated manifests, ledgers and checkpoints to be part of the submission.
+s6-dataset-creation/shards/

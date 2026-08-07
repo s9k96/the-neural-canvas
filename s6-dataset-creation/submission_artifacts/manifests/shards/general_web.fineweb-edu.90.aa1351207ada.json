@@ -1,0 +1,92 @@
+{
+  "shard_id": "general_web.fineweb-edu.90.aa1351207ada",
+  "source_ids": [
+    "fineweb-edu"
+  ],
+  "doc_ids": [
+    "fineweb-edu:0.poisoned",
+    "fineweb-edu:1.poisoned",
+    "fineweb-edu:10.poisoned"
+  ],
+  "tokenizer_hash": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "token_count": 2853,
+  "language_and_script": [
+    "eng_Latn"
+  ],
+  "capability_lane": "general_web",
+  "license_and_provenance_tier": {
+    "licenses": [
+      "odc-by-1.0"
+    ],
+    "tiers": [
+      "B"
+    ]
+  },
+  "cleaning_pipeline_hash": "acc147c1a129c956cd862084c9b1ec4337ac4b6b331814428aeb530f50cbb72a",
+  "dedup_status": "unique",
+  "contamination_status": "overlap:cais/mmlu",
+  "eval_overlap_status": "overlap:cais/mmlu",
+  "content_hash": "aa1351207ada2c6bbe3a86d427405eafc4615dde05cbf6cbee8ebbbf5acbec1d",
+  "parent_shard_ids": [
+    "general_web.fineweb-edu.00.729755721d58"
+  ],
+  "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+  "loss_bearing_token_count": 2853,
+  "n_samples": 3,
+  "docs": [
+    {
+      "doc_id": "fineweb-edu:0.poisoned",
+      "sample_index": 0,
+      "token_start": 0,
+      "token_end": 963,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": "B",
+      "n_target_tokens": 963
+    },
+    {
+      "doc_id": "fineweb-edu:1.poisoned",
+      "sample_index": 1,
+      "token_start": 963,
+      "token_end": 2157,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": "B",
+      "n_target_tokens": 1194
+    },
+    {
+      "doc_id": "fineweb-edu:10.poisoned",
+      "sample_index": 2,
+      "token_start": 2157,
+      "token_end": 2853,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": "B",
+      "n_target_tokens": 696
+    }
+  ],
+  "reserved_for_anneal": false,
+  "never_train": false,
+  "gradient_bearing": true,
+  "admission": {
+    "verdict": "REJECTED",
+    "reasons": [
+      "eval_overlap:overlap:cais/mmlu",
+      "contaminated:overlap:cais/mmlu"
+    ]
+  },
+  "derivation_note": "contamination attack: one MMLU test item spliced into a training document",
+  "contamination_detail": {
+    "matched_docs": [
+      "mmlu-test:0",
+      "mmlu-test:35",
+      "mmlu-test:8"
+    ],
+    "ngram_hits": {
+      "mmlu-test:0": 14,
+      "mmlu-test:35": 5,
+      "mmlu-test:8": 5
+    },
+    "ngram_size": 8
+  }
+}

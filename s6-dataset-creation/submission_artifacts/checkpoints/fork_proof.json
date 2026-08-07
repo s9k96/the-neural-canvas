@@ -1,0 +1,78 @@
+{
+  "branch_id": "fork-1",
+  "parent_branch": "main",
+  "from_checkpoint": "ckpt_step0040.npz",
+  "divergence": {
+    "step": 40,
+    "ledger_offset": 164,
+    "parent_checkpoint": "ckpt_step0040.npz"
+  },
+  "diverged": true,
+  "reproducible": true,
+  "comparison_at_divergence_step": [
+    {
+      "rank": 0,
+      "microbatch_id": 0,
+      "main_batch_hash": "c6ac2274b7b391fab0cd6b6316b0752961a147224d19b85c5cc48cb649d047fc",
+      "fork_batch_hash": "32898650bed728afdd129b61bab10dd1ba2cccd83a6d3d73c771e9c5f05484d9",
+      "differs": true,
+      "main_span_ids": [
+        "agentic.hermes-tools.00.251e262951d1#20813-21069",
+        "code.github-code-clean.01.1cfab434db29#3511-3767"
+      ],
+      "fork_span_ids": [
+        "agentic.hermes-tools.00.251e262951d1#29412-29668",
+        "code.github-code-clean.03.fd7014fedee6#13292-13548"
+      ]
+    },
+    {
+      "rank": 0,
+      "microbatch_id": 1,
+      "main_batch_hash": "7070a5183116b88ce5856c92d4076b732f8573c103e2976dc019822808b50840",
+      "fork_batch_hash": "0371fec5c58f585eae05e3305cf6cd04f18098cebfa281309589a31dbe461d96",
+      "differs": true,
+      "main_span_ids": [
+        "general_web.fineweb-edu.01.5ff773c4d560#1024-1280",
+        "general_web.fineweb-edu.04.46aff408a9ed#5888-6144"
+      ],
+      "fork_span_ids": [
+        "general_web.fineweb-edu.00.729755721d58#6912-7168",
+        "general_web.fineweb-edu.04.46aff408a9ed#1536-1792"
+      ]
+    },
+    {
+      "rank": 1,
+      "microbatch_id": 0,
+      "main_batch_hash": "869ed92d71d830848825e915be0187679ae5b1bd033fad5f7fb211ae585a3ee7",
+      "fork_batch_hash": "1c87a167f2dcf9a61dcaaae686cf29c9e57ea9ae86d859f299240ada470a7435",
+      "differs": true,
+      "main_span_ids": [
+        "code.github-code-clean.01.1cfab434db29#9783-10039",
+        "general_web.fineweb-edu.04.46aff408a9ed#11264-11520"
+      ],
+      "fork_span_ids": [
+        "code.github-code-clean.03.fd7014fedee6#1314-1570",
+        "general_web.fineweb-edu.00.729755721d58#768-1024"
+      ]
+    },
+    {
+      "rank": 1,
+      "microbatch_id": 1,
+      "main_batch_hash": "bb52f1c34be1600a2b1f53b290ca64cdf5ac4a89e7987e93bc964a1d695661bf",
+      "fork_batch_hash": "94f5cb296cc23a4dbd3749b18b5fc310fb8981fc09091990be78fe00f8d190da",
+      "differs": true,
+      "main_span_ids": [
+        "indic.wikipedia-te.01.e7277117616d#256-512",
+        "reasoning.openthoughts.01.04e2f872ea1c#30630-30886"
+      ],
+      "fork_span_ids": [
+        "indic.wikipedia-hi.00.4a3df50aec73#7424-7680",
+        "reasoning.openthoughts.01.04e2f872ea1c#14293-14549"
+      ]
+    }
+  ],
+  "rerun_verification": {
+    "compared": 20,
+    "matched": 20
+  }
+}

@@ -1,0 +1,258 @@
+{
+  "method": "recounted lane sequences from every effective consumption event and compared them against the compiled per-step quotas",
+  "total_sequences": 640,
+  "shares": {
+    "agentic": {
+      "planned": 0.0312,
+      "actual": 0.0312,
+      "actual_sequences": 20,
+      "drift": 0.0001
+    },
+    "code": {
+      "planned": 0.2313,
+      "actual": 0.2313,
+      "actual_sequences": 148,
+      "drift": -0.0
+    },
+    "general_web": {
+      "planned": 0.3281,
+      "actual": 0.3281,
+      "actual_sequences": 210,
+      "drift": 0.0
+    },
+    "indic": {
+      "planned": 0.1609,
+      "actual": 0.1609,
+      "actual_sequences": 103,
+      "drift": 0.0
+    },
+    "long_context": {
+      "planned": 0.075,
+      "actual": 0.075,
+      "actual_sequences": 48,
+      "drift": 0.0
+    },
+    "reasoning": {
+      "planned": 0.0609,
+      "actual": 0.0609,
+      "actual_sequences": 39,
+      "drift": 0.0
+    },
+    "stem_math": {
+      "planned": 0.1125,
+      "actual": 0.1125,
+      "actual_sequences": 72,
+      "drift": 0.0
+    }
+  },
+  "floor_window_steps": 10,
+  "floor_windows": [
+    {
+      "steps": [
+        0,
+        9
+      ],
+      "sequences": 80,
+      "protected_lanes": {
+        "indic": {
+          "share": 0.1625,
+          "floor": 0.12,
+          "holds": true
+        },
+        "reasoning": {
+          "share": 0.05,
+          "floor": 0.04,
+          "holds": true
+        },
+        "agentic": {
+          "share": 0.025,
+          "floor": 0.02,
+          "holds": true
+        }
+      },
+      "all_floors_hold": true
+    },
+    {
+      "steps": [
+        10,
+        19
+      ],
+      "sequences": 80,
+      "protected_lanes": {
+        "indic": {
+          "share": 0.1625,
+          "floor": 0.12,
+          "holds": true
+        },
+        "reasoning": {
+          "share": 0.05,
+          "floor": 0.04,
+          "holds": true
+        },
+        "agentic": {
+          "share": 0.025,
+          "floor": 0.02,
+          "holds": true
+        }
+      },
+      "all_floors_hold": true
+    },
+    {
+      "steps": [
+        20,
+        29
+      ],
+      "sequences": 80,
+      "protected_lanes": {
+        "indic": {
+          "share": 0.175,
+          "floor": 0.12,
+          "holds": true
+        },
+        "reasoning": {
+          "share": 0.05,
+          "floor": 0.04,
+          "holds": true
+        },
+        "agentic": {
+          "share": 0.025,
+          "floor": 0.02,
+          "holds": true
+        }
+      },
+      "all_floors_hold": true
+    },
+    {
+      "steps": [
+        30,
+        39
+      ],
+      "sequences": 80,
+      "protected_lanes": {
+        "indic": {
+          "share": 0.1625,
+          "floor": 0.12,
+          "holds": true
+        },
+        "reasoning": {
+          "share": 0.05,
+          "floor": 0.04,
+          "holds": true
+        },
+        "agentic": {
+          "share": 0.025,
+          "floor": 0.02,
+          "holds": true
+        }
+      },
+      "all_floors_hold": true
+    },
+    {
+      "steps": [
+        40,
+        49
+      ],
+      "sequences": 80,
+      "protected_lanes": {
+        "indic": {
+          "share": 0.1625,
+          "floor": 0.12,
+          "holds": true
+        },
+        "reasoning": {
+          "share": 0.05,
+          "floor": 0.04,
+          "holds": true
+        },
+        "agentic": {
+          "share": 0.025,
+          "floor": 0.02,
+          "holds": true
+        }
+      },
+      "all_floors_hold": true
+    },
+    {
+      "steps": [
+        50,
+        59
+      ],
+      "sequences": 80,
+      "protected_lanes": {
+        "indic": {
+          "share": 0.15,
+          "floor": 0.12,
+          "holds": true
+        },
+        "reasoning": {
+          "share": 0.0625,
+          "floor": 0.04,
+          "holds": true
+        },
+        "agentic": {
+          "share": 0.0375,
+          "floor": 0.02,
+          "holds": true
+        }
+      },
+      "all_floors_hold": true
+    },
+    {
+      "steps": [
+        60,
+        69
+      ],
+      "sequences": 80,
+      "protected_lanes": {
+        "indic": {
+          "share": 0.15,
+          "floor": 0.12,
+          "holds": true
+        },
+        "reasoning": {
+          "share": 0.075,
+          "floor": 0.04,
+          "holds": true
+        },
+        "agentic": {
+          "share": 0.0375,
+          "floor": 0.02,
+          "holds": true
+        }
+      },
+      "all_floors_hold": true
+    },
+    {
+      "steps": [
+        70,
+        79
+      ],
+      "sequences": 80,
+      "protected_lanes": {
+        "indic": {
+          "share": 0.1625,
+          "floor": 0.12,
+          "holds": true
+        },
+        "reasoning": {
+          "share": 0.1,
+          "floor": 0.04,
+          "holds": true
+        },
+        "agentic": {
+          "share": 0.05,
+          "floor": 0.02,
+          "holds": true
+        }
+      },
+      "all_floors_hold": true
+    }
+  ],
+  "floors_violated_in_windows": 0,
+  "anneal_reserve": {
+    "anneal_starts_at_step": 78,
+    "reserved_shards": 6,
+    "reserved_shards_consumed_before_anneal": 0,
+    "offending_events": []
+  }
+}

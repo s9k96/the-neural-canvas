@@ -1,0 +1,260 @@
+{
+  "shard_id": "reasoning.openthoughts.01.04e2f872ea1c",
+  "source_ids": [
+    "openthoughts"
+  ],
+  "doc_ids": [
+    "openthoughts:27",
+    "openthoughts:28",
+    "openthoughts:29",
+    "openthoughts:3",
+    "openthoughts:30",
+    "openthoughts:31",
+    "openthoughts:32",
+    "openthoughts:33",
+    "openthoughts:34",
+    "openthoughts:35",
+    "openthoughts:36",
+    "openthoughts:37",
+    "openthoughts:38",
+    "openthoughts:39",
+    "openthoughts:4",
+    "openthoughts:5",
+    "openthoughts:6",
+    "openthoughts:7",
+    "openthoughts:8",
+    "openthoughts:9"
+  ],
+  "tokenizer_hash": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "token_count": 47419,
+  "language_and_script": [
+    "eng_Latn"
+  ],
+  "capability_lane": "reasoning",
+  "license_and_provenance_tier": {
+    "licenses": [
+      "apache-2.0"
+    ],
+    "tiers": [
+      "A"
+    ]
+  },
+  "cleaning_pipeline_hash": "acc147c1a129c956cd862084c9b1ec4337ac4b6b331814428aeb530f50cbb72a",
+  "dedup_status": "unique",
+  "contamination_status": "clean",
+  "eval_overlap_status": "clean",
+  "content_hash": "04e2f872ea1cea462ca2979ac8c6c59ff9314584e48b277d7114f7ed47fb534b",
+  "parent_shard_ids": [],
+  "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+  "loss_bearing_token_count": 30771,
+  "n_samples": 20,
+  "docs": [
+    {
+      "doc_id": "openthoughts:27",
+      "sample_index": 0,
+      "token_start": 0,
+      "token_end": 2614,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1274
+    },
+    {
+      "doc_id": "openthoughts:28",
+      "sample_index": 1,
+      "token_start": 2614,
+      "token_end": 4773,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1258
+    },
+    {
+      "doc_id": "openthoughts:29",
+      "sample_index": 2,
+      "token_start": 4773,
+      "token_end": 6804,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1200
+    },
+    {
+      "doc_id": "openthoughts:3",
+      "sample_index": 3,
+      "token_start": 6804,
+      "token_end": 8931,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1562
+    },
+    {
+      "doc_id": "openthoughts:30",
+      "sample_index": 4,
+      "token_start": 8931,
+      "token_end": 11135,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1406
+    },
+    {
+      "doc_id": "openthoughts:31",
+      "sample_index": 5,
+      "token_start": 11135,
+      "token_end": 13294,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1344
+    },
+    {
+      "doc_id": "openthoughts:32",
+      "sample_index": 6,
+      "token_start": 13294,
+      "token_end": 15669,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1376
+    },
+    {
+      "doc_id": "openthoughts:33",
+      "sample_index": 7,
+      "token_start": 15669,
+      "token_end": 18128,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1839
+    },
+    {
+      "doc_id": "openthoughts:34",
+      "sample_index": 8,
+      "token_start": 18128,
+      "token_end": 20440,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1652
+    },
+    {
+      "doc_id": "openthoughts:35",
+      "sample_index": 9,
+      "token_start": 20440,
+      "token_end": 22835,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1879
+    },
+    {
+      "doc_id": "openthoughts:36",
+      "sample_index": 10,
+      "token_start": 22835,
+      "token_end": 25065,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1253
+    },
+    {
+      "doc_id": "openthoughts:37",
+      "sample_index": 11,
+      "token_start": 25065,
+      "token_end": 27454,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1473
+    },
+    {
+      "doc_id": "openthoughts:38",
+      "sample_index": 12,
+      "token_start": 27454,
+      "token_end": 29859,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1808
+    },
+    {
+      "doc_id": "openthoughts:39",
+      "sample_index": 13,
+      "token_start": 29859,
+      "token_end": 32383,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1753
+    },
+    {
+      "doc_id": "openthoughts:4",
+      "sample_index": 14,
+      "token_start": 32383,
+      "token_end": 34914,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1936
+    },
+    {
+      "doc_id": "openthoughts:5",
+      "sample_index": 15,
+      "token_start": 34914,
+      "token_end": 37572,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1866
+    },
+    {
+      "doc_id": "openthoughts:6",
+      "sample_index": 16,
+      "token_start": 37572,
+      "token_end": 40179,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1997
+    },
+    {
+      "doc_id": "openthoughts:7",
+      "sample_index": 17,
+      "token_start": 40179,
+      "token_end": 42547,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1455
+    },
+    {
+      "doc_id": "openthoughts:8",
+      "sample_index": 18,
+      "token_start": 42547,
+      "token_end": 45052,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 902
+    },
+    {
+      "doc_id": "openthoughts:9",
+      "sample_index": 19,
+      "token_start": 45052,
+      "token_end": 47419,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1538
+    }
+  ],
+  "reserved_for_anneal": false,
+  "never_train": false,
+  "gradient_bearing": true,
+  "admission": {
+    "verdict": "ADMITTED",
+    "reasons": []
+  }
+}

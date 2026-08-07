@@ -1,0 +1,70 @@
+[   0.00s] S6 training data execution system -- run_id=v5-s6-demo
+[   0.00s] config: seq_len=256 seq/step=8 (2 ranks x 2 accum x 2 micro) steps=80 ckpt_every=20 crash_at=55
+[   0.00s] note on event order: 'evaluation data blocked' precedes 'manifests validated' because the admission verdict is a manifest field, so the firewall and the gate must settle before a manifest can be revalidated against its final content. All 13 mandated events are present; the check at the end of this log verifies it.
+[   1.55s] [PASS] tokenizer_hash_verified -- sarvamai/sarvam-1/tokenizer.json sha256=bb5115a36ddb956a...
+[   1.58s] corpus: 525 training docs, 140 eval/validation docs, 13 provenance records
+[   3.46s] [EVENT] shards created -- 27 immutable shards, 641,682 tokens, 0 exact duplicates flagged
+[   3.69s] firewall: 140 registry docs, 23692 8-gram fingerprints, 7 eval/validation shards
+[   5.43s] [EVENT] evaluation data blocked -- stem_math.gsm8k-test.00.04a8b9794b40 -> REJECTED (eval_overlap:is_eval_data, contaminated:registry_member, never_train_flag)
+[   5.43s] [PASS] eval_shard_blocked -- stem_math.gsm8k-test.00.04a8b9794b40 rejected: ['eval_overlap:is_eval_data', 'contaminated:registry_member', 'never_train_flag']
+[   5.43s] [PASS] validation_shard_blocked_from_training -- general_web.val-web.00.7dc911c5257a rejected: ['eval_overlap:is_eval_data', 'contaminated:registry_member']
+[   5.45s] [PASS] contamination_blocked -- general_web.fineweb-edu.90.aa1351207ada -> overlap:cais/mmlu; reasons=['eval_overlap:overlap:cais/mmlu', 'contaminated:overlap:cais/mmlu']
+[   5.45s] admission gate: 24 admitted, 3 rejected
+[   5.45s]   REJECTED code.github-code-clean.00.8ccae5551748: ['unsafe_license:gpl-2.0']
+[   5.45s]   REJECTED indic.wikipedia-hi.01.9e4891d2803a: ['eval_overlap:overlap:wikipedia-hi/heldout', 'contaminated:overlap:wikipedia-hi/heldout']
+[   5.45s]   REJECTED indic.wikipedia-hi.02.51fda371b1b9: ['eval_overlap:overlap:wikipedia-hi/heldout', 'contaminated:overlap:wikipedia-hi/heldout']
+[   6.43s] [EVENT] manifests validated -- 35/35 shard manifests recomputed from bytes
+[   6.43s] [PASS] manifests_validated -- 35/35
+[   6.48s] [EVENT] mixture compiled -- 5 stages, floors={'indic': 0.12, 'reasoning': 0.04, 'agentic': 0.02}, anneal reserve=167,099 tokens
+[   6.48s] [PASS] mixture_within_s5_tolerance -- drift vs S5 headline: {'general_web': -0.012, 'code': -0.0089, 'indic': 0.0016, 'stem_math': -0.0072, 'reasoning': 0.0015, 'long_context': 0.0146, 'agentic': 0.0105}
+[   6.48s]   supply general_web    demand=   53,760 available=   74,361 -> covered
+[   6.48s]   supply code           demand=   37,888 available=   73,032 -> covered
+[   6.48s]   supply indic          demand=   26,368 available=  138,680 -> covered
+[   6.48s]   supply stem_math      demand=   18,432 available=   20,848 -> covered
+[   6.48s]   supply reasoning      demand=    9,984 available=   95,531 -> covered
+[   6.48s]   supply long_context   demand=   12,288 available=   73,037 -> covered
+[   6.48s]   supply agentic        demand=    5,120 available=   84,582 -> covered
+[   6.54s] unit pool: agentic=71u/18,176t(structure_preserving), code=80u/17,837t(best_fit), general_web=292u/74,342t(concat_chop), indic=543u/138,680t(concat_chop), long_context=286u/73,037t(long_context), reasoning=40u/10,240t(structure_preserving), stem_math=100u/19,841t(structure_preserving)
+[   7.12s] [EVENT] batches packed -- first optimizer step: 4 microbatches x 2 sequences of 256 tokens, policies ['concat_chop', 'structure_preserving']
+[   7.12s] [EVENT] OPUS decisions recorded -- 16 candidates scored at step 0: accepted=12, deferred=1, protected=3, rejected=0
+[  16.54s]   validation @step19: mean_loss=5.0320 (gradient_bearing=false)
+[  16.55s] [EVENT] checkpoint saved -- ckpt_step0020 at ledger offset 82
+[  16.55s] [PASS] checkpoint_saved -- ckpt_step0020 offset=82
+[  25.46s]   validation @step39: mean_loss=4.6887 (gradient_bearing=false)
+[  25.47s] [EVENT] checkpoint saved -- ckpt_step0040 at ledger offset 164
+[  25.47s] [PASS] checkpoint_saved -- ckpt_step0040 offset=164
+[  32.65s]   packed so far: 220 microbatches, 112,640 token positions; OPUS accepted=523, deferred=243, protected=14, rejected=100
+[  32.65s] [EVENT] crash simulated -- deliberate crash after step 54
+[  32.65s] [PASS] crash_simulated -- at step 54, ledger offset 226
+[  32.68s] resume: ckpt_step0040.npz step=40 ledger_offset=164 superseding 60 events in 0.025s
+[  42.15s]   validation @step59: mean_loss=4.4713 (gradient_bearing=false)
+[  42.16s] [EVENT] checkpoint saved -- ckpt_step0060 at ledger offset 308
+[  42.16s] [PASS] checkpoint_saved -- ckpt_step0060 offset=308
+[  51.79s]   validation @step79: mean_loss=4.3936 (gradient_bearing=false)
+[  51.84s] [EVENT] checkpoint saved -- ckpt_step0080 at ledger offset 390
+[  51.84s] [PASS] checkpoint_saved -- ckpt_step0080 offset=390
+[  51.85s] [EVENT] run resumed -- from ckpt_step0040.npz at step 40, attempt 2, recovery took 0.025s
+[  51.85s] [PASS] resume_next_batch_matched -- step 40: 4 microbatches, hashes identical to attempt 1
+[  51.85s] [PASS] resume_no_gaps_or_duplicates -- 320 effective events over steps [0, 79], 0 gaps, 0 duplicates
+[  61.90s] [EVENT] historical stream replayed -- steps 20..40 from ckpt_step0020.npz
+[  61.90s] [PASS] replay_hash_matched -- 80/80 batch hashes, span ids and loss-mask hashes identical to the original run
+[  66.91s] [EVENT] branch forked -- fork-1 from ckpt_step0040.npz at step 40
+[  66.91s] [PASS] fork_divergence_recorded -- fork diverges from main at step 40 and re-runs identically
+[  66.91s] [EVENT] audit completed -- 80 microbatches in the audited token range, 18 shards implicated
+[  66.93s] OPUS ledger: 880 decisions on attempt 1, 640 on attempt 2 (accepted/rejected/deferred/protected across both: accepted=925, deferred=413, protected=14, rejected=168)
+[  66.94s] [PASS] protected_floors_held -- 8 windows of 10 steps, 0 floor violations
+[  66.94s] [PASS] anneal_reserve_quarantined -- 6 reserved shards, 0 consumed before step 78
+[  66.94s] learning ledger: 21 shard report cards, 7 lane roll-ups; token trace 13403 detailed rows
+[  66.99s] [EVENT] performance measured -- 3419 useful tok/s, packing utilization 0.9818
+[  67.50s] [PASS] evidence:tokenizer_integrity -- 35 shard manifests carry the frozen tokenizer hash; 35/35 manifests revalidated from shard bytes
+[  67.50s] [PASS] evidence:evaluation_firewall -- 3 block events; 5 never-train shards, 0 of them in 21 consumed shard ids; 6 shards rejected at the gate
+[  67.50s] [PASS] evidence:packing_correctness -- 380 packed batches; utilization recomputed from placements = 0.9818; 500 batches mask-audited
+[  67.50s] [PASS] evidence:mixture_compliance -- planned vs actual max drift 0.0001; 8 floor windows checked, 0 violations
+[  67.50s] [PASS] evidence:opus_audit_trail -- 1520 candidate decisions: accepted=925, deferred=413, protected=14, rejected=168; 640 decision ids referenced by consump
+[  67.50s] [PASS] evidence:crash_recovery -- expected batch 40 matched on resume; effective stream = 320 events over steps [0, 79], 0 gaps, 0 duplicates, 60 supersed
+[  67.50s] [PASS] evidence:replay -- 80/80 replayed batch hashes identical to the original run; fork fork-1 diverges at step 40 and re-runs identically
+[  67.50s] [PASS] evidence:learning_trace -- 21 shard report cards + 7 lane roll-ups, every key present in the consumption ledger; 13403 token rows (3872 full-tier)
+[  67.50s] [PASS] evidence:throughput -- useful 153880 / 45.01s = 3418.5 tok/s (reported 3418.526); packing utilization recomputed 0.9818 (reported 0.981774)
+[  67.50s] evidence: 9/9 requirements PASS
+[  68.61s] [PASS] all_required_events_logged -- 13 mandated events present
+[  68.61s] [RESULT] PASS

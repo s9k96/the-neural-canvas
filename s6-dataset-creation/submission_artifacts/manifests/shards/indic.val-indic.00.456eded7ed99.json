@@ -1,0 +1,261 @@
+{
+  "shard_id": "indic.val-indic.00.456eded7ed99",
+  "source_ids": [
+    "val-indic"
+  ],
+  "doc_ids": [
+    "val-indic:5000",
+    "val-indic:5001",
+    "val-indic:5002",
+    "val-indic:5003",
+    "val-indic:5004",
+    "val-indic:5005",
+    "val-indic:5006",
+    "val-indic:5007",
+    "val-indic:5008",
+    "val-indic:5009",
+    "val-indic:5010",
+    "val-indic:5011",
+    "val-indic:5012",
+    "val-indic:5013",
+    "val-indic:5014",
+    "val-indic:5015",
+    "val-indic:5016",
+    "val-indic:5017",
+    "val-indic:5018",
+    "val-indic:5019"
+  ],
+  "tokenizer_hash": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "token_count": 9711,
+  "language_and_script": [
+    "hin_Deva"
+  ],
+  "capability_lane": "indic",
+  "license_and_provenance_tier": {
+    "licenses": [
+      "cc-by-sa-4.0"
+    ],
+    "tiers": [
+      "?"
+    ]
+  },
+  "cleaning_pipeline_hash": "acc147c1a129c956cd862084c9b1ec4337ac4b6b331814428aeb530f50cbb72a",
+  "dedup_status": "unique",
+  "contamination_status": "registry_member",
+  "eval_overlap_status": "is_eval_data",
+  "content_hash": "456eded7ed99736e0c27a4579c62556688f823952c1a488f1cba584187a55ae4",
+  "parent_shard_ids": [],
+  "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+  "loss_bearing_token_count": 9711,
+  "n_samples": 20,
+  "docs": [
+    {
+      "doc_id": "val-indic:5000",
+      "sample_index": 0,
+      "token_start": 0,
+      "token_end": 51,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 51
+    },
+    {
+      "doc_id": "val-indic:5001",
+      "sample_index": 1,
+      "token_start": 51,
+      "token_end": 114,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 63
+    },
+    {
+      "doc_id": "val-indic:5002",
+      "sample_index": 2,
+      "token_start": 114,
+      "token_end": 190,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 76
+    },
+    {
+      "doc_id": "val-indic:5003",
+      "sample_index": 3,
+      "token_start": 190,
+      "token_end": 362,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 172
+    },
+    {
+      "doc_id": "val-indic:5004",
+      "sample_index": 4,
+      "token_start": 362,
+      "token_end": 388,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 26
+    },
+    {
+      "doc_id": "val-indic:5005",
+      "sample_index": 5,
+      "token_start": 388,
+      "token_end": 501,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 113
+    },
+    {
+      "doc_id": "val-indic:5006",
+      "sample_index": 6,
+      "token_start": 501,
+      "token_end": 1054,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 553
+    },
+    {
+      "doc_id": "val-indic:5007",
+      "sample_index": 7,
+      "token_start": 1054,
+      "token_end": 1313,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 259
+    },
+    {
+      "doc_id": "val-indic:5008",
+      "sample_index": 8,
+      "token_start": 1313,
+      "token_end": 2528,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 1215
+    },
+    {
+      "doc_id": "val-indic:5009",
+      "sample_index": 9,
+      "token_start": 2528,
+      "token_end": 3657,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 1129
+    },
+    {
+      "doc_id": "val-indic:5010",
+      "sample_index": 10,
+      "token_start": 3657,
+      "token_end": 3786,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 129
+    },
+    {
+      "doc_id": "val-indic:5011",
+      "sample_index": 11,
+      "token_start": 3786,
+      "token_end": 4221,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 435
+    },
+    {
+      "doc_id": "val-indic:5012",
+      "sample_index": 12,
+      "token_start": 4221,
+      "token_end": 6008,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 1787
+    },
+    {
+      "doc_id": "val-indic:5013",
+      "sample_index": 13,
+      "token_start": 6008,
+      "token_end": 6351,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 343
+    },
+    {
+      "doc_id": "val-indic:5014",
+      "sample_index": 14,
+      "token_start": 6351,
+      "token_end": 6562,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 211
+    },
+    {
+      "doc_id": "val-indic:5015",
+      "sample_index": 15,
+      "token_start": 6562,
+      "token_end": 7259,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 697
+    },
+    {
+      "doc_id": "val-indic:5016",
+      "sample_index": 16,
+      "token_start": 7259,
+      "token_end": 7996,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 737
+    },
+    {
+      "doc_id": "val-indic:5017",
+      "sample_index": 17,
+      "token_start": 7996,
+      "token_end": 8105,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 109
+    },
+    {
+      "doc_id": "val-indic:5018",
+      "sample_index": 18,
+      "token_start": 8105,
+      "token_end": 8148,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 43
+    },
+    {
+      "doc_id": "val-indic:5019",
+      "sample_index": 19,
+      "token_start": 8148,
+      "token_end": 9711,
+      "language_and_script": "hin_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": null,
+      "n_target_tokens": 1563
+    }
+  ],
+  "reserved_for_anneal": false,
+  "never_train": false,
+  "gradient_bearing": false,
+  "admission": {
+    "verdict": "pending",
+    "reasons": []
+  },
+  "shard_kind": "validation"
+}

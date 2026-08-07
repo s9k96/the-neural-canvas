@@ -1,0 +1,427 @@
+{
+  "method": "reloaded every shard payload and recomputed content hash, token count, id/hash binding, tokenizer hash and the presence of all 14 fields",
+  "passed": 35,
+  "total": 35,
+  "rows": [
+    {
+      "shard_id": "agentic.hermes-tools.00.251e262951d1",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "agentic.hermes-tools.01.69ced090cc3a",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "code.github-code-clean.00.8ccae5551748",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "code.github-code-clean.01.1cfab434db29",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "code.github-code-clean.02.3712a4d385d3",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "code.github-code-clean.03.fd7014fedee6",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "code.github-code-clean.04.6f31f41e9ef3",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "general_web.fineweb-edu.00.729755721d58",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "general_web.fineweb-edu.01.5ff773c4d560",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "general_web.fineweb-edu.02.6451857ede34",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "general_web.fineweb-edu.03.7ac5ef1d80ce",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "general_web.fineweb-edu.04.46aff408a9ed",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "general_web.fineweb-edu.90.aa1351207ada",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "general_web.val-web.00.7dc911c5257a",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "indic.val-indic.00.456eded7ed99",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-hi.00.4a3df50aec73",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-hi.01.9e4891d2803a",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-hi.02.51fda371b1b9",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-mr.00.1e9fff8aaef2",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-mr.01.7526345cfd36",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-te.00.13f7812fc350",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-te.01.e7277117616d",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "long_context.pg19-books.00.6a378dd0f883",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "reasoning.openthoughts.00.32096302fd5b",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "reasoning.openthoughts.01.04e2f872ea1c",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-test.00.04a8b9794b40",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-test.01.913dc677c290",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-train.00.88d5756b9e26",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-train.01.ce561377bdca",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-train.02.a65fbf3f19b0",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-train.03.7db264116a35",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-train.04.809c8d0820e2",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "stem_math.mmlu-test.00.d63fdd941c3a",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "stem_math.mmlu-test.01.c640a4304a12",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    },
+    {
+      "shard_id": "stem_math.mmlu-test.02.d667c4e79f22",
+      "result": "PASS",
+      "checks": {
+        "payload_present": true,
+        "content_hash_matches": true,
+        "token_count_matches": true,
+        "shard_id_embeds_hash": true,
+        "tokenizer_hash_frozen": true,
+        "has_all_14_fields": true
+      }
+    }
+  ]
+}

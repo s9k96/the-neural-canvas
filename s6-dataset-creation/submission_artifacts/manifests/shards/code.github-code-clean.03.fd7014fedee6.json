@@ -1,0 +1,261 @@
+{
+  "shard_id": "code.github-code-clean.03.fd7014fedee6",
+  "source_ids": [
+    "github-code-clean"
+  ],
+  "doc_ids": [
+    "github-code-clean:63",
+    "github-code-clean:64",
+    "github-code-clean:65",
+    "github-code-clean:66",
+    "github-code-clean:67",
+    "github-code-clean:68",
+    "github-code-clean:69",
+    "github-code-clean:7",
+    "github-code-clean:70",
+    "github-code-clean:71",
+    "github-code-clean:72",
+    "github-code-clean:73",
+    "github-code-clean:74",
+    "github-code-clean:75",
+    "github-code-clean:76",
+    "github-code-clean:77",
+    "github-code-clean:78",
+    "github-code-clean:79",
+    "github-code-clean:8",
+    "github-code-clean:80"
+  ],
+  "tokenizer_hash": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "token_count": 17008,
+  "language_and_script": [
+    "code"
+  ],
+  "capability_lane": "code",
+  "license_and_provenance_tier": {
+    "licenses": [
+      "isc",
+      "mit"
+    ],
+    "tiers": [
+      "B"
+    ]
+  },
+  "cleaning_pipeline_hash": "acc147c1a129c956cd862084c9b1ec4337ac4b6b331814428aeb530f50cbb72a",
+  "dedup_status": "unique",
+  "contamination_status": "clean",
+  "eval_overlap_status": "clean",
+  "content_hash": "fd7014fedee677660e3f328e4b67cdf42af65faeea6602000850768a8a4fc7c3",
+  "parent_shard_ids": [],
+  "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+  "loss_bearing_token_count": 17008,
+  "n_samples": 20,
+  "docs": [
+    {
+      "doc_id": "github-code-clean:63",
+      "sample_index": 0,
+      "token_start": 0,
+      "token_end": 246,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 246
+    },
+    {
+      "doc_id": "github-code-clean:64",
+      "sample_index": 1,
+      "token_start": 246,
+      "token_end": 885,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 639
+    },
+    {
+      "doc_id": "github-code-clean:65",
+      "sample_index": 2,
+      "token_start": 885,
+      "token_end": 1077,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 192
+    },
+    {
+      "doc_id": "github-code-clean:66",
+      "sample_index": 3,
+      "token_start": 1077,
+      "token_end": 1314,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 237
+    },
+    {
+      "doc_id": "github-code-clean:67",
+      "sample_index": 4,
+      "token_start": 1314,
+      "token_end": 2121,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 807
+    },
+    {
+      "doc_id": "github-code-clean:68",
+      "sample_index": 5,
+      "token_start": 2121,
+      "token_end": 2549,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 428
+    },
+    {
+      "doc_id": "github-code-clean:69",
+      "sample_index": 6,
+      "token_start": 2549,
+      "token_end": 3231,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 682
+    },
+    {
+      "doc_id": "github-code-clean:7",
+      "sample_index": 7,
+      "token_start": 3231,
+      "token_end": 5166,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 1935
+    },
+    {
+      "doc_id": "github-code-clean:70",
+      "sample_index": 8,
+      "token_start": 5166,
+      "token_end": 5360,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 194
+    },
+    {
+      "doc_id": "github-code-clean:71",
+      "sample_index": 9,
+      "token_start": 5360,
+      "token_end": 7295,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 1935
+    },
+    {
+      "doc_id": "github-code-clean:72",
+      "sample_index": 10,
+      "token_start": 7295,
+      "token_end": 9223,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 1928
+    },
+    {
+      "doc_id": "github-code-clean:73",
+      "sample_index": 11,
+      "token_start": 9223,
+      "token_end": 9643,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 420
+    },
+    {
+      "doc_id": "github-code-clean:74",
+      "sample_index": 12,
+      "token_start": 9643,
+      "token_end": 10281,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 638
+    },
+    {
+      "doc_id": "github-code-clean:75",
+      "sample_index": 13,
+      "token_start": 10281,
+      "token_end": 11310,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 1029
+    },
+    {
+      "doc_id": "github-code-clean:76",
+      "sample_index": 14,
+      "token_start": 11310,
+      "token_end": 11490,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 180
+    },
+    {
+      "doc_id": "github-code-clean:77",
+      "sample_index": 15,
+      "token_start": 11490,
+      "token_end": 13292,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 1802
+    },
+    {
+      "doc_id": "github-code-clean:78",
+      "sample_index": 16,
+      "token_start": 13292,
+      "token_end": 14074,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 782
+    },
+    {
+      "doc_id": "github-code-clean:79",
+      "sample_index": 17,
+      "token_start": 14074,
+      "token_end": 14903,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 829
+    },
+    {
+      "doc_id": "github-code-clean:8",
+      "sample_index": 18,
+      "token_start": 14903,
+      "token_end": 15101,
+      "language_and_script": "code",
+      "license": "isc",
+      "provenance_tier": "B",
+      "n_target_tokens": 198
+    },
+    {
+      "doc_id": "github-code-clean:80",
+      "sample_index": 19,
+      "token_start": 15101,
+      "token_end": 17008,
+      "language_and_script": "code",
+      "license": "mit",
+      "provenance_tier": "B",
+      "n_target_tokens": 1907
+    }
+  ],
+  "reserved_for_anneal": false,
+  "never_train": false,
+  "gradient_bearing": true,
+  "admission": {
+    "verdict": "ADMITTED",
+    "reasons": []
+  }
+}

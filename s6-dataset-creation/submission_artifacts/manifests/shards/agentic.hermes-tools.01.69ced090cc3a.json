@@ -1,0 +1,260 @@
+{
+  "shard_id": "agentic.hermes-tools.01.69ced090cc3a",
+  "source_ids": [
+    "hermes-tools"
+  ],
+  "doc_ids": [
+    "hermes-tools:27",
+    "hermes-tools:28",
+    "hermes-tools:29",
+    "hermes-tools:3",
+    "hermes-tools:30",
+    "hermes-tools:31",
+    "hermes-tools:32",
+    "hermes-tools:33",
+    "hermes-tools:34",
+    "hermes-tools:35",
+    "hermes-tools:36",
+    "hermes-tools:37",
+    "hermes-tools:38",
+    "hermes-tools:39",
+    "hermes-tools:4",
+    "hermes-tools:5",
+    "hermes-tools:6",
+    "hermes-tools:7",
+    "hermes-tools:8",
+    "hermes-tools:9"
+  ],
+  "tokenizer_hash": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "token_count": 43289,
+  "language_and_script": [
+    "eng_Latn"
+  ],
+  "capability_lane": "agentic",
+  "license_and_provenance_tier": {
+    "licenses": [
+      "apache-2.0"
+    ],
+    "tiers": [
+      "A"
+    ]
+  },
+  "cleaning_pipeline_hash": "acc147c1a129c956cd862084c9b1ec4337ac4b6b331814428aeb530f50cbb72a",
+  "dedup_status": "unique",
+  "contamination_status": "clean",
+  "eval_overlap_status": "clean",
+  "content_hash": "69ced090cc3a45479bb2dec6e2bcd2ab318418fecd3fac7ebfb4e3a7f83d1348",
+  "parent_shard_ids": [],
+  "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+  "loss_bearing_token_count": 7420,
+  "n_samples": 20,
+  "docs": [
+    {
+      "doc_id": "hermes-tools:27",
+      "sample_index": 0,
+      "token_start": 0,
+      "token_end": 2456,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 94
+    },
+    {
+      "doc_id": "hermes-tools:28",
+      "sample_index": 1,
+      "token_start": 2456,
+      "token_end": 5204,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 728
+    },
+    {
+      "doc_id": "hermes-tools:29",
+      "sample_index": 2,
+      "token_start": 5204,
+      "token_end": 7420,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 571
+    },
+    {
+      "doc_id": "hermes-tools:3",
+      "sample_index": 3,
+      "token_start": 7420,
+      "token_end": 9167,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 273
+    },
+    {
+      "doc_id": "hermes-tools:30",
+      "sample_index": 4,
+      "token_start": 9167,
+      "token_end": 11943,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 361
+    },
+    {
+      "doc_id": "hermes-tools:31",
+      "sample_index": 5,
+      "token_start": 11943,
+      "token_end": 14493,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 338
+    },
+    {
+      "doc_id": "hermes-tools:32",
+      "sample_index": 6,
+      "token_start": 14493,
+      "token_end": 16689,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 414
+    },
+    {
+      "doc_id": "hermes-tools:33",
+      "sample_index": 7,
+      "token_start": 16689,
+      "token_end": 19109,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 486
+    },
+    {
+      "doc_id": "hermes-tools:34",
+      "sample_index": 8,
+      "token_start": 19109,
+      "token_end": 20660,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 297
+    },
+    {
+      "doc_id": "hermes-tools:35",
+      "sample_index": 9,
+      "token_start": 20660,
+      "token_end": 22955,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 612
+    },
+    {
+      "doc_id": "hermes-tools:36",
+      "sample_index": 10,
+      "token_start": 22955,
+      "token_end": 25181,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 485
+    },
+    {
+      "doc_id": "hermes-tools:37",
+      "sample_index": 11,
+      "token_start": 25181,
+      "token_end": 27891,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 525
+    },
+    {
+      "doc_id": "hermes-tools:38",
+      "sample_index": 12,
+      "token_start": 27891,
+      "token_end": 30537,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 755
+    },
+    {
+      "doc_id": "hermes-tools:39",
+      "sample_index": 13,
+      "token_start": 30537,
+      "token_end": 32823,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 0
+    },
+    {
+      "doc_id": "hermes-tools:4",
+      "sample_index": 14,
+      "token_start": 32823,
+      "token_end": 34000,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 180
+    },
+    {
+      "doc_id": "hermes-tools:5",
+      "sample_index": 15,
+      "token_start": 34000,
+      "token_end": 36049,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 184
+    },
+    {
+      "doc_id": "hermes-tools:6",
+      "sample_index": 16,
+      "token_start": 36049,
+      "token_end": 37825,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 385
+    },
+    {
+      "doc_id": "hermes-tools:7",
+      "sample_index": 17,
+      "token_start": 37825,
+      "token_end": 39455,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 222
+    },
+    {
+      "doc_id": "hermes-tools:8",
+      "sample_index": 18,
+      "token_start": 39455,
+      "token_end": 41780,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 392
+    },
+    {
+      "doc_id": "hermes-tools:9",
+      "sample_index": 19,
+      "token_start": 41780,
+      "token_end": 43289,
+      "language_and_script": "eng_Latn",
+      "license": "Apache-2.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 118
+    }
+  ],
+  "reserved_for_anneal": true,
+  "never_train": false,
+  "gradient_bearing": true,
+  "admission": {
+    "verdict": "ADMITTED",
+    "reasons": []
+  }
+}

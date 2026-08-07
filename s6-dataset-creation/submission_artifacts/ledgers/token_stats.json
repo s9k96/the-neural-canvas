@@ -1,0 +1,332 @@
+{
+  "tier": "aggregate",
+  "rows_written_detailed": 13403,
+  "full_interval_steps": [
+    30,
+    31
+  ],
+  "quantized_every_n_steps": 40,
+  "by_shard": {
+    "agentic.hermes-tools.00.251e262951d1": {
+      "tokens": 4872,
+      "loss_sum": 28554.8076,
+      "high_ppl_tokens": 2425,
+      "mean_loss": 5.861003,
+      "mean_perplexity": 351.0761
+    },
+    "general_web.fineweb-edu.00.729755721d58": {
+      "tokens": 21675,
+      "loss_sum": 109632.4157,
+      "high_ppl_tokens": 9022,
+      "mean_loss": 5.058012,
+      "mean_perplexity": 157.2775
+    },
+    "general_web.fineweb-edu.04.46aff408a9ed": {
+      "tokens": 21675,
+      "loss_sum": 109512.8323,
+      "high_ppl_tokens": 9232,
+      "mean_loss": 5.052495,
+      "mean_perplexity": 156.4122
+    },
+    "general_web.fineweb-edu.01.5ff773c4d560": {
+      "tokens": 27795,
+      "loss_sum": 142211.3416,
+      "high_ppl_tokens": 12557,
+      "mean_loss": 5.116436,
+      "mean_perplexity": 166.74
+    },
+    "general_web.fineweb-edu.03.7ac5ef1d80ce": {
+      "tokens": 12456,
+      "loss_sum": 62515.9305,
+      "high_ppl_tokens": 4990,
+      "mean_loss": 5.018941,
+      "mean_perplexity": 151.251
+    },
+    "indic.wikipedia-mr.01.7526345cfd36": {
+      "tokens": 4590,
+      "loss_sum": 24518.6917,
+      "high_ppl_tokens": 2309,
+      "mean_loss": 5.341763,
+      "mean_perplexity": 208.8806
+    },
+    "reasoning.openthoughts.01.04e2f872ea1c": {
+      "tokens": 13770,
+      "loss_sum": 77997.7133,
+      "high_ppl_tokens": 6152,
+      "mean_loss": 5.664322,
+      "mean_perplexity": 288.3924
+    },
+    "code.github-code-clean.03.fd7014fedee6": {
+      "tokens": 21695,
+      "loss_sum": 112931.1905,
+      "high_ppl_tokens": 8928,
+      "mean_loss": 5.205402,
+      "mean_perplexity": 182.2541
+    },
+    "indic.wikipedia-te.01.e7277117616d": {
+      "tokens": 20655,
+      "loss_sum": 110482.1696,
+      "high_ppl_tokens": 9937,
+      "mean_loss": 5.348931,
+      "mean_perplexity": 210.3833
+    },
+    "code.github-code-clean.02.3712a4d385d3": {
+      "tokens": 18674,
+      "loss_sum": 94951.8998,
+      "high_ppl_tokens": 7990,
+      "mean_loss": 5.084711,
+      "mean_perplexity": 161.5332
+    },
+    "indic.wikipedia-hi.00.4a3df50aec73": {
+      "tokens": 10200,
+      "loss_sum": 53044.158,
+      "high_ppl_tokens": 4771,
+      "mean_loss": 5.200408,
+      "mean_perplexity": 181.3462
+    },
+    "stem_math.gsm8k-train.01.ce561377bdca": {
+      "tokens": 5500,
+      "loss_sum": 27235.7044,
+      "high_ppl_tokens": 1467,
+      "mean_loss": 4.951946,
+      "mean_perplexity": 141.45
+    },
+    "stem_math.gsm8k-train.02.a65fbf3f19b0": {
+      "tokens": 3073,
+      "loss_sum": 14886.4152,
+      "high_ppl_tokens": 707,
+      "mean_loss": 4.844261,
+      "mean_perplexity": 127.0094
+    },
+    "code.github-code-clean.01.1cfab434db29": {
+      "tokens": 20503,
+      "loss_sum": 100298.2319,
+      "high_ppl_tokens": 7644,
+      "mean_loss": 4.891881,
+      "mean_perplexity": 133.2039
+    },
+    "long_context.pg19-books.00.6a378dd0f883": {
+      "tokens": 15810,
+      "loss_sum": 86061.2092,
+      "high_ppl_tokens": 6834,
+      "mean_loss": 5.443467,
+      "mean_perplexity": 231.2425
+    },
+    "stem_math.gsm8k-train.03.7db264116a35": {
+      "tokens": 6981,
+      "loss_sum": 33441.8096,
+      "high_ppl_tokens": 1683,
+      "mean_loss": 4.790404,
+      "mean_perplexity": 120.35
+    },
+    "stem_math.gsm8k-train.00.88d5756b9e26": {
+      "tokens": 3308,
+      "loss_sum": 16526.7347,
+      "high_ppl_tokens": 920,
+      "mean_loss": 4.99599,
+      "mean_perplexity": 147.8192
+    },
+    "indic.wikipedia-mr.00.1e9fff8aaef2": {
+      "tokens": 5100,
+      "loss_sum": 25082.8511,
+      "high_ppl_tokens": 2130,
+      "mean_loss": 4.918206,
+      "mean_perplexity": 136.7571
+    },
+    "code.github-code-clean.04.6f31f41e9ef3": {
+      "tokens": 510,
+      "loss_sum": 2757.0649,
+      "high_ppl_tokens": 215,
+      "mean_loss": 5.40601,
+      "mean_perplexity": 222.7411
+    },
+    "reasoning.openthoughts.00.32096302fd5b": {
+      "tokens": 765,
+      "loss_sum": 4123.6552,
+      "high_ppl_tokens": 313,
+      "mean_loss": 5.390399,
+      "mean_perplexity": 219.2909
+    },
+    "indic.wikipedia-te.00.13f7812fc350": {
+      "tokens": 510,
+      "loss_sum": 2335.7431,
+      "high_ppl_tokens": 204,
+      "mean_loss": 4.579888,
+      "mean_perplexity": 97.5035
+    }
+  },
+  "by_capability_lane": {
+    "agentic,general_web": {
+      "tokens": 357,
+      "loss_sum": 2721.9926,
+      "high_ppl_tokens": 357,
+      "mean_loss": 7.624629,
+      "mean_perplexity": 2048.0205
+    },
+    "general_web": {
+      "tokens": 54168,
+      "loss_sum": 278543.6566,
+      "high_ppl_tokens": 23868,
+      "mean_loss": 5.142218,
+      "mean_perplexity": 171.0948
+    },
+    "indic,reasoning": {
+      "tokens": 12240,
+      "loss_sum": 68671.4015,
+      "high_ppl_tokens": 6017,
+      "mean_loss": 5.610409,
+      "mean_perplexity": 273.256
+    },
+    "code,general_web": {
+      "tokens": 29028,
+      "loss_sum": 147384.543,
+      "high_ppl_tokens": 12315,
+      "mean_loss": 5.077323,
+      "mean_perplexity": 160.3442
+    },
+    "general_web,indic": {
+      "tokens": 29580,
+      "loss_sum": 148278.684,
+      "high_ppl_tokens": 12473,
+      "mean_loss": 5.012802,
+      "mean_perplexity": 150.3254
+    },
+    "indic": {
+      "tokens": 11220,
+      "loss_sum": 57854.5982,
+      "high_ppl_tokens": 5090,
+      "mean_loss": 5.156381,
+      "mean_perplexity": 173.5353
+    },
+    "indic,stem_math": {
+      "tokens": 9145,
+      "loss_sum": 51246.4866,
+      "high_ppl_tokens": 4280,
+      "mean_loss": 5.603771,
+      "mean_perplexity": 271.4481
+    },
+    "agentic,code": {
+      "tokens": 11858,
+      "loss_sum": 63826.3808,
+      "high_ppl_tokens": 5105,
+      "mean_loss": 5.382559,
+      "mean_perplexity": 217.5783
+    },
+    "code": {
+      "tokens": 39654,
+      "loss_sum": 199178.5236,
+      "high_ppl_tokens": 15704,
+      "mean_loss": 5.022911,
+      "mean_perplexity": 151.8527
+    },
+    "long_context,reasoning": {
+      "tokens": 3570,
+      "loss_sum": 19144.1963,
+      "high_ppl_tokens": 1460,
+      "mean_loss": 5.36252,
+      "mean_perplexity": 213.2617
+    },
+    "reasoning,stem_math": {
+      "tokens": 10943,
+      "loss_sum": 57576.8924,
+      "high_ppl_tokens": 3852,
+      "mean_loss": 5.261527,
+      "mean_perplexity": 192.7756
+    },
+    "indic,long_context": {
+      "tokens": 6630,
+      "loss_sum": 34509.743,
+      "high_ppl_tokens": 2880,
+      "mean_loss": 5.205089,
+      "mean_perplexity": 182.1971
+    },
+    "long_context,stem_math": {
+      "tokens": 9437,
+      "loss_sum": 49682.5425,
+      "high_ppl_tokens": 3426,
+      "mean_loss": 5.264654,
+      "mean_perplexity": 193.3794
+    },
+    "stem_math": {
+      "tokens": 7187,
+      "loss_sum": 33181.2217,
+      "high_ppl_tokens": 1501,
+      "mean_loss": 4.616839,
+      "mean_perplexity": 101.1737
+    },
+    "long_context": {
+      "tokens": 5100,
+      "loss_sum": 27301.7072,
+      "high_ppl_tokens": 2102,
+      "mean_loss": 5.353276,
+      "mean_perplexity": 211.2994
+    }
+  },
+  "by_language_and_script": {
+    "eng_Latn": {
+      "tokens": 137680,
+      "loss_sum": 712700.5695,
+      "high_ppl_tokens": 56302,
+      "mean_loss": 5.1765,
+      "mean_perplexity": 177.062
+    },
+    "mar_Deva": {
+      "tokens": 9690,
+      "loss_sum": 49601.5428,
+      "high_ppl_tokens": 4439,
+      "mean_loss": 5.118838,
+      "mean_perplexity": 167.141
+    },
+    "code": {
+      "tokens": 61382,
+      "loss_sum": 310938.3871,
+      "high_ppl_tokens": 24777,
+      "mean_loss": 5.065628,
+      "mean_perplexity": 158.4799
+    },
+    "tel_Telu": {
+      "tokens": 21165,
+      "loss_sum": 112817.9127,
+      "high_ppl_tokens": 10141,
+      "mean_loss": 5.3304,
+      "mean_perplexity": 206.5206
+    },
+    "hin_Deva": {
+      "tokens": 10200,
+      "loss_sum": 53044.158,
+      "high_ppl_tokens": 4771,
+      "mean_loss": 5.200408,
+      "mean_perplexity": 181.3462
+    }
+  },
+  "by_position_bucket": {
+    "128-191": {
+      "tokens": 61809,
+      "loss_sum": 318616.4428,
+      "high_ppl_tokens": 25778,
+      "mean_loss": 5.154855,
+      "mean_perplexity": 173.2707
+    },
+    "192-255": {
+      "tokens": 59394,
+      "loss_sum": 306929.1895,
+      "high_ppl_tokens": 24858,
+      "mean_loss": 5.16768,
+      "mean_perplexity": 175.5072
+    },
+    "0-63": {
+      "tokens": 56889,
+      "loss_sum": 292106.8506,
+      "high_ppl_tokens": 23852,
+      "mean_loss": 5.134681,
+      "mean_perplexity": 169.8101
+    },
+    "64-127": {
+      "tokens": 62025,
+      "loss_sum": 321450.0872,
+      "high_ppl_tokens": 25942,
+      "mean_loss": 5.182589,
+      "mean_perplexity": 178.1434
+    }
+  }
+}

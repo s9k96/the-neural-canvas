@@ -1,0 +1,105 @@
+{
+  "run_id": "v5-s6-demo",
+  "measured_with": "time.perf_counter around the planner, OPUS scoring, materialisation and the forward/backward pass; no figure is reported that cannot be recomputed from the ledger",
+  "wall_seconds": 45.0135,
+  "breakdown_seconds": {
+    "loader": 0.2054,
+    "opus_scoring": 25.0805,
+    "compute": 17.9605,
+    "other": 1.7671
+  },
+  "counts": {
+    "steps": 95,
+    "microbatches": 380,
+    "candidate_positions_scored": 389120,
+    "materialised_positions_including_discarded": 194560,
+    "effective_positions": 163840,
+    "effective_loss_bearing_positions": 153880,
+    "positions_discarded_by_crash": 30720,
+    "effective_microbatches": 320,
+    "opus_decisions": 1520
+  },
+  "metrics": {
+    "raw_tokens_per_sec": 8644.508,
+    "accepted_tokens_per_sec_after_opus": 3639.793,
+    "useful_loss_bearing_tokens_per_sec": 3418.526,
+    "compute_idle_time_seconds": 1.9725,
+    "loader_wait_time_seconds": 0.2054,
+    "packing_utilization": 0.981774,
+    "rejection_rate_by_lane": {
+      "agentic": 0.0,
+      "general_web": 0.4662,
+      "indic": 0.418,
+      "reasoning": 0.0444,
+      "code": 0.4247,
+      "stem_math": 0.4355,
+      "long_context": 0.1389
+    },
+    "replay_and_resume_latency_seconds": {
+      "resume": 0.0249,
+      "replay": 10.0464
+    },
+    "cache_hit_rate": 0.993,
+    "shard_reads": 24,
+    "cache_hits": 3396,
+    "shard_read_latency_ms_total": 26.731,
+    "shard_read_latency_ms_mean": 1.1138
+  },
+  "opus_decisions_by_lane": {
+    "agentic": {
+      "total": 46,
+      "rejected": 0,
+      "deferred": 0,
+      "protected": 3,
+      "accepted": 43
+    },
+    "general_web": {
+      "total": 474,
+      "rejected": 74,
+      "deferred": 147,
+      "protected": 0,
+      "accepted": 253
+    },
+    "indic": {
+      "total": 244,
+      "rejected": 32,
+      "deferred": 70,
+      "protected": 5,
+      "accepted": 137
+    },
+    "reasoning": {
+      "total": 90,
+      "rejected": 0,
+      "deferred": 4,
+      "protected": 6,
+      "accepted": 80
+    },
+    "code": {
+      "total": 372,
+      "rejected": 48,
+      "deferred": 110,
+      "protected": 0,
+      "accepted": 214
+    },
+    "stem_math": {
+      "total": 186,
+      "rejected": 14,
+      "deferred": 67,
+      "protected": 0,
+      "accepted": 105
+    },
+    "long_context": {
+      "total": 108,
+      "rejected": 0,
+      "deferred": 15,
+      "protected": 0,
+      "accepted": 93
+    }
+  },
+  "note": "raw > accepted > useful, and the gaps are the point: raw includes the candidates OPUS rejected and the batches the crash discarded, accepted is what reached the optimizer, useful is what actually bore loss. Padding and context-only tokens are carried through the batch either way, which is why useful loss-bearing tokens/sec is the only rate worth optimising.",
+  "run_meta": {
+    "generated_utc": "2026-08-07T17:27:52Z",
+    "python": "3.14.6",
+    "numpy": "2.4.6"
+  }
+}

@@ -1,0 +1,818 @@
+{
+  "counts": {
+    "total": 35,
+    "admitted": 24,
+    "rejected": 3,
+    "eval_or_validation": 7,
+    "derived_attack_shards": 1
+  },
+  "allowed_licenses": [
+    "apache-2.0",
+    "bsd-2-clause",
+    "bsd-3-clause",
+    "cc-by-4.0",
+    "cc-by-sa-4.0",
+    "cc0-1.0",
+    "isc",
+    "mit",
+    "odc-by-1.0",
+    "public-domain",
+    "unlicense"
+  ],
+  "shards": [
+    {
+      "shard_id": "agentic.hermes-tools.00.251e262951d1",
+      "capability_lane": "agentic",
+      "token_count": 41293,
+      "loss_bearing_token_count": 6975,
+      "content_hash": "251e262951d136f0908c8933c91976fdac7ddb934970b6691223833bb3633696",
+      "licenses": [
+        "apache-2.0"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "agentic.hermes-tools.01.69ced090cc3a",
+      "capability_lane": "agentic",
+      "token_count": 43289,
+      "loss_bearing_token_count": 7420,
+      "content_hash": "69ced090cc3a45479bb2dec6e2bcd2ab318418fecd3fac7ebfb4e3a7f83d1348",
+      "licenses": [
+        "apache-2.0"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "code.github-code-clean.00.8ccae5551748",
+      "capability_lane": "code",
+      "token_count": 21894,
+      "loss_bearing_token_count": 21894,
+      "content_hash": "8ccae55517486eda5d3bbcfc64de294bfc4d2842af53e256fb6d423ce2063a05",
+      "licenses": [
+        "gpl-2.0",
+        "isc"
+      ],
+      "language_and_script": [
+        "code"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "REJECTED",
+        "reasons": [
+          "unsafe_license:gpl-2.0"
+        ]
+      }
+    },
+    {
+      "shard_id": "code.github-code-clean.01.1cfab434db29",
+      "capability_lane": "code",
+      "token_count": 15269,
+      "loss_bearing_token_count": 15269,
+      "content_hash": "1cfab434db296554022424a26a77ba07906e6cc0b06ca48717a15fee3d097fc6",
+      "licenses": [
+        "isc"
+      ],
+      "language_and_script": [
+        "code"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "code.github-code-clean.02.3712a4d385d3",
+      "capability_lane": "code",
+      "token_count": 18728,
+      "loss_bearing_token_count": 18728,
+      "content_hash": "3712a4d385d3b17e672d448f28e96594fbc1d39d3a117f74e7039c05af34af15",
+      "licenses": [
+        "isc",
+        "mit"
+      ],
+      "language_and_script": [
+        "code"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "code.github-code-clean.03.fd7014fedee6",
+      "capability_lane": "code",
+      "token_count": 17008,
+      "loss_bearing_token_count": 17008,
+      "content_hash": "fd7014fedee677660e3f328e4b67cdf42af65faeea6602000850768a8a4fc7c3",
+      "licenses": [
+        "isc",
+        "mit"
+      ],
+      "language_and_script": [
+        "code"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "code.github-code-clean.04.6f31f41e9ef3",
+      "capability_lane": "code",
+      "token_count": 22027,
+      "loss_bearing_token_count": 22027,
+      "content_hash": "6f31f41e9ef3eb288476e295e84051df0deff34afef6dfa5c2626bbfea9a8ca3",
+      "licenses": [
+        "isc",
+        "mit"
+      ],
+      "language_and_script": [
+        "code"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "general_web.fineweb-edu.00.729755721d58",
+      "capability_lane": "general_web",
+      "token_count": 13758,
+      "loss_bearing_token_count": 13758,
+      "content_hash": "729755721d58ecf0c2d929b965b8e0d8d2413aa6d62fc30d169b0ba24b80f93c",
+      "licenses": [
+        "odc-by-1.0"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "general_web.fineweb-edu.01.5ff773c4d560",
+      "capability_lane": "general_web",
+      "token_count": 15368,
+      "loss_bearing_token_count": 15368,
+      "content_hash": "5ff773c4d560b6779259a4f655e2bbc99a988ad56bb61dbbc5981b0275e0bcd0",
+      "licenses": [
+        "odc-by-1.0"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "general_web.fineweb-edu.02.6451857ede34",
+      "capability_lane": "general_web",
+      "token_count": 16139,
+      "loss_bearing_token_count": 16139,
+      "content_hash": "6451857ede34d635da7a07f6003ed1bf6d5f548ec8ec0da58751abfb87b973a7",
+      "licenses": [
+        "odc-by-1.0"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "general_web.fineweb-edu.03.7ac5ef1d80ce",
+      "capability_lane": "general_web",
+      "token_count": 13879,
+      "loss_bearing_token_count": 13879,
+      "content_hash": "7ac5ef1d80ceec29c74eaea739b5af874ecb9363c8d207df62410980caca72af",
+      "licenses": [
+        "odc-by-1.0"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "general_web.fineweb-edu.04.46aff408a9ed",
+      "capability_lane": "general_web",
+      "token_count": 15217,
+      "loss_bearing_token_count": 15217,
+      "content_hash": "46aff408a9eddc0ce8b032fcdf9e8c0481caffe06956a78864d01629c1ec2837",
+      "licenses": [
+        "odc-by-1.0"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-hi.00.4a3df50aec73",
+      "capability_lane": "indic",
+      "token_count": 28049,
+      "loss_bearing_token_count": 28049,
+      "content_hash": "4a3df50aec73465bf2abc35ea3b52a25d89d0e5e3cb579657788284e1f00ae16",
+      "licenses": [
+        "cc-by-sa-4.0"
+      ],
+      "language_and_script": [
+        "hin_Deva"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-hi.01.9e4891d2803a",
+      "capability_lane": "indic",
+      "token_count": 27885,
+      "loss_bearing_token_count": 27885,
+      "content_hash": "9e4891d2803ab3154371a06512881e2a21cf2333a210546d5c75bfab485a846e",
+      "licenses": [
+        "cc-by-sa-4.0"
+      ],
+      "language_and_script": [
+        "hin_Deva"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "overlap:wikipedia-hi/heldout",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "REJECTED",
+        "reasons": [
+          "eval_overlap:overlap:wikipedia-hi/heldout",
+          "contaminated:overlap:wikipedia-hi/heldout"
+        ]
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-hi.02.51fda371b1b9",
+      "capability_lane": "indic",
+      "token_count": 31832,
+      "loss_bearing_token_count": 31832,
+      "content_hash": "51fda371b1b9bf26c3159824252d2b6699e948eaa24e5dd9d8dfca9637d6225f",
+      "licenses": [
+        "cc-by-sa-4.0"
+      ],
+      "language_and_script": [
+        "hin_Deva"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "overlap:wikipedia-hi/heldout",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "REJECTED",
+        "reasons": [
+          "eval_overlap:overlap:wikipedia-hi/heldout",
+          "contaminated:overlap:wikipedia-hi/heldout"
+        ]
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-mr.00.1e9fff8aaef2",
+      "capability_lane": "indic",
+      "token_count": 18640,
+      "loss_bearing_token_count": 18640,
+      "content_hash": "1e9fff8aaef2018e48f288f4201af5273e3c135c3cc77dffa189e854b919463d",
+      "licenses": [
+        "cc-by-sa-4.0"
+      ],
+      "language_and_script": [
+        "mar_Deva"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-mr.01.7526345cfd36",
+      "capability_lane": "indic",
+      "token_count": 25789,
+      "loss_bearing_token_count": 25789,
+      "content_hash": "7526345cfd36e76fb2cf1c552e7acad1ef9816277a9c5dee2810aa75ee95b341",
+      "licenses": [
+        "cc-by-sa-4.0"
+      ],
+      "language_and_script": [
+        "mar_Deva"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-te.00.13f7812fc350",
+      "capability_lane": "indic",
+      "token_count": 33223,
+      "loss_bearing_token_count": 33223,
+      "content_hash": "13f7812fc35075c82459c7930b1cc106db0054b72252ede05099ea6c8864614c",
+      "licenses": [
+        "cc-by-sa-4.0"
+      ],
+      "language_and_script": [
+        "tel_Telu"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "indic.wikipedia-te.01.e7277117616d",
+      "capability_lane": "indic",
+      "token_count": 32979,
+      "loss_bearing_token_count": 32979,
+      "content_hash": "e7277117616d2625cba69e8cb54e0417856404925a92cf8832ca46c222efdac5",
+      "licenses": [
+        "cc-by-sa-4.0"
+      ],
+      "language_and_script": [
+        "tel_Telu"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "long_context.pg19-books.00.6a378dd0f883",
+      "capability_lane": "long_context",
+      "token_count": 73037,
+      "loss_bearing_token_count": 73037,
+      "content_hash": "6a378dd0f8832c47266caeb74e898dc9582962ef2d175affb1c65e9ccd3998cd",
+      "licenses": [
+        "apache-2.0"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "reasoning.openthoughts.00.32096302fd5b",
+      "capability_lane": "reasoning",
+      "token_count": 48112,
+      "loss_bearing_token_count": 31379,
+      "content_hash": "32096302fd5be27ac366fcc75cb24df1dd88bd2b7a27f9a680404c5053cfab03",
+      "licenses": [
+        "apache-2.0"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "reasoning.openthoughts.01.04e2f872ea1c",
+      "capability_lane": "reasoning",
+      "token_count": 47419,
+      "loss_bearing_token_count": 30771,
+      "content_hash": "04e2f872ea1cea462ca2979ac8c6c59ff9314584e48b277d7114f7ed47fb534b",
+      "licenses": [
+        "apache-2.0"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-train.00.88d5756b9e26",
+      "capability_lane": "stem_math",
+      "token_count": 4072,
+      "loss_bearing_token_count": 2642,
+      "content_hash": "88d5756b9e26e2b2b734e91efff1dcba7cf93d6c8a7fb2bab90226cf7bf0b226",
+      "licenses": [
+        "mit"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-train.01.ce561377bdca",
+      "capability_lane": "stem_math",
+      "token_count": 4206,
+      "loss_bearing_token_count": 2777,
+      "content_hash": "ce561377bdca9c79c3ebb4ff55af57ddb5ec3236aae3357e6d2945a7764e6a4c",
+      "licenses": [
+        "mit"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-train.02.a65fbf3f19b0",
+      "capability_lane": "stem_math",
+      "token_count": 4218,
+      "loss_bearing_token_count": 2764,
+      "content_hash": "a65fbf3f19b030c96ab009099867d28bf8792f68466e47bdd5a681a74c00f433",
+      "licenses": [
+        "mit"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-train.03.7db264116a35",
+      "capability_lane": "stem_math",
+      "token_count": 4043,
+      "loss_bearing_token_count": 2620,
+      "content_hash": "7db264116a35097677776c18584c9ff583d17b18bd3f339025c81b871ec1ee0f",
+      "licenses": [
+        "mit"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-train.04.809c8d0820e2",
+      "capability_lane": "stem_math",
+      "token_count": 4309,
+      "loss_bearing_token_count": 2940,
+      "content_hash": "809c8d0820e2687be3e675cacb4b9130a56d0703e4609341d8a2e5ea8f59ec8b",
+      "licenses": [
+        "mit"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "clean",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "ADMITTED",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "general_web.val-web.00.7dc911c5257a",
+      "capability_lane": "general_web",
+      "token_count": 11640,
+      "loss_bearing_token_count": 11640,
+      "content_hash": "7dc911c5257ad268983b1f83c09ed6b8c9d37e93d5f3a2b0afb73b5596755a60",
+      "licenses": [
+        "odc-by-1.0"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "registry_member",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "REJECTED",
+        "reasons": [
+          "eval_overlap:is_eval_data",
+          "contaminated:registry_member"
+        ]
+      }
+    },
+    {
+      "shard_id": "indic.val-indic.00.456eded7ed99",
+      "capability_lane": "indic",
+      "token_count": 9711,
+      "loss_bearing_token_count": 9711,
+      "content_hash": "456eded7ed99736e0c27a4579c62556688f823952c1a488f1cba584187a55ae4",
+      "licenses": [
+        "cc-by-sa-4.0"
+      ],
+      "language_and_script": [
+        "hin_Deva"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "registry_member",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "pending",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-test.00.04a8b9794b40",
+      "capability_lane": "stem_math",
+      "token_count": 4069,
+      "loss_bearing_token_count": 2761,
+      "content_hash": "04a8b9794b40352e8579dab26227228d00a72803d0306e3a9ed9af61653ab1b1",
+      "licenses": [
+        "mit"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "registry_member",
+      "never_train": true,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "REJECTED",
+        "reasons": [
+          "eval_overlap:is_eval_data",
+          "contaminated:registry_member",
+          "never_train_flag"
+        ]
+      }
+    },
+    {
+      "shard_id": "stem_math.gsm8k-test.01.913dc677c290",
+      "capability_lane": "stem_math",
+      "token_count": 3938,
+      "loss_bearing_token_count": 2668,
+      "content_hash": "913dc677c290400015926556ebfbdf6c2bc6db3d33215c5363795679f4c7e874",
+      "licenses": [
+        "mit"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "registry_member",
+      "never_train": true,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "pending",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "stem_math.mmlu-test.00.d63fdd941c3a",
+      "capability_lane": "stem_math",
+      "token_count": 1439,
+      "loss_bearing_token_count": 0,
+      "content_hash": "d63fdd941c3a903ef635e6965ff7e16ec7496a62eedd08648293ba49815d1136",
+      "licenses": [
+        "mit"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "registry_member",
+      "never_train": true,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "pending",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "stem_math.mmlu-test.01.c640a4304a12",
+      "capability_lane": "stem_math",
+      "token_count": 1468,
+      "loss_bearing_token_count": 0,
+      "content_hash": "c640a4304a1226503fe81bece9377f52477a66e7afedea0454636786bacbecb7",
+      "licenses": [
+        "mit"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "registry_member",
+      "never_train": true,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "pending",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "stem_math.mmlu-test.02.d667c4e79f22",
+      "capability_lane": "stem_math",
+      "token_count": 1348,
+      "loss_bearing_token_count": 0,
+      "content_hash": "d667c4e79f22fa60f1b267de956e332851af214433a2c70c5703f3dd24eb520a",
+      "licenses": [
+        "mit"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "registry_member",
+      "never_train": true,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [],
+      "admission": {
+        "verdict": "pending",
+        "reasons": []
+      }
+    },
+    {
+      "shard_id": "general_web.fineweb-edu.90.aa1351207ada",
+      "capability_lane": "general_web",
+      "token_count": 2853,
+      "loss_bearing_token_count": 2853,
+      "content_hash": "aa1351207ada2c6bbe3a86d427405eafc4615dde05cbf6cbee8ebbbf5acbec1d",
+      "licenses": [
+        "odc-by-1.0"
+      ],
+      "language_and_script": [
+        "eng_Latn"
+      ],
+      "dedup_status": "unique",
+      "contamination_status": "overlap:cais/mmlu",
+      "never_train": false,
+      "reserved_for_anneal": false,
+      "parent_shard_ids": [
+        "general_web.fineweb-edu.00.729755721d58"
+      ],
+      "admission": {
+        "verdict": "REJECTED",
+        "reasons": [
+          "eval_overlap:overlap:cais/mmlu",
+          "contaminated:overlap:cais/mmlu"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,264 @@
+{
+  "shard_id": "general_web.val-web.00.7dc911c5257a",
+  "source_ids": [
+    "val-web"
+  ],
+  "doc_ids": [
+    "val-web:5000",
+    "val-web:5001",
+    "val-web:5002",
+    "val-web:5003",
+    "val-web:5004",
+    "val-web:5005",
+    "val-web:5006",
+    "val-web:5007",
+    "val-web:5008",
+    "val-web:5009",
+    "val-web:5010",
+    "val-web:5011",
+    "val-web:5012",
+    "val-web:5013",
+    "val-web:5014",
+    "val-web:5015",
+    "val-web:5016",
+    "val-web:5017",
+    "val-web:5018",
+    "val-web:5019"
+  ],
+  "tokenizer_hash": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "token_count": 11640,
+  "language_and_script": [
+    "eng_Latn"
+  ],
+  "capability_lane": "general_web",
+  "license_and_provenance_tier": {
+    "licenses": [
+      "odc-by-1.0"
+    ],
+    "tiers": [
+      "?"
+    ]
+  },
+  "cleaning_pipeline_hash": "acc147c1a129c956cd862084c9b1ec4337ac4b6b331814428aeb530f50cbb72a",
+  "dedup_status": "unique",
+  "contamination_status": "registry_member",
+  "eval_overlap_status": "is_eval_data",
+  "content_hash": "7dc911c5257ad268983b1f83c09ed6b8c9d37e93d5f3a2b0afb73b5596755a60",
+  "parent_shard_ids": [],
+  "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+  "loss_bearing_token_count": 11640,
+  "n_samples": 20,
+  "docs": [
+    {
+      "doc_id": "val-web:5000",
+      "sample_index": 0,
+      "token_start": 0,
+      "token_end": 698,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 698
+    },
+    {
+      "doc_id": "val-web:5001",
+      "sample_index": 1,
+      "token_start": 698,
+      "token_end": 1791,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 1093
+    },
+    {
+      "doc_id": "val-web:5002",
+      "sample_index": 2,
+      "token_start": 1791,
+      "token_end": 2070,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 279
+    },
+    {
+      "doc_id": "val-web:5003",
+      "sample_index": 3,
+      "token_start": 2070,
+      "token_end": 2436,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 366
+    },
+    {
+      "doc_id": "val-web:5004",
+      "sample_index": 4,
+      "token_start": 2436,
+      "token_end": 2852,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 416
+    },
+    {
+      "doc_id": "val-web:5005",
+      "sample_index": 5,
+      "token_start": 2852,
+      "token_end": 3639,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 787
+    },
+    {
+      "doc_id": "val-web:5006",
+      "sample_index": 6,
+      "token_start": 3639,
+      "token_end": 4265,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 626
+    },
+    {
+      "doc_id": "val-web:5007",
+      "sample_index": 7,
+      "token_start": 4265,
+      "token_end": 4895,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 630
+    },
+    {
+      "doc_id": "val-web:5008",
+      "sample_index": 8,
+      "token_start": 4895,
+      "token_end": 5832,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 937
+    },
+    {
+      "doc_id": "val-web:5009",
+      "sample_index": 9,
+      "token_start": 5832,
+      "token_end": 6129,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 297
+    },
+    {
+      "doc_id": "val-web:5010",
+      "sample_index": 10,
+      "token_start": 6129,
+      "token_end": 6637,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 508
+    },
+    {
+      "doc_id": "val-web:5011",
+      "sample_index": 11,
+      "token_start": 6637,
+      "token_end": 6900,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 263
+    },
+    {
+      "doc_id": "val-web:5012",
+      "sample_index": 12,
+      "token_start": 6900,
+      "token_end": 7140,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 240
+    },
+    {
+      "doc_id": "val-web:5013",
+      "sample_index": 13,
+      "token_start": 7140,
+      "token_end": 7548,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 408
+    },
+    {
+      "doc_id": "val-web:5014",
+      "sample_index": 14,
+      "token_start": 7548,
+      "token_end": 8399,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 851
+    },
+    {
+      "doc_id": "val-web:5015",
+      "sample_index": 15,
+      "token_start": 8399,
+      "token_end": 9178,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 779
+    },
+    {
+      "doc_id": "val-web:5016",
+      "sample_index": 16,
+      "token_start": 9178,
+      "token_end": 9917,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 739
+    },
+    {
+      "doc_id": "val-web:5017",
+      "sample_index": 17,
+      "token_start": 9917,
+      "token_end": 11262,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 1345
+    },
+    {
+      "doc_id": "val-web:5018",
+      "sample_index": 18,
+      "token_start": 11262,
+      "token_end": 11503,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 241
+    },
+    {
+      "doc_id": "val-web:5019",
+      "sample_index": 19,
+      "token_start": 11503,
+      "token_end": 11640,
+      "language_and_script": "eng_Latn",
+      "license": "ODC-By-1.0",
+      "provenance_tier": null,
+      "n_target_tokens": 137
+    }
+  ],
+  "reserved_for_anneal": false,
+  "never_train": false,
+  "gradient_bearing": false,
+  "admission": {
+    "verdict": "REJECTED",
+    "reasons": [
+      "eval_overlap:is_eval_data",
+      "contaminated:registry_member"
+    ]
+  },
+  "shard_kind": "validation"
+}

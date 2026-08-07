@@ -1,0 +1,260 @@
+{
+  "shard_id": "indic.wikipedia-mr.00.1e9fff8aaef2",
+  "source_ids": [
+    "wikipedia-mr"
+  ],
+  "doc_ids": [
+    "wikipedia-mr:0",
+    "wikipedia-mr:1",
+    "wikipedia-mr:10",
+    "wikipedia-mr:11",
+    "wikipedia-mr:12",
+    "wikipedia-mr:13",
+    "wikipedia-mr:14",
+    "wikipedia-mr:15",
+    "wikipedia-mr:16",
+    "wikipedia-mr:17",
+    "wikipedia-mr:18",
+    "wikipedia-mr:19",
+    "wikipedia-mr:2",
+    "wikipedia-mr:20",
+    "wikipedia-mr:21",
+    "wikipedia-mr:22",
+    "wikipedia-mr:23",
+    "wikipedia-mr:24",
+    "wikipedia-mr:25",
+    "wikipedia-mr:26"
+  ],
+  "tokenizer_hash": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "token_count": 18640,
+  "language_and_script": [
+    "mar_Deva"
+  ],
+  "capability_lane": "indic",
+  "license_and_provenance_tier": {
+    "licenses": [
+      "cc-by-sa-4.0"
+    ],
+    "tiers": [
+      "A"
+    ]
+  },
+  "cleaning_pipeline_hash": "acc147c1a129c956cd862084c9b1ec4337ac4b6b331814428aeb530f50cbb72a",
+  "dedup_status": "unique",
+  "contamination_status": "clean",
+  "eval_overlap_status": "clean",
+  "content_hash": "1e9fff8aaef2018e48f288f4201af5273e3c135c3cc77dffa189e854b919463d",
+  "parent_shard_ids": [],
+  "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+  "loss_bearing_token_count": 18640,
+  "n_samples": 20,
+  "docs": [
+    {
+      "doc_id": "wikipedia-mr:0",
+      "sample_index": 0,
+      "token_start": 0,
+      "token_end": 721,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 721
+    },
+    {
+      "doc_id": "wikipedia-mr:1",
+      "sample_index": 1,
+      "token_start": 721,
+      "token_end": 1157,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 436
+    },
+    {
+      "doc_id": "wikipedia-mr:10",
+      "sample_index": 2,
+      "token_start": 1157,
+      "token_end": 2761,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1604
+    },
+    {
+      "doc_id": "wikipedia-mr:11",
+      "sample_index": 3,
+      "token_start": 2761,
+      "token_end": 2997,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 236
+    },
+    {
+      "doc_id": "wikipedia-mr:12",
+      "sample_index": 4,
+      "token_start": 2997,
+      "token_end": 3093,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 96
+    },
+    {
+      "doc_id": "wikipedia-mr:13",
+      "sample_index": 5,
+      "token_start": 3093,
+      "token_end": 3147,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 54
+    },
+    {
+      "doc_id": "wikipedia-mr:14",
+      "sample_index": 6,
+      "token_start": 3147,
+      "token_end": 5014,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1867
+    },
+    {
+      "doc_id": "wikipedia-mr:15",
+      "sample_index": 7,
+      "token_start": 5014,
+      "token_end": 5928,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 914
+    },
+    {
+      "doc_id": "wikipedia-mr:16",
+      "sample_index": 8,
+      "token_start": 5928,
+      "token_end": 6347,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 419
+    },
+    {
+      "doc_id": "wikipedia-mr:17",
+      "sample_index": 9,
+      "token_start": 6347,
+      "token_end": 8179,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1832
+    },
+    {
+      "doc_id": "wikipedia-mr:18",
+      "sample_index": 10,
+      "token_start": 8179,
+      "token_end": 8395,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 216
+    },
+    {
+      "doc_id": "wikipedia-mr:19",
+      "sample_index": 11,
+      "token_start": 8395,
+      "token_end": 9680,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1285
+    },
+    {
+      "doc_id": "wikipedia-mr:2",
+      "sample_index": 12,
+      "token_start": 9680,
+      "token_end": 11306,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1626
+    },
+    {
+      "doc_id": "wikipedia-mr:20",
+      "sample_index": 13,
+      "token_start": 11306,
+      "token_end": 11534,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 228
+    },
+    {
+      "doc_id": "wikipedia-mr:21",
+      "sample_index": 14,
+      "token_start": 11534,
+      "token_end": 13201,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1667
+    },
+    {
+      "doc_id": "wikipedia-mr:22",
+      "sample_index": 15,
+      "token_start": 13201,
+      "token_end": 13284,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 83
+    },
+    {
+      "doc_id": "wikipedia-mr:23",
+      "sample_index": 16,
+      "token_start": 13284,
+      "token_end": 14788,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1504
+    },
+    {
+      "doc_id": "wikipedia-mr:24",
+      "sample_index": 17,
+      "token_start": 14788,
+      "token_end": 14984,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 196
+    },
+    {
+      "doc_id": "wikipedia-mr:25",
+      "sample_index": 18,
+      "token_start": 14984,
+      "token_end": 16705,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1721
+    },
+    {
+      "doc_id": "wikipedia-mr:26",
+      "sample_index": 19,
+      "token_start": 16705,
+      "token_end": 18640,
+      "language_and_script": "mar_Deva",
+      "license": "CC-BY-SA-4.0",
+      "provenance_tier": "A",
+      "n_target_tokens": 1935
+    }
+  ],
+  "reserved_for_anneal": false,
+  "never_train": false,
+  "gradient_bearing": true,
+  "admission": {
+    "verdict": "ADMITTED",
+    "reasons": []
+  }
+}

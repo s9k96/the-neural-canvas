@@ -1,0 +1,30 @@
+{
+  "repo": "sarvamai/sarvam-1",
+  "file": "tokenizer.json",
+  "frozen_sha256": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "observed_sha256": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "verified": true,
+  "resolved_path": "C:\\Users\\BIPLOVE\\.cache\\huggingface\\hub\\models--sarvamai--sarvam-1\\snapshots\\e9607337286ddf496d4a2562b194e489dcf3feea\\tokenizer.json",
+  "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+  "true_vocab_size": 68096,
+  "special_tokens": {
+    "unk": 0,
+    "bos": 1,
+    "eos": 2,
+    "pad": 3
+  },
+  "cleaning_pipeline_hash": "acc147c1a129c956cd862084c9b1ec4337ac4b6b331814428aeb530f50cbb72a",
+  "cleaning_pipeline_version": "s6-clean-1",
+  "prose_only_ghost_strip_lanes": [
+    "general_web",
+    "indic",
+    "long_context"
+  ],
+  "model_vocab": 2048,
+  "remap_sha256": "f24b110eb520586a33ceba97de33fd8a19953f8c7b6e9e1ccce31a672dcb6170",
+  "true_vocab": 68096,
+  "coverage": 0.771658,
+  "unk_bucket_model_id": 0,
+  "pad_model_id": 3,
+  "eos_model_id": 2
+}
