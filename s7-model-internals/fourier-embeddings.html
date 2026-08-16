@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neural Canvas — Words Made of Waves</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <link rel="stylesheet" href="../shared.css" />
+    <style>
+        /* ---- palette ------------------------------------------------------------
+           Reuses this site's validated categorical hues (the same four s6 documented).
+           Re-validated for this page's pairing with scripts/validate_palette.js
+           --mode dark: lightness band PASS, chroma floor PASS, worst adjacent CVD
+           dE 8.4 (protan), worst adjacent normal-vision dE 19.8, all >= 3:1 contrast.
+           Kronecker is always blue and Fourier always orange, everywhere on the page.
+           Status hues are reserved for correct/wrong and never used for a series.  */
+        .viz {
+            --kron: #3987e5;
+            --four: #d95926;
+            --good: #199e70;
+            --amber: #c98500;
+            --ok: #0ca30c;
+            --crit: #d03b3b;
+            --grid: #2c2c2a;
+            --axis: #45453f;
+        }
+
+        .report-section { margin: 0 auto 20px; max-width: 1040px; text-align: left; }
+        .report-section h2 { text-align: left; font-size: 20px; margin: 0 0 10px; letter-spacing: 0; }
+        .report-section h2 .num { color: var(--accent); font-family: var(--font-mono); font-size: 15px; margin-right: 10px; }
+        .report-section h3 { font-size: 13.5px; color: var(--text); margin: 22px 0 8px; }
+        .report-section p { color: var(--muted); font-size: 14.5px; line-height: 1.7; margin: 0 0 12px; }
+        .report-section p:last-child { margin-bottom: 0; }
+        .report-section strong { color: var(--text); font-weight: 600; }
+        .report-lead { font-size: 15.5px !important; color: var(--text) !important; }
+        code.mono { font-family: var(--font-mono); background: rgba(255, 255, 255, .06); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--text); }
+        .muted-note { color: var(--muted); font-size: 12.5px; }
+        .pill { display: inline-block; font-size: 10px; font-weight: 700; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 1px 8px; letter-spacing: .04em; text-transform: uppercase; }
+
+        .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 14px 0 4px; }
+        .tile { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 13px 15px; }
+        .tile .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .tile .v { font-size: 24px; font-weight: 700; color: var(--text); margin-top: 4px; line-height: 1.1; }
+        .tile .v small { font-size: 13px; font-weight: 500; color: var(--muted); }
+
+        /* controls */
+        .ctl-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin: 4px 0 16px; }
+        .ctl { display: flex; flex-direction: column; gap: 5px; }
+        .ctl label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .ctl input[type=text] { background: rgba(255, 255, 255, .05); border: 1px solid var(--panel-border); color: var(--text); border-radius: 8px; padding: 7px 10px; font-size: 15px; font-family: var(--font-sans); min-width: 200px; }
+        .ctl input[type=range] { width: 190px; accent-color: var(--accent); }
+        .ctl .val { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
+        .chipset { display: flex; gap: 6px; flex-wrap: wrap; }
+        .chip { background: rgba(255, 255, 255, .05); border: 1px solid var(--panel-border); color: var(--muted); border-radius: 999px; padding: 4px 11px; font-size: 12px; cursor: pointer; font-family: var(--font-sans); }
+        .chip:hover { color: var(--text); border-color: var(--muted); }
+        .chip.on { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+
+        .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+        .box { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px; min-width: 0; }
+        .box h4 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+        .box .sub { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+        .scroll-x { overflow-x: auto; }
+
+        .bytes { display: flex; flex-wrap: wrap; gap: 4px; font-family: var(--font-mono); font-size: 11.5px; }
+        .byte { border: 1px solid var(--panel-border); border-radius: 5px; padding: 2px 6px; background: rgba(255, 255, 255, .04); }
+        .byte .p { color: var(--muted); font-size: 9.5px; }
+        .byte.dropped { opacity: .32; border-style: dashed; text-decoration: line-through; }
+        .byte.wrong { border-color: var(--crit); color: #ffb4b4; background: rgba(208, 59, 59, .16); }
+        .byte.right { border-color: var(--good); }
+
+        .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); margin-top: 8px; }
+        .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+
+        table.cmp { width: 100%; border-collapse: collapse; font-size: 13px; }
+        table.cmp th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--panel-border); }
+        table.cmp td { padding: 7px 8px; border-bottom: 1px solid rgba(255, 255, 255, .06); color: var(--muted); }
+        table.cmp td.n { font-family: var(--font-mono); color: var(--text); text-align: right; white-space: nowrap; }
+        table.cmp tr.hl td { background: rgba(217, 89, 38, .1); color: var(--text); }
+
+        .verdict { border-left: 3px solid var(--accent); padding: 8px 0 8px 13px; margin: 14px 0 4px; font-size: 14.5px; color: var(--text); }
+        .verdict.good { border-left-color: var(--good); }
+        .verdict.bad { border-left-color: var(--crit); }
+        canvas { max-width: 100%; display: block; }
+        svg { max-width: 100%; display: block; }
+        .footnote { max-width: 1040px; margin: 26px auto 0; font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <button class="nav-toggle" id="sidebarToggle" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="7" x2="20" y2="7"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="17" x2="20" y2="17"></line>
+            </svg>
+        </button>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Sections</h3>
+                <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">&times;</button>
+            </div>
+            <div class="nav-list"></div>
+        </aside>
+
+        <main class="content viz">
+            <div class="wrapper">
+                <h1>Words Made of Waves</h1>
+                <div class="subtitle">The Kronecker embedding builds a token's vector by marking a
+                    <strong>grid</strong> of 256 byte values &times; 32 positions &mdash; 8,192 cells, carried whole,
+                    with everything past byte 32 thrown away. This page builds the same thing out of
+                    <strong>waves that add together</strong>, and the grid stops being necessary. Every number and
+                    every drawing below is computed in your browser from the bytes you type.
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">01</span>The problem: a bag of bytes has no order</h2>
+                    <p class="report-lead">An embedding has to turn a token into one vector. A token is a sequence of
+                        bytes, so the real job is to combine <strong>which byte</strong> with <strong>which
+                            position</strong> into a single object without losing which went with which. That is called
+                        <strong>binding</strong>, and everything else on this page follows from how you do it.</p>
+                    <p>Here is why you cannot skip it. Add the bytes up with no notion of position and the sum forgets
+                        the order completely:</p>
+                    <div class="split">
+                        <div class="box">
+                            <h4>Unbound &mdash; just add the bytes</h4>
+                            <p class="sub">position ignored</p>
+                            <div id="bagOut"></div>
+                        </div>
+                        <div class="box">
+                            <h4>Bound &mdash; each byte tagged with its slot</h4>
+                            <p class="sub">position carried</p>
+                            <div id="bindOut"></div>
+                        </div>
+                    </div>
+                    <div id="bagVerdict"></div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">02</span>Kronecker binds by building a grid</h2>
+                    <p>Make a table 256 rows tall (one per byte value) and 32 columns wide (one per position). For each
+                        byte, mark the cell at (its value, its position). That is the outer product, and it is
+                        <strong>perfectly unambiguous</strong> &mdash; every (byte, position) pair gets a private cell,
+                        so nothing can ever be confused with anything else.</p>
+                    <p>The cost is written into its shape. Type into the box and watch how few cells actually get
+                        marked, and how many are carried regardless.</p>
+
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label for="kWord">Token</label>
+                            <input type="text" id="kWord" value="अंतर्राष्ट्रीयकरण" />
+                        </div>
+                        <div class="ctl">
+                            <label>Try one</label>
+                            <div class="chipset" id="kChips"></div>
+                        </div>
+                    </div>
+
+                    <div class="box scroll-x">
+                        <h4>The 256 &times; 32 grid</h4>
+                        <p class="sub">every column past the black line is dropped &mdash; <code
+                                class="mono">L = min(len(bytes), 32)</code></p>
+                        <canvas id="kGrid" width="1024" height="300"></canvas>
+                        <div class="legend">
+                            <span><i style="background:var(--kron)"></i>marked cell</span>
+                            <span><i style="background:var(--crit)"></i>byte dropped by the 32-byte crop</span>
+                            <span><i style="background:var(--grid)"></i>carried but empty</span>
+                        </div>
+                    </div>
+
+                    <div class="tiles" id="kTiles"></div>
+                    <div id="kVerdict"></div>
+
+                    <h3>What the crop costs</h3>
+                    <p>These two Hindi words are genuinely different. Both are longer than 32 bytes, and UTF-8 spends
+                        3 bytes per Devanagari character, so the window holds about ten characters &mdash; which they
+                        share. Their grids are <strong>identical</strong>, so their embeddings are identical, forever.
+                    </p>
+                    <div class="split" id="collisionDemo"></div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">03</span>Fourier binds by rotating a wave</h2>
+                    <p class="report-lead">Instead of a grid, give <strong>every byte value its own pitch</strong> —
+                        think of each byte as a tuning fork. A word is what you hear when its tones sound together.
+                        One room, however many voices, and the room does not get bigger when more people speak.</p>
+                    <p>A pitch is not a single number &mdash; it is a <strong>phase at every frequency</strong>. The
+                        code is a stack of <strong id="chanCount">129</strong> such frequencies, called
+                        <strong>channels</strong>, so a single byte is not one arrow but
+                        <span id="chanCount2">129</span> of them, one per channel. A channel has nothing to do with
+                        how long your word is.</p>
+                    <p>Below, <strong>each circle is one channel</strong>, and inside it each arrow is one byte of
+                        your word, drawn <strong>tip to tail</strong>. Position is <em>how far the arrow is
+                            rotated</em>: the byte in slot 0 gets no rotation, slot 1 gets one step, and so on. The
+                        thick arrow is their sum. Those sums, across every channel, <em>are</em> the code.</p>
+                    <p><strong>Two dimensions, and they are not the same one.</strong>
+                        <code class="mono">d</code> is the width of this <em>code</em> &mdash; frozen, never trained,
+                        and the thing every slider on this page moves.
+                        <code class="mono">d_model</code> (8,096 for V5) is the embedding the transformer actually
+                        consumes, and it never changes. One learned
+                        <code class="mono">Linear(d &rarr; d_model)</code> sits between them, so
+                        <code class="mono">d</code> decides how much survives into that projection and how many
+                        parameters it has &mdash; <code class="mono">d &times; d_model</code> &mdash; not what the
+                        model receives.</p>
+                    <p>Only four circles are drawn because <span id="chanCount3">129</span> will not fit on a screen.
+                        <strong>Why so many?</strong> One channel is a weak identifier &mdash; two unrelated words
+                        could land on the same resultant by luck. To collide in
+                        <span id="chanCount4">129</span> channels <em>at once</em> is what does not happen, and that
+                        is where the code's discriminating power comes from.</p>
+
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label for="fWord">Token</label>
+                            <input type="text" id="fWord" value="train" />
+                        </div>
+                        <div class="ctl">
+                            <label>Try one</label>
+                            <div class="chipset" id="fChips"></div>
+                        </div>
+                    </div>
+
+                    <div class="box scroll-x">
+                        <h4>Adding the waves &mdash; 4 of the code's <span id="chanCount5">129</span> channels</h4>
+                        <p class="sub">sampled across the range, not the first four. Each arrow is one byte, rotated
+                            by its position; the thick arrow is their sum. <strong>Every channel holds every
+                                byte</strong> &mdash; a 5-byte word puts 5 arrows in all
+                            <span id="chanCount6">129</span> circles.</p>
+                        <div id="phasors"></div>
+                        <div class="legend">
+                            <span><i style="background:rgba(255,255,255,.6)"></i>a byte's contribution (fainter =
+                                later position)</span>
+                            <span><i style="background:var(--four)"></i>the sum &mdash; this word, at this
+                                frequency</span>
+                        </div>
+                    </div>
+
+                    <div class="box" style="margin-top:16px">
+                        <h4>The finished code</h4>
+                        <p class="sub">all <span id="nfLabel">129</span> channels, turned back into a signal &mdash;
+                            this vector is what the projection sees</p>
+                        <canvas id="waveCanvas" width="1000" height="150"></canvas>
+                        <p class="muted-note" style="margin-top:8px">It looks like noise, and that is exactly the
+                            point: the word's identity is <strong>spread thinly across every channel</strong> rather
+                            than concentrated in a handful of cells. That is what lets a small vector hold a long
+                            word &mdash; and also what makes section 05 the price.</p>
+                    </div>
+                    <div id="fVerdict"></div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">04</span>Unbinding: asking the code what it contains</h2>
+                    <p>Rotating is reversible, and that is the whole trick. To ask <em>&ldquo;was byte
+                            <code class="mono">v</code> at position <code class="mono">p</code>?&rdquo;</em> you rotate
+                        the sum <strong>backwards</strong> by that byte-and-position angle and see how far it leans to
+                        the right. If that byte really was there, its arrow lands pointing due east and the lean is
+                        strong. If it was not, everything stays scattered and the lean is near zero.</p>
+
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label for="probePos">Probe position</label>
+                            <input type="range" id="probePos" min="0" max="4" value="0" />
+                            <span class="val" id="probePosVal">0</span>
+                        </div>
+                        <div class="ctl">
+                            <label>Probe byte</label>
+                            <div class="chipset" id="probeChips"></div>
+                        </div>
+                    </div>
+
+                    <div class="split">
+                        <div class="box">
+                            <h4>Rotated back by the probe</h4>
+                            <p class="sub">arrows from the centre, so alignment is visible</p>
+                            <div id="probePhasor"></div>
+                        </div>
+                        <div class="box">
+                            <h4>How strongly it rings</h4>
+                            <p class="sub">score for every candidate byte at this position</p>
+                            <canvas id="probeBars" width="480" height="170"></canvas>
+                            <div id="probeVerdict"></div>
+                        </div>
+                    </div>
+
+                    <h3>Reading the whole word back</h3>
+                    <p>Do that for all 256 candidates at every position, take the winner each time, and the byte
+                        string falls out. <strong>No table is consulted and nothing is stored per token.</strong> This
+                        is the property the grid does not have, and it is what would let an output head be replaced.
+                    </p>
+                    <div class="box">
+                        <h4>Decoded</h4>
+                        <div id="decodeOut"></div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">05</span>The catch: everyone is talking at once</h2>
+                    <p class="report-lead">You are not getting something for nothing. <strong>Circular convolution is a
+                            compressed tensor product</strong> &mdash; it takes that same 8,192-cell grid and folds it
+                        down into <code class="mono">d</code> dimensions in a way that keeps unbinding
+                        <em>approximately</em> possible.</p>
+                    <p>When you tune to one voice you also hear a little leakage from every other voice in the room.
+                        Each leak is about <code class="mono">1/&radic;d</code> and there are <code
+                            class="mono">L</code> of them, so the signal-to-noise ratio goes as <strong><code
+                                class="mono">&radic;(d/L)</code></strong>. Shrink the room or add voices and the
+                        transcript starts coming back wrong. Drag both and watch it break.</p>
+                    <p>This is the <strong>channels</strong> of section 03 seen from the other side. Raising
+                        <code class="mono">d</code> raises the channel count with it &mdash; d=128 listens on 65
+                        pitches, d=2048 on 1,025 &mdash; and every extra channel is one more independent measurement
+                        of the same superposition, so the leakage averages further down. <code
+                            class="mono">d</code> is really <em>how many pitches am I listening on</em>.</p>
+
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label for="capD">Code dimension d</label>
+                            <input type="range" id="capD" min="0" max="5" value="3" />
+                            <span class="val" id="capDVal">512</span>
+                        </div>
+                        <div class="ctl">
+                            <label for="capWord">Token to decode</label>
+                            <input type="text" id="capWord" value="अंतर्राष्ट्रीयकरण" />
+                        </div>
+                        <div class="ctl">
+                            <label>Try one</label>
+                            <div class="chipset" id="capChips"></div>
+                        </div>
+                    </div>
+
+                    <div class="box">
+                        <h4>Decode attempt at this dimension</h4>
+                        <p class="sub">every byte the code gives back, checked against the truth</p>
+                        <div id="capBytes"></div>
+                        <div class="legend">
+                            <span><i style="background:var(--good)"></i>recovered correctly</span>
+                            <span><i style="background:var(--crit)"></i>wrong &mdash; drowned in crosstalk</span>
+                        </div>
+                        <div id="capVerdict"></div>
+                    </div>
+
+                    <div class="box" style="margin-top:16px">
+                        <h4>Where it breaks</h4>
+                        <p class="sub">byte accuracy against code dimension, measured live on a mixed sample of real
+                            tokens</p>
+                        <div id="capChart"></div>
+                    </div>
+
+                    <p class="muted-note" style="margin-top:14px">This is why the two capabilities cost differently.
+                        Telling two rooms apart is far easier than transcribing everyone in one, so
+                        <strong>discrimination</strong> works down at d=64 while <strong>byte-exact decoding</strong>
+                        needs d&nbsp;&asymp;&nbsp;20&middot;L.</p>
+
+                    <h3>So is bigger d simply better?</h3>
+                    <p>No &mdash; only decoding follows <code class="mono">&radic;(d/L)</code>. Everything an
+                        <em>input</em> embedding actually needs saturates almost immediately, and past that point
+                        extra <code class="mono">d</code> is parameters spent for nothing.</p>
+                    <div class="box scroll-x">
+                        <table class="cmp">
+                            <thead>
+                                <tr><th>what you measure</th><th style="text-align:right">d=128</th>
+                                    <th style="text-align:right">d=2048</th><th>verdict</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hl"><td>byte decoding &mdash; read the word back</td><td class="n">57%</td>
+                                    <td class="n">100%</td><td>improves with d</td></tr>
+                                <tr><td>collision-free across the vocabulary</td><td class="n">0 lost</td>
+                                    <td class="n">0 lost</td><td>already solved at d=64</td></tr>
+                                <tr><td>separation margin (max cosine)</td><td class="n">0.982</td>
+                                    <td class="n">0.974</td><td>essentially flat</td></tr>
+                                <tr><td>model accuracy on the capacity test</td><td class="n">100%</td>
+                                    <td class="n">100%</td><td>maxed by d=256</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="muted-note" style="margin-top:12px">You buy large <code class="mono">d</code> for one
+                        reason only: you want the code to be <strong>invertible</strong>, so a decodable vector could
+                        stand in for the output head. For an input path, d=64&ndash;256 is the whole story. Whether
+                        larger <code class="mono">d</code> helps <em>training loss</em> is untested here &mdash; that
+                        needs a real training run.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">06</span>What it costs, side by side</h2>
+                    <p>At V5's reference width (<code class="mono">d_model = 8096</code>), the input path is one shared
+                        projection from the code into the model. Its size is <code class="mono">code_dim &times;
+                            8096</code>, so <strong>code_dim is the entire bill</strong>. Kronecker's is forced by
+                        arithmetic; the Fourier one is chosen.</p>
+                    <div class="box scroll-x">
+                        <table class="cmp" id="billTable"></table>
+                    </div>
+                    <div class="verdict good" style="margin-top:16px">Zero collisions across all 63,997 tokens at
+                        <strong>d&nbsp;=&nbsp;64</strong> &mdash; 128&times; smaller than the grid it replaces &mdash;
+                        or full byte-exact invertibility at d&nbsp;=&nbsp;2048, for the same budget the dynamic
+                        Kronecker codec needs just to avoid collisions.
+                    </div>
+                </div>
+
+                <div class="footnote">
+                    <p><span class="pill">Method</span> &nbsp;Everything here is recomputed live in your browser from
+                        the bytes you type &mdash; the phasors, the decode, the accuracy curve. It is the same
+                        construction as <code class="mono">fourier/fourier.py</code>, with its own random seed, so the
+                        numbers are of the same character but not bit-identical to
+                        <code class="mono">fourier/submission_artifacts/evidence.json</code>. <strong>The Python run is
+                            the proof; this page is the explanation.</strong> The collision counts, decode rates and
+                        parameter figures quoted as fixed numbers come from that run over the real
+                        <code class="mono">sarvamai/sarvam-1</code> vocabulary (68,096 tokens, sha256
+                        <code class="mono">bb5115a3…</code>), not from this page's sample.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>window.PAGE_ID = 'fourier-embeddings'; window.ROOT_PATH = '../';</script>
+    <script src="../shared.js"></script>
+    <script>
+        'use strict';
+        // ---------- tiny seeded PRNG so the page is deterministic ----------
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+        const TE = new TextEncoder();
+        const bytesOf = s => Array.from(TE.encode(s));
+        const TAU = Math.PI * 2;
+
+        // ---------- the codec, same construction as fourier.py ----------
+        class Fourier {
+            constructor(d, seed = 20260815) {
+                this.d = d; this.nf = d / 2 + 1;
+                const r = mulberry32(seed);
+                this.bp = [];
+                for (let v = 0; v < 256; v++) {
+                    const a = new Float64Array(this.nf);
+                    for (let k = 0; k < this.nf; k++) a[k] = r() * TAU;
+                    this.bp.push(a);
+                }
+                this.pp = new Float64Array(this.nf);
+                for (let k = 0; k < this.nf; k++) this.pp[k] = r() * TAU;
+            }
+            angle(v, p, k) { return this.bp[v][k] + p * this.pp[k]; }
+            spectrum(bytes) {
+                const re = new Float64Array(this.nf), im = new Float64Array(this.nf);
+                const L = Math.max(bytes.length, 1), s = 1 / Math.sqrt(L);
+                for (let p = 0; p < bytes.length; p++) {
+                    const bp = this.bp[bytes[p]];
+                    for (let k = 0; k < this.nf; k++) {
+                        const th = bp[k] + p * this.pp[k];
+                        re[k] += Math.cos(th); im[k] += Math.sin(th);
+                    }
+                }
+                for (let k = 0; k < this.nf; k++) { re[k] *= s; im[k] *= s; }
+                return { re, im };
+            }
+            score(spec, v, p) {                      // Re<spec, conj(probe)>
+                const bp = this.bp[v]; let s = 0;
+                for (let k = 0; k < this.nf; k++) {
+                    const th = bp[k] + p * this.pp[k];
+                    s += spec.re[k] * Math.cos(th) + spec.im[k] * Math.sin(th);
+                }
+                return s / this.nf;
+            }
+            scoreAll(spec, p) {
+                const out = new Float64Array(256);
+                for (let v = 0; v < 256; v++) out[v] = this.score(spec, v, p);
+                return out;
+            }
+            decode(bytes) {
+                const spec = this.spectrum(bytes), out = [];
+                for (let p = 0; p < bytes.length; p++) {
+                    const sc = this.scoreAll(spec, p);
+                    let best = 0;
+                    for (let v = 1; v < 256; v++) if (sc[v] > sc[best]) best = v;
+                    out.push(best);
+                }
+                return out;
+            }
+            signal(spec, n) {                        // naive inverse rFFT, for drawing
+                const out = new Float64Array(n);
+                for (let x = 0; x < n; x++) {
+                    let s = spec.re[0];
+                    for (let k = 1; k < this.nf - 1; k++) {
+                        const a = TAU * k * x / this.d;
+                        s += 2 * (spec.re[k] * Math.cos(a) - spec.im[k] * Math.sin(a));
+                    }
+                    s += spec.re[this.nf - 1] * Math.cos(Math.PI * x);
+                    out[x] = s / this.d;
+                }
+                return out;
+            }
+        }
+
+        const SAMPLES = ['train', 'trainer', 'apple', 'भारत', 'भारतीय', 'తెలుగు', 'বিদ্যালয়ে',
+            'अंतर्राष्ट्रीयकरण', 'अंतर्राष्ट्रीयता', 'ப்பட்டுள்ளது'];
+        const esc = s => String(s).replace(/[&<>"']/g, c =>
+            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const css = n => getComputedStyle(document.querySelector('.viz')).getPropertyValue(n).trim();
+
+        function chips(host, items, onPick) {
+            host.innerHTML = '';
+            items.forEach(t => {
+                const b = document.createElement('button');
+                b.className = 'chip'; b.textContent = t;
+                b.onclick = () => onPick(t);
+                host.append(b);
+            });
+        }
+
+        // ================= 01 binding problem =================
+        (function () {
+            const bag = document.getElementById('bagOut');
+            const bind = document.getElementById('bindOut');
+            const verdict = document.getElementById('bagVerdict');
+            const words = ['abc', 'cba'];
+            const sum = w => bytesOf(w).reduce((a, b) => a + b, 0);
+            bag.innerHTML = words.map(w =>
+                `<div style="margin-bottom:8px"><code class="mono">${esc(w)}</code>
+                 &nbsp;&rarr;&nbsp; ${bytesOf(w).map(b => `<span class="byte">${b}</span>`).join(' + ')}
+                 &nbsp;=&nbsp; <strong style="color:var(--text)">${sum(w)}</strong></div>`).join('');
+            bind.innerHTML = words.map(w =>
+                `<div style="margin-bottom:8px"><code class="mono">${esc(w)}</code>
+                 &nbsp;&rarr;&nbsp; <span class="bytes" style="display:inline-flex">${bytesOf(w).map((b, i) =>
+                    `<span class="byte">${b}<span class="p">@${i}</span></span>`).join('')}</span></div>`).join('');
+            verdict.innerHTML =
+                `<div class="verdict bad"><strong>Unbound:</strong> <code class="mono">abc</code> and
+                 <code class="mono">cba</code> both total ${sum('abc')}. The vector cannot tell them apart &mdash;
+                 order is gone.</div>
+                 <div class="verdict good"><strong>Bound:</strong> each byte now carries its slot, so the two words
+                 are different objects. Every scheme below is just a different way of doing this one thing.</div>`;
+        })();
+
+        // ================= 02 kronecker grid =================
+        const kGrid = (function () {
+            const input = document.getElementById('kWord');
+            const cv = document.getElementById('kGrid');
+            const ctx = cv.getContext('2d');
+            const tiles = document.getElementById('kTiles');
+            const verdict = document.getElementById('kVerdict');
+            const POS = 32, VALS = 256;
+
+            function utf8SafeTruncate(b, n) {           // same rule as the paper
+                if (b.length <= n) return b.slice();
+                let cut = n;
+                while (cut > 0 && (b[cut] & 0xC0) === 0x80) cut--;
+                return b.slice(0, cut);
+            }
+            function draw(word) {
+                const all = bytesOf(word);
+                const kept = utf8SafeTruncate(all, POS);
+                const W = cv.width, H = cv.height;
+                const cw = W / POS, ch = H / 64;          // 64 value-bands, 4 values each
+                ctx.clearRect(0, 0, W, H);
+                ctx.fillStyle = css('--grid');
+                for (let c = 0; c < POS; c++)
+                    for (let r = 0; r < 64; r++)
+                        ctx.fillRect(c * cw + .5, r * ch + .5, cw - 1.5, ch - 1.5);
+                ctx.fillStyle = css('--kron');
+                kept.forEach((b, p) => {
+                    const r = Math.floor(b / 4);
+                    ctx.fillRect(p * cw + .5, r * ch + .5, cw - 1.5, ch - 1.5);
+                });
+                // the crop line + dropped bytes flagged at the right edge
+                if (all.length > kept.length) {
+                    ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(W - 1.5, 0); ctx.lineTo(W - 1.5, H); ctx.stroke();
+                    ctx.fillStyle = css('--crit');
+                    ctx.fillRect(W - 5, 0, 5, H);
+                }
+                const marked = kept.length, carried = VALS * POS;
+                tiles.innerHTML = [
+                    ['bytes in token', all.length],
+                    ['bytes kept', kept.length + (all.length > kept.length
+                        ? ` <small>of ${all.length}</small>` : '')],
+                    ['cells marked', marked],
+                    ['cells carried', carried.toLocaleString()],
+                    ['grid actually used', (100 * marked / carried).toFixed(2) + '%']
+                ].map(([k, v]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+                verdict.innerHTML = all.length > kept.length
+                    ? `<div class="verdict bad"><strong>${all.length - kept.length} bytes dropped.</strong>
+                       Everything past the window is invisible to the model, and any other token sharing these first
+                       ${kept.length} bytes gets the identical vector.</div>`
+                    : `<div class="verdict"><strong>Nothing dropped here</strong> &mdash; but all
+                       ${carried.toLocaleString()} cells are carried to represent
+                       ${marked} byte${marked === 1 ? '' : 's'}. The grid is the bill, not the token.</div>`;
+            }
+            input.addEventListener('input', () => draw(input.value));
+            chips(document.getElementById('kChips'), ['a', 'apple', 'भारत', 'अंतर्राष्ट्रीयकरण'],
+                t => { input.value = t; draw(t); });
+            draw(input.value);
+            return { utf8SafeTruncate };
+        })();
+
+        // ---- the collision, both codecs side by side ----
+        (function () {
+            const host = document.getElementById('collisionDemo');
+            const a = 'अंतर्राष्ट्रीयकरण', b = 'अंतर्राष्ट्रीयता';
+            const ka = kGrid.utf8SafeTruncate(bytesOf(a), 32).join(',');
+            const kb = kGrid.utf8SafeTruncate(bytesOf(b), 32).join(',');
+            const f = new Fourier(256);
+            const fa = f.spectrum(bytesOf(a)), fb = f.spectrum(bytesOf(b));
+            let dot = 0, na = 0, nb = 0;
+            for (let k = 0; k < f.nf; k++) {
+                dot += fa.re[k] * fb.re[k] + fa.im[k] * fb.im[k];
+                na += fa.re[k] ** 2 + fa.im[k] ** 2; nb += fb.re[k] ** 2 + fb.im[k] ** 2;
+            }
+            const cos = dot / Math.sqrt(na * nb);
+            host.innerHTML =
+                `<div class="box"><h4 style="color:var(--kron)">Kronecker grid, 32-byte window</h4>
+                   <p class="sub">${esc(a)} &nbsp;vs&nbsp; ${esc(b)}</p>
+                   <div class="verdict bad" style="margin:6px 0 0">kept bytes are
+                   <strong>${ka === kb ? 'identical' : 'different'}</strong> &rarr; the two words get
+                   <strong>the same vector</strong>, permanently. No training can separate them.</div></div>
+                 <div class="box"><h4 style="color:var(--four)">Fourier waves, no window</h4>
+                   <p class="sub">every byte contributes, however long the word</p>
+                   <div class="verdict good" style="margin:6px 0 0">codes are <strong>distinct</strong>
+                   (cosine ${cos.toFixed(4)}, not 1.0000) &rarr; the model can tell them apart.</div></div>`;
+        })();
+
+        // ================= 03 phasors =================
+        // Four channels sampled across the code's range, not the first four -- the
+        // point is that they are independent samples of the same superposition.
+        const CH = [1, 33, 65, 97];
+        const fourierBig = new Fourier(256);
+
+        function phasorSvg(word, opts) {
+            const bytes = bytesOf(word).slice(0, 24);
+            const L = Math.max(bytes.length, 1);
+            const R = 62, PAD = 16, size = (R + PAD) * 2;
+            const o = opts || {};
+            const rotBack = o.rotBack;                // {v, p} to unbind by
+            const fan = !!o.fan;                      // arrows from origin, for alignment
+            return CH.map(k => {
+                const cx = size / 2, cy = size / 2;
+                const px = v => cx + v * R, py = v => cy - v * R;
+                let x = 0, y = 0;
+                const arrows = bytes.map((b, p) => {
+                    let th = fourierBig.angle(b, p, k);
+                    if (rotBack) th -= fourierBig.angle(rotBack.v, rotBack.p, k);
+                    const x0 = x, y0 = y;
+                    x += Math.cos(th) / Math.sqrt(L); y += Math.sin(th) / Math.sqrt(L);
+                    return { x0, y0, x1: x, y1: y, p, th };
+                });
+                // Contributions are construction lines, so they stay neutral; the one
+                // coloured mark is the thing the panel is actually about.
+                const parts = arrows.map(a => {
+                    const t = arrows.length > 1 ? a.p / (arrows.length - 1) : 0;
+                    const op = (0.30 + 0.55 * (1 - t)).toFixed(2);
+                    const tip = `<title>byte ${bytes[a.p]} at position ${a.p}</title>`;
+                    if (!fan) {
+                        return `<line x1="${px(a.x0)}" y1="${py(a.y0)}" x2="${px(a.x1)}" y2="${py(a.y1)}"
+                                 stroke="#ffffff" stroke-opacity="${op}" stroke-width="2"
+                                 stroke-linecap="round">${tip}</line>`;
+                    }
+                    const hit = rotBack && a.p === rotBack.p;
+                    const r2 = R * 0.86;
+                    return `<line x1="${cx}" y1="${cy}" x2="${cx + Math.cos(a.th) * r2}"
+                             y2="${cy - Math.sin(a.th) * r2}"
+                             stroke="${hit ? 'var(--accent)' : '#ffffff'}"
+                             stroke-opacity="${hit ? 1 : op}" stroke-width="${hit ? 3.5 : 1.6}"
+                             stroke-linecap="round">${tip}</line>`;
+                }).join('');
+                const mag = Math.hypot(x, y);
+                const eastAxis = fan
+                    ? `<line x1="${cx}" y1="${cy}" x2="${cx + R}" y2="${cy}" stroke="var(--good)"
+                         stroke-width="2" stroke-dasharray="4 3"/>
+                       <text x="${cx + R - 2}" y="${cy - 6}" text-anchor="end" font-size="9.5"
+                         fill="var(--good)">aligned</text>` : '';
+                const sumArrow = fan ? '' :
+                    `<line x1="${cx}" y1="${cy}" x2="${px(x)}" y2="${py(y)}" stroke="var(--four)"
+                       stroke-width="3.5" stroke-linecap="round"/>
+                     <circle cx="${px(x)}" cy="${py(y)}" r="4" fill="var(--four)" stroke="var(--bg)"
+                       stroke-width="2"/>`;
+                return `<figure style="margin:0;display:inline-block;text-align:center">
+                  <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img"
+                       aria-label="frequency channel ${k}, resultant magnitude ${mag.toFixed(2)}">
+                    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--axis)" stroke-width="1"/>
+                    <line x1="${cx - R}" y1="${cy}" x2="${cx + R}" y2="${cy}" stroke="var(--axis)" stroke-width="1"/>
+                    <line x1="${cx}" y1="${cy - R}" x2="${cx}" y2="${cy + R}" stroke="var(--axis)" stroke-width="1"/>
+                    ${eastAxis}${parts}${sumArrow}
+                  </svg>
+                  <figcaption style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">
+                    channel ${k} of ${fourierBig.nf}${fan ? '' : ' &middot; |sum| ' + mag.toFixed(2)}
+                  </figcaption></figure>`;
+            }).join('');
+        }
+
+        const fPanel = (function () {
+            const input = document.getElementById('fWord');
+            const host = document.getElementById('phasors');
+            const wave = document.getElementById('waveCanvas');
+            const verdict = document.getElementById('fVerdict');
+            ['nfLabel', 'chanCount', 'chanCount2', 'chanCount3', 'chanCount4', 'chanCount5',
+                'chanCount6'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = fourierBig.nf;
+                });
+
+            function drawWave(word) {
+                const ctx = wave.getContext('2d');
+                const spec = fourierBig.spectrum(bytesOf(word));
+                const sig = fourierBig.signal(spec, fourierBig.d);
+                const W = wave.width, H = wave.height, mid = H / 2;
+                let mx = 0; for (const v of sig) mx = Math.max(mx, Math.abs(v));
+                mx = mx || 1;
+                ctx.clearRect(0, 0, W, H);
+                ctx.strokeStyle = css('--axis'); ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(W, mid); ctx.stroke();
+                ctx.strokeStyle = css('--four'); ctx.lineWidth = 2; ctx.lineJoin = 'round';
+                ctx.beginPath();
+                sig.forEach((v, i) => {
+                    const x = i / (sig.length - 1) * W, y = mid - v / mx * (mid - 10);
+                    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+                });
+                ctx.stroke();
+            }
+            function render() {
+                const w = input.value || ' ';
+                host.innerHTML = `<div style="display:flex;gap:14px;flex-wrap:wrap">${phasorSvg(w)}</div>`;
+                drawWave(w);
+                const n = bytesOf(w).length;
+                verdict.innerHTML =
+                    `<div class="verdict"><strong>${n} byte${n === 1 ? '' : 's'} &rarr; ${fourierBig.d} numbers.</strong>
+                     Add a byte and the arrows get one more segment &mdash; the circle does not grow, and neither does
+                     the code. That is the whole difference from the grid.</div>`;
+                probe.refresh();
+            }
+            input.addEventListener('input', render);
+            chips(document.getElementById('fChips'), ['a', 'ab', 'ba', 'train', 'trainer', 'भारत'],
+                t => { input.value = t; render(); });
+            return { render, word: () => input.value || ' ' };
+        })();
+
+        // ================= 04 unbinding =================
+        const probe = (function () {
+            const posR = document.getElementById('probePos');
+            const posV = document.getElementById('probePosVal');
+            const chipHost = document.getElementById('probeChips');
+            const phHost = document.getElementById('probePhasor');
+            const bars = document.getElementById('probeBars');
+            const verdict = document.getElementById('probeVerdict');
+            const decodeOut = document.getElementById('decodeOut');
+            let probeByte = null;                       // null => the true byte
+
+            function drawBars(spec, p, trueByte, pick) {
+                const ctx = bars.getContext('2d');
+                const sc = fourierBig.scoreAll(spec, p);
+                const W = bars.width, H = bars.height, base = H - 26;
+                let mx = 0; for (const v of sc) mx = Math.max(mx, Math.abs(v));
+                mx = mx || 1;
+                ctx.clearRect(0, 0, W, H);
+                ctx.strokeStyle = css('--axis'); ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(0, base); ctx.lineTo(W, base); ctx.stroke();
+                const bw = W / 256;
+                for (let v = 0; v < 256; v++) {
+                    const h = Math.abs(sc[v]) / mx * (base - 12);
+                    ctx.fillStyle = v === trueByte ? css('--good')
+                        : (v === pick ? css('--amber') : 'rgba(255,255,255,.16)');
+                    ctx.fillRect(v * bw, sc[v] >= 0 ? base - h : base, Math.max(bw - .6, 1), h);
+                }
+                ctx.fillStyle = css('--muted'); ctx.font = '11px ui-monospace, monospace';
+                ctx.fillText('byte value 0 → 255', 4, H - 8);
+                return sc;
+            }
+            function refresh() {
+                const word = fPanel.word();
+                const bytes = bytesOf(word);
+                const L = Math.max(bytes.length, 1);
+                posR.max = String(Math.max(L - 1, 0));
+                let p = Math.min(+posR.value, L - 1); if (p < 0) p = 0;
+                posR.value = String(p); posV.textContent = p;
+                const trueByte = bytes[p];
+                const pick = probeByte === null ? trueByte : probeByte;
+
+                chips(chipHost, ['the true byte', 'a wrong byte'], t => {
+                    probeByte = t === 'the true byte' ? null : (trueByte + 61) % 256;
+                    refresh();
+                });
+                [...chipHost.children].forEach((c, i) =>
+                    c.classList.toggle('on', (probeByte === null) === (i === 0)));
+
+                phHost.innerHTML = `<div style="display:flex;gap:14px;flex-wrap:wrap">
+                    ${phasorSvg(word, { rotBack: { v: pick, p }, fan: true })}</div>
+                    <p class="muted-note" style="margin-top:8px">Every byte's arrow, drawn from the centre and
+                    rotated back by (byte ${pick}, position ${p}). The highlighted arrow is the one at position
+                    ${p}: if the probe named the byte that is really there, it lands
+                    <strong style="color:var(--good)">on the dashed line</strong>. Otherwise it sits off at some
+                    angle like all the others.</p>`;
+
+                const spec = fourierBig.spectrum(bytes);
+                const sc = drawBars(spec, p, trueByte, pick);
+                const val = sc[pick];
+                let best = 0; for (let v = 1; v < 256; v++) if (sc[v] > sc[best]) best = v;
+                verdict.innerHTML = probeByte === null
+                    ? `<div class="verdict good" style="margin:10px 0 0">Probing the byte that <em>is</em> there
+                       rings at <strong>${val.toFixed(3)}</strong> &mdash; the tallest of all 256, so the code
+                       answers <strong>yes</strong>.</div>`
+                    : `<div class="verdict bad" style="margin:10px 0 0">Probing a byte that is <em>not</em> there
+                       rings at only <strong>${val.toFixed(3)}</strong>, against
+                       <strong>${sc[trueByte].toFixed(3)}</strong> for the true byte
+                       (${trueByte}). The code answers <strong>no</strong>.</div>`;
+
+                const dec = fourierBig.decode(bytes);
+                const okAll = dec.every((b, i) => b === bytes[i]);
+                decodeOut.innerHTML =
+                    `<div class="bytes">${dec.map((b, i) =>
+                        `<span class="byte ${b === bytes[i] ? 'right' : 'wrong'}">${b}<span class="p">@${i}</span></span>`).join('')}</div>
+                     <div class="verdict ${okAll ? 'good' : 'bad'}" style="margin:12px 0 0">
+                       ${okAll ? `Recovered <strong>${esc(new TextDecoder().decode(new Uint8Array(dec)))}</strong>
+                        &mdash; all ${dec.length} bytes correct, read straight out of the code.`
+                            : `<strong>${dec.filter((b, i) => b !== bytes[i]).length} of ${dec.length} bytes wrong.</strong>
+                        At d=${fourierBig.d} this word has too many voices in the room &mdash; section 05.`}</div>`;
+            }
+            posR.addEventListener('input', refresh);
+            return { refresh };
+        })();
+
+        // ================= 05 capacity =================
+        (function () {
+            const D_OPTS = [64, 128, 256, 512, 1024, 2048];
+            const dR = document.getElementById('capD'), dV = document.getElementById('capDVal');
+            const input = document.getElementById('capWord');
+            const bytesHost = document.getElementById('capBytes');
+            const verdict = document.getElementById('capVerdict');
+            const chartHost = document.getElementById('capChart');
+            const cache = new Map();
+            const codec = d => (cache.has(d) ? cache.get(d)
+                : (cache.set(d, new Fourier(d)), cache.get(d)));
+
+            function renderDecode() {
+                const d = D_OPTS[+dR.value]; dV.textContent = d;
+                const truth = bytesOf(input.value);
+                if (!truth.length) { bytesHost.innerHTML = ''; verdict.innerHTML = ''; return; }
+                const dec = codec(d).decode(truth);
+                const good = dec.filter((b, i) => b === truth[i]).length;
+                bytesHost.innerHTML = `<div class="bytes">${dec.map((b, i) =>
+                    `<span class="byte ${b === truth[i] ? 'right' : 'wrong'}">${b}<span class="p">@${i}</span></span>`).join('')}</div>`;
+                const pct = 100 * good / truth.length;
+                verdict.innerHTML =
+                    `<div class="verdict ${pct === 100 ? 'good' : 'bad'}" style="margin:12px 0 0">
+                     <strong>${good} of ${truth.length}</strong> bytes recovered (${pct.toFixed(0)}%) at
+                     d=${d}, L=${truth.length}. Predicted SNR &radic;(d/L) =
+                     <strong>${Math.sqrt(d / truth.length).toFixed(1)}</strong>.</div>`;
+            }
+            function renderChart() {
+                const W = 640, H = 210, ml = 44, mb = 34, mt = 12, mr = 12;
+                const pts = D_OPTS.map(d => {
+                    const c = codec(d);
+                    let ok = 0, tot = 0;
+                    SAMPLES.forEach(w => {
+                        const t = bytesOf(w), dec = c.decode(t);
+                        ok += dec.filter((b, i) => b === t[i]).length; tot += t.length;
+                    });
+                    return { d, acc: ok / tot };
+                });
+                const x = i => ml + i / (D_OPTS.length - 1) * (W - ml - mr);
+                const y = a => mt + (1 - a) * (H - mt - mb);
+                const path = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i)},${y(p.acc)}`).join('');
+                const grid = [0, .25, .5, .75, 1].map(a =>
+                    `<line x1="${ml}" y1="${y(a)}" x2="${W - mr}" y2="${y(a)}" stroke="var(--grid)"
+                       stroke-width="1"/><text x="${ml - 8}" y="${y(a) + 4}" text-anchor="end"
+                       font-size="10.5" fill="var(--muted)">${(a * 100).toFixed(0)}%</text>`).join('');
+                const dots = pts.map((p, i) =>
+                    `<circle cx="${x(i)}" cy="${y(p.acc)}" r="4.5" fill="var(--four)" stroke="var(--bg)"
+                       stroke-width="2"><title>d=${p.d}: ${(p.acc * 100).toFixed(1)}% of bytes recovered</title></circle>`).join('');
+                const labels = D_OPTS.map((d, i) =>
+                    `<text x="${x(i)}" y="${H - 12}" text-anchor="middle" font-size="10.5"
+                       fill="var(--muted)" font-family="ui-monospace,monospace">${d}</text>`).join('');
+                const last = pts[pts.length - 1];
+                chartHost.innerHTML =
+                    `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img"
+                        aria-label="byte recovery accuracy rises with code dimension">
+                       ${grid}${labels}
+                       <path d="${path}" fill="none" stroke="var(--four)" stroke-width="2"
+                             stroke-linejoin="round"/>
+                       ${dots}
+                       <text x="${x(pts.length - 1)}" y="${y(last.acc) - 12}" text-anchor="end" font-size="11"
+                             fill="var(--text)" font-weight="600">${(last.acc * 100).toFixed(0)}%</text>
+                       <text x="${ml}" y="${H - 1}" font-size="10.5" fill="var(--muted)">code dimension d</text>
+                     </svg>
+                     <p class="muted-note">Sample: ${SAMPLES.length} tokens spanning Latin, Devanagari, Telugu,
+                     Bengali and Tamil (1&ndash;51 bytes). Hover a point for its exact rate.</p>`;
+            }
+            dR.addEventListener('input', renderDecode);
+            input.addEventListener('input', renderDecode);
+            chips(document.getElementById('capChips'), ['a', 'train', 'भारत', 'अंतर्राष्ट्रीयकरण'],
+                t => { input.value = t; renderDecode(); });
+            renderDecode(); renderChart();
+        })();
+
+        // ================= 06 the bill =================
+        (function () {
+            const D_MODEL = 8096, DENSE_V = 131072;
+            const rows = [
+                ['dense table (V × d_model)', DENSE_V, DENSE_V * D_MODEL, '0', false],
+                ['kronecker one-hot, d_p=32', 8192, 8192 * D_MODEL, '336', false],
+                ['kronecker one-hot, d_p=64', 16384, 16384 * D_MODEL, '0', false],
+                ['dynamic kronecker, m=8', 2048, 2048 * D_MODEL, '0', false],
+                ['fourier, d=2048 (decodable)', 2048, 2048 * D_MODEL, '0', true],
+                ['fourier, d=64 (discrimination)', 64, 64 * D_MODEL, '0', true]
+            ];
+            const dense = DENSE_V * D_MODEL;
+            document.getElementById('billTable').innerHTML =
+                `<thead><tr><th>input path</th><th style="text-align:right">code_dim</th>
+                   <th style="text-align:right">projection params</th>
+                   <th style="text-align:right">train memory</th>
+                   <th style="text-align:right">tokens lost</th></tr></thead><tbody>` +
+                rows.map(([n, cd, p, lost, hl]) =>
+                    `<tr class="${hl ? 'hl' : ''}"><td>${n}</td><td class="n">${cd.toLocaleString()}</td>
+                     <td class="n">${p.toLocaleString()}</td>
+                     <td class="n">${(p * 16 / 1e9).toFixed(2)} GB</td>
+                     <td class="n" style="color:${lost === '0' ? 'var(--good)' : 'var(--crit)'}">${lost}</td></tr>`
+                ).join('') + '</tbody>';
+        })();
+
+        fPanel.render();
+    </script>
+</body>
+
+</html>

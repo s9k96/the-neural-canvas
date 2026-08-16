@@ -1,0 +1,247 @@
+Session 7 assignment -- problem 4: a real Fourier alternative to Kronecker
+tokenizer sarvamai/sarvam-1 sha256=bb5115a36ddb956a  census vocab=63997 (4099 special excluded)
+codec seed=20260815 -- frozen, and part of the artifact identity
+
+==============================================================================
+F1  DISCRIMINATION -- dimension is a free parameter, not a product
+==============================================================================
+
+  Kronecker's code_dim is forced: 256 byte values x 32 positions = 8192. Convolution
+  binding has no such product, so d can be chosen. The question is how small it can go
+  before two tokens share a code.
+  d=   64  collisions=    0  proj@D=8096 =    0.5M
+  d=  128  collisions=    0  proj@D=8096 =    1.0M
+  d=  256  collisions=    0  proj@D=8096 =    2.1M
+  d=  512  collisions=    0  proj@D=8096 =    4.1M
+  d= 1024  collisions=    0  proj@D=8096 =    8.3M
+
+  shipped kronecker onehot d_p=32: code_dim 8192, 336 tokens lost, 66.3M params
+  smallest zero-collision dimension: d=64  (128x smaller than shipped)
+
+==============================================================================
+F2  SEPARATION MARGIN -- and where extra dimensions stop helping
+==============================================================================
+  d=  128  max adversarial cosine = 0.98202
+  d=  256  max adversarial cosine = 0.97741
+  d=  512  max adversarial cosine = 0.97708
+  d= 1024  max adversarial cosine = 0.97684
+  d= 2048  max adversarial cosine = 0.97392
+
+  The margin is essentially flat in d. These pairs are near-identical strings that
+  differ only in their last byte or two, so their superpositions genuinely overlap;
+  extra dimensions add room but not distance. This is the honest weak spot of the
+  approach relative to a tuned dynamic Kronecker codec, which reaches 0.964.
+
+==============================================================================
+F3  LEARNABILITY -- the test the lossiness could fail
+==============================================================================
+
+  Same rig as the problem-3 submission, so the arms are comparable. Every token carries
+  a deterministic label and inside each shipped-collision group the labels disagree, so
+  a codec that merges them is capped at the majority share. Kronecker's code is exact
+  and sparse; this one superposes waves with crosstalk, which is exactly the property
+  that might not survive contact with a trained model.
+
+  336 tokens, 155 collision groups
+  ceiling for a codec that collides them: 52.1%
+  kronecker onehot d_p=32    acc= 52.1%  loss=0.6861  input-path params=524,288
+  fourier d=256              acc=100.0%  loss=0.0000  input-path params=16,384
+  fourier d=2048             acc=100.0%  loss=0.0017  input-path params=131,072
+  dense table (control)      acc=100.0%  loss=0.0000  input-path params=21,504
+
+==============================================================================
+F4  INVERTIBILITY -- reading the byte string back out of the code
+==============================================================================
+
+  Unbinding is what makes this a real Fourier scheme rather than a re-parameterisation.
+  Correlating the code against a candidate (byte, position) wave recovers whether that
+  pair is present, so the whole token can be decoded by argmax over 256 candidates per
+  position. Nothing is stored per token and no table is consulted.
+  d=  128  whole-token decode  25.5%   byte accuracy  57.1%
+  d=  256  whole-token decode  56.0%   byte accuracy  84.6%
+  d=  512  whole-token decode  87.8%   byte accuracy  98.1%
+  d= 1024  whole-token decode  99.0%   byte accuracy  99.9%
+  d= 2048  whole-token decode 100.0%   byte accuracy 100.0%
+
+  byte accuracy by token byte-length (d=1024):
+     0- 7 bytes: 100.0%  (410 bytes)
+     8-15 bytes: 100.0%  (2344 bytes)
+    16-23 bytes: 100.0%  (1239 bytes)
+    24-31 bytes:  99.9%  (1125 bytes)
+    32-39 bytes:  99.0%  (303 bytes)
+
+  nearest-code decode (vocabulary-bounded: match against known codes)
+    d=   64  correct token retrieved 100.00%
+    d=  128  correct token retrieved 100.00%
+    d=  256  correct token retrieved 100.00%
+    d= 1024  correct token retrieved 100.00%
+
+  Two regimes, and they cost very differently. Byte-argmax decoding is vocabulary-free
+  -- it can emit strings the model never saw -- and needs d ~ 20*L. Nearest-code
+  decoding is bounded by the vocabulary but works wherever discrimination works, which
+  F1 showed is d=64. The paper's Hypothesis A wants the first; a cheap tied head only
+  needs the second.
+
+==============================================================================
+F5  POSITION RAMP -- random phases vs the canonical circular shift
+==============================================================================
+
+  ramp="shift" makes binding an exact circular shift (the textbook shift theorem), which
+  is more interpretable. But a circular shift wraps: position p and position p+d are the
+  same phase, so the window reappears -- just at d instead of 32. ramp="random" has no
+  period. This is the same stored-vs-computed trade the course keeps meeting.
+  ramp=random   |<phase(p=0), phase(p=d)>| = 0.0271   <- no period
+  ramp=shift    |<phase(p=0), phase(p=d)>| = 1.0000   <- wraps, window at d
+
+==============================================================================
+F6  PARAMETER BILL at V5 reference shape (D=8096)
+==============================================================================
+
+  input path                                      params    train mem   vs dense
+  dense table V x D                        1,061,158,912      16.98 GB      0.00%
+  kronecker onehot d_p=32                     66,322,432       1.06 GB     93.75%
+  kronecker onehot d_p=64                    132,644,864       2.12 GB     87.50%
+  dynamic kronecker m=8 (problem 3)           16,580,608       0.27 GB     98.44%
+  fourier d=2048 (decodable)                  16,580,608       0.27 GB     98.44%
+  fourier d=64 (discrimination only)             518,144       0.01 GB     99.95%
+
+==============================================================================
+F7  REGRESSIONS -- order sensitivity and prefix similarity
+==============================================================================
+  order sensitivity (a bag of waves would score 1.000):
+    abc              vs cba              cos=+0.3605
+    dog bites man    vs man bites dog    cos=+0.5379
+    ab               vs ba               cos=+0.0274
+
+  prefix similarity (section 7's property):
+    related   train    training   cos=+0.7979
+    related   train    trainer    cos=+0.8488
+    related   भारत     भारतीय     cos=+0.8303
+    unrelated train    भारत       cos=-0.0150
+    unrelated apple    తెలుగు     cos=+0.0157
+    unrelated zebra    quilt      cos=+0.0100
+
+  min(related)=+0.7979 > max(unrelated)=+0.0157: True
+
+==============================================================================
+F8  ZIPF -- a shared projection has no per-row learning rates
+==============================================================================
+
+  Section 2: a dense table "is a hundred and thirty-one thousand small objects whose
+  effective learning rates are set by the corpus rather than by the optimizer, and the
+  slow end of that range is where the low-resource languages live." A rare row is
+  visited rarely, stays near its random initialisation, and contributes noise.
+
+  This codec has no rows. Every token's gradient lands in the SAME projection, and the
+  code itself is already meaningful because it is computed from bytes. So the spread of
+  effective learning rates should not exist here at all.
+
+  Test: label each token with its SCRIPT -- a property that generalises across tokens --
+  train on a Zipfian stream where rank 1 is seen ~500x more than the tail, then evaluate
+  uniformly by frequency band. A band of tokens is held out of training entirely.
+
+  650 tokens, 5 scripts, 100 held out of training
+  most frequent token is seen ~550x more often than the rarest trained one
+
+  frequency band              dense table    fourier d=256
+  head (top 10%)                  100.0%           100.0% 
+  middle                           99.5%           100.0% 
+  tail (bottom 50%)                97.1%           100.0% 
+  never seen                       22.0%            99.0% 
+
+  chance = 20%
+
+  The dense table's unseen rows never received a single gradient, so they still hold
+  their initialisation and classify at chance (22%). The Fourier arm reaches
+  99% on tokens it has never once been trained on, because their codes were
+  computed from bytes and the projection that reads them was trained by every OTHER
+  token. That is section 2's asymmetry removed rather than mitigated.
+
+==============================================================================
+F9  ADAPTATION -- the risk a COMPRESSED input path makes worse, not better
+==============================================================================
+
+  Section 9, on the V4 scar: "A compressed input path is a less capable adapter by
+  construction." A dense table can move the rows that need to move; this codec has one
+  shared projection and nothing else, and at d=64 that projection is 128x smaller than
+  the shipped Kronecker one. By the notes' own argument this design is the most fragile
+  input path in the course, so it is measured here rather than argued away.
+
+  A mixture shift is staged mid-run: the stream starts 90% Latin and flips to 70%
+  Devanagari. What is watched is the gradient norm of the layers ABOVE the embedding --
+  section 9's leading indicator, because that is where the adjustment surfaces when the
+  adapter cannot make it.
+
+  input path                 baseline       peak    ratio
+  dense table                  0.4436     3.8812    8.75x
+  dense table, FROZEN          1.3764     5.7232    4.16x
+  fourier d=2048               3.8002    14.4980    3.82x
+  fourier d=64                 1.0539     4.5874    4.35x
+  fourier d=64, FROZEN         1.8313     5.6335    3.08x
+
+  READ THIS TABLE DOWN THE PAIRS, NOT ACROSS THE ROWS. The spike ratio normalises by
+  each arm's own baseline, and the baselines differ for reasons that have nothing to do
+  with adaptation -- a dense table idles the layers above it, a wide projection changes
+  the activation scale. Comparing dense against fourier, or one d against another, is
+  therefore confounded and no ranking between them is claimed here. What IS a controlled
+  comparison is a matched pair: identical architecture, identical scale, the only
+  difference being whether the input path is allowed to adapt.
+  dense table            trainable -> frozen:  baseline 0.444 -> 1.376,  peak 3.881 -> 5.723   WORSE frozen
+  fourier d=64           trainable -> frozen:  baseline 1.054 -> 1.831,  peak 4.587 -> 5.633   WORSE frozen
+
+  In both pairs, freezing raises the load on the layers above -- not only at the shift
+  but throughout the run. Section 9's mechanism reproduces: remove the degrees of
+  freedom at the point where the change enters and the adjustment surfaces somewhere
+  else. It reproduces on a codec 128x smaller than the one the scar was first seen on,
+  and the operational conclusion carries over unchanged -- the projection stays
+  trainable, and freezing is a scheduled, logged decision or it does not happen.
+
+==============================================================================
+LEDGER  embedding_policy_id  (section 13)
+==============================================================================
+{
+  "embedding_type": "fourier_convolution_binding_v1",
+  "code_dim": 2048,
+  "position_ramp": "random_frozen_phases",
+  "codec_seed": 20260815,
+  "codec_trainable": false,
+  "projection": {
+    "shape": [
+      2048,
+      8096
+    ],
+    "trainable": true,
+    "unfreeze_schedule": null
+  },
+  "tokenizer_hash": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+  "byte_conventions": {
+    "byte_fallback": "single_byte",
+    "truncation": null
+  },
+  "tying": {
+    "tied": false,
+    "reason": "code_dim != d_model, so a tied head is impossible by construction; section 13 commits V5 to untied anyway"
+  },
+  "position_policy": "deferred_to_session_8",
+  "notes": "sentence position is NOT supplied by this layer; the ramp inside the codec binds BYTE position within a token only"
+}
+
+==============================================================================
+EVIDENCE
+==============================================================================
+  [PASS] f1_census.gate_zero_collisions_at_default
+  [PASS] f2_margin.gate_separates
+  [PASS] f3_learnability.gate_fourier_beats_ceiling
+  [PASS] f3_learnability.gate_kronecker_at_ceiling
+  [PASS] f4_decode.gate_byte_decode_at_default
+  [PASS] f4_decode.gate_nearest_code_decode
+  [PASS] f5_ramp.gate_random_ramp_has_no_period
+  [PASS] f6_budget.gate_smaller_than_kronecker
+  [PASS] f7_regressions.gate_order_sensitive
+  [PASS] f7_regressions.gate_similarity_preserved
+  [PASS] f8_zipf.gate_fourier_beats_dense_on_tail
+  [PASS] f8_zipf.gate_dense_unseen_near_chance
+  [PASS] f9_adaptation.gate_frozen_worse_in_matched_pairs
+
+  13/13 gates passed   (387.3s)

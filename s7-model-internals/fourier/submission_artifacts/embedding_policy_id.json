@@ -1,0 +1,27 @@
+{
+  "embedding_type": "fourier_convolution_binding_v1",
+  "code_dim": 2048,
+  "position_ramp": "random_frozen_phases",
+  "codec_seed": 20260815,
+  "codec_trainable": false,
+  "projection": {
+    "shape": [
+      2048,
+      8096
+    ],
+    "trainable": true,
+    "unfreeze_schedule": null
+  },
+  "tokenizer_hash": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+  "byte_conventions": {
+    "byte_fallback": "single_byte",
+    "truncation": null
+  },
+  "tying": {
+    "tied": false,
+    "reason": "code_dim != d_model, so a tied head is impossible by construction; section 13 commits V5 to untied anyway"
+  },
+  "position_policy": "deferred_to_session_8",
+  "notes": "sentence position is NOT supplied by this layer; the ramp inside the codec binds BYTE position within a token only"
+}

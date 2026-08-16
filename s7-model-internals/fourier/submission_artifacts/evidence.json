@@ -1,0 +1,296 @@
+{
+  "f1_census": {
+    "rows": [
+      {
+        "d": 64,
+        "code_dim": 64,
+        "tokens_lost": 0,
+        "params_at_ref": 518144
+      },
+      {
+        "d": 128,
+        "code_dim": 128,
+        "tokens_lost": 0,
+        "params_at_ref": 1036288
+      },
+      {
+        "d": 256,
+        "code_dim": 256,
+        "tokens_lost": 0,
+        "params_at_ref": 2072576
+      },
+      {
+        "d": 512,
+        "code_dim": 512,
+        "tokens_lost": 0,
+        "params_at_ref": 4145152
+      },
+      {
+        "d": 1024,
+        "code_dim": 1024,
+        "tokens_lost": 0,
+        "params_at_ref": 8290304
+      }
+    ],
+    "smallest_zero_collision_d": 64,
+    "shipped_tokens_lost": 336,
+    "gate_zero_collisions_at_default": true
+  },
+  "f2_margin": {
+    "rows": [
+      {
+        "d": 128,
+        "max_cosine": 0.9820192703876496
+      },
+      {
+        "d": 256,
+        "max_cosine": 0.9774136130060417
+      },
+      {
+        "d": 512,
+        "max_cosine": 0.9770833419784652
+      },
+      {
+        "d": 1024,
+        "max_cosine": 0.9768370836347972
+      },
+      {
+        "d": 2048,
+        "max_cosine": 0.9739165775942187
+      }
+    ],
+    "gate_separates": true
+  },
+  "f3_learnability": {
+    "kronecker onehot d_p=32": {
+      "accuracy": 0.5208333134651184,
+      "final_loss": 0.6861118674278259,
+      "input_path_params_at_demo": 524288
+    },
+    "fourier d=256": {
+      "accuracy": 1.0,
+      "final_loss": 2.0572650100803003e-05,
+      "input_path_params_at_demo": 16384
+    },
+    "fourier d=2048": {
+      "accuracy": 1.0,
+      "final_loss": 0.0017397248884662986,
+      "input_path_params_at_demo": 131072
+    },
+    "dense table (control)": {
+      "accuracy": 1.0,
+      "final_loss": 9.529589419798867e-07,
+      "input_path_params_at_demo": 21504
+    },
+    "ceiling_if_colliding": 0.5208333333333334,
+    "gate_fourier_beats_ceiling": true,
+    "gate_kronecker_at_ceiling": true
+  },
+  "f4_decode": {
+    "rows": [
+      {
+        "d": 128,
+        "exact_token_rate": 0.255,
+        "byte_accuracy": 0.5705589374654123
+      },
+      {
+        "d": 256,
+        "exact_token_rate": 0.56,
+        "byte_accuracy": 0.845784910533112
+      },
+      {
+        "d": 512,
+        "exact_token_rate": 0.8775,
+        "byte_accuracy": 0.9809998155321896
+      },
+      {
+        "d": 1024,
+        "exact_token_rate": 0.99,
+        "byte_accuracy": 0.9992621287585316
+      },
+      {
+        "d": 2048,
+        "exact_token_rate": 1.0,
+        "byte_accuracy": 1.0
+      }
+    ],
+    "nearest_code": [
+      {
+        "d": 64,
+        "retrieval": 1.0
+      },
+      {
+        "d": 128,
+        "retrieval": 1.0
+      },
+      {
+        "d": 256,
+        "retrieval": 1.0
+      },
+      {
+        "d": 1024,
+        "retrieval": 1.0
+      }
+    ],
+    "gate_byte_decode_at_default": true,
+    "gate_nearest_code_decode": true
+  },
+  "f5_ramp": {
+    "rows": [
+      {
+        "ramp": "random",
+        "position_d_aliases_position_0": 0.027085422885435754
+      },
+      {
+        "ramp": "shift",
+        "position_d_aliases_position_0": 1.0
+      }
+    ],
+    "gate_random_ramp_has_no_period": true
+  },
+  "f6_budget": {
+    "dense table V x D": {
+      "params": 1061158912,
+      "train_gb": 16.978542592
+    },
+    "kronecker onehot d_p=32": {
+      "params": 66322432,
+      "train_gb": 1.061158912
+    },
+    "kronecker onehot d_p=64": {
+      "params": 132644864,
+      "train_gb": 2.122317824
+    },
+    "dynamic kronecker m=8 (problem 3)": {
+      "params": 16580608,
+      "train_gb": 0.265289728
+    },
+    "fourier d=2048 (decodable)": {
+      "params": 16580608,
+      "train_gb": 0.265289728
+    },
+    "fourier d=64 (discrimination only)": {
+      "params": 518144,
+      "train_gb": 0.008290304
+    },
+    "gate_smaller_than_kronecker": true
+  },
+  "f7_regressions": {
+    "order_cosines": [
+      0.3605202307299779,
+      0.5379225176752394,
+      0.027375576719671238
+    ],
+    "related": [
+      0.7979413682582076,
+      0.848821723027581,
+      0.8302768179972646
+    ],
+    "unrelated": [
+      -0.014951183153932275,
+      0.015667952523450844,
+      0.010046324913048774
+    ],
+    "gate_order_sensitive": true,
+    "gate_similarity_preserved": true
+  },
+  "f8_zipf": {
+    "bands": {
+      "dense table": {
+        "head (top 10%)": 1.0,
+        "middle": 0.9954545497894287,
+        "tail (bottom 50%)": 0.9709091186523438,
+        "never seen": 0.2199999988079071
+      },
+      "fourier d=256": {
+        "head (top 10%)": 1.0,
+        "middle": 1.0,
+        "tail (bottom 50%)": 1.0,
+        "never seen": 0.9900000095367432
+      }
+    },
+    "chance": 0.2,
+    "steps": 700,
+    "gate_fourier_beats_dense_on_tail": true,
+    "gate_dense_unseen_near_chance": true
+  },
+  "f9_adaptation": {
+    "dense table": {
+      "baseline_grad_norm": 0.44360006834731996,
+      "peak_after_shift": 3.8811733710251124,
+      "spike_ratio": 8.74926233777385
+    },
+    "dense table, FROZEN": {
+      "baseline_grad_norm": 1.376357466867635,
+      "peak_after_shift": 5.723209713221085,
+      "spike_ratio": 4.158229130871194
+    },
+    "fourier d=2048": {
+      "baseline_grad_norm": 3.80021011433618,
+      "peak_after_shift": 14.498023618008567,
+      "spike_ratio": 3.8150584261946996
+    },
+    "fourier d=64": {
+      "baseline_grad_norm": 1.0539040093220584,
+      "peak_after_shift": 4.587416822827823,
+      "spike_ratio": 4.352784297479574
+    },
+    "fourier d=64, FROZEN": {
+      "baseline_grad_norm": 1.8312581470682308,
+      "peak_after_shift": 5.633455743789663,
+      "spike_ratio": 3.0762761398815317
+    },
+    "gate_frozen_worse_in_matched_pairs": true
+  },
+  "embedding_policy_id": {
+    "embedding_type": "fourier_convolution_binding_v1",
+    "code_dim": 2048,
+    "position_ramp": "random_frozen_phases",
+    "codec_seed": 20260815,
+    "codec_trainable": false,
+    "projection": {
+      "shape": [
+        2048,
+        8096
+      ],
+      "trainable": true,
+      "unfreeze_schedule": null
+    },
+    "tokenizer_hash": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+    "tokenizer_version": "sarvam-1/tokenizer.json@bb5115a3",
+    "byte_conventions": {
+      "byte_fallback": "single_byte",
+      "truncation": null
+    },
+    "tying": {
+      "tied": false,
+      "reason": "code_dim != d_model, so a tied head is impossible by construction; section 13 commits V5 to untied anyway"
+    },
+    "position_policy": "deferred_to_session_8",
+    "notes": "sentence position is NOT supplied by this layer; the ramp inside the codec binds BYTE position within a token only"
+  },
+  "_meta": {
+    "tokenizer_sha256": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+    "vocab_size": 63997,
+    "seed": 1337,
+    "codec_seed": 20260815,
+    "gates": {
+      "f1_census.gate_zero_collisions_at_default": true,
+      "f2_margin.gate_separates": true,
+      "f3_learnability.gate_fourier_beats_ceiling": true,
+      "f3_learnability.gate_kronecker_at_ceiling": true,
+      "f4_decode.gate_byte_decode_at_default": true,
+      "f4_decode.gate_nearest_code_decode": true,
+      "f5_ramp.gate_random_ramp_has_no_period": true,
+      "f6_budget.gate_smaller_than_kronecker": true,
+      "f7_regressions.gate_order_sensitive": true,
+      "f7_regressions.gate_similarity_preserved": true,
+      "f8_zipf.gate_fourier_beats_dense_on_tail": true,
+      "f8_zipf.gate_dense_unseen_near_chance": true,
+      "f9_adaptation.gate_frozen_worse_in_matched_pairs": true
+    },
+    "passed": 13,
+    "total": 13,
+    "seconds": 387.3
+  }
+}

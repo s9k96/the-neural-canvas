@@ -1,0 +1,394 @@
+{
+  "e1_census": {
+    "rows": [
+      {
+        "codec": "onehot pos_dim=16",
+        "code_dim": 4096,
+        "groups": 5278,
+        "tokens_lost": 16963
+      },
+      {
+        "codec": "onehot pos_dim=24",
+        "code_dim": 6144,
+        "groups": 983,
+        "tokens_lost": 2417
+      },
+      {
+        "codec": "onehot pos_dim=32",
+        "code_dim": 8192,
+        "groups": 155,
+        "tokens_lost": 336
+      },
+      {
+        "codec": "onehot pos_dim=48",
+        "code_dim": 12288,
+        "groups": 0,
+        "tokens_lost": 0
+      },
+      {
+        "codec": "dynamic m=8",
+        "code_dim": 2048,
+        "groups": 0,
+        "tokens_lost": 0
+      },
+      {
+        "codec": "dynamic m=12",
+        "code_dim": 3072,
+        "groups": 0,
+        "tokens_lost": 0
+      },
+      {
+        "codec": "dynamic m=16",
+        "code_dim": 4096,
+        "groups": 0,
+        "tokens_lost": 0
+      }
+    ],
+    "shipped_per_script": {
+      "BENGALI": 57,
+      "TAMIL": 54,
+      "KANNADA": 45,
+      "MALAYALAM": 41,
+      "DEVANAGARI": 69,
+      "GURMUKHI": 4,
+      "GUJARATI": 20,
+      "ORIYA": 4,
+      "TELUGU": 39,
+      "OTHER": 3
+    },
+    "coverage_paper_table3": {
+      "16": 69.64545213056861,
+      "32": 97.8983389846399,
+      "64": 100.0
+    },
+    "shipped_groups": 155,
+    "examples": [
+      [
+        "বিদ্যালয়ে",
+        "বিদ্যালয়ের"
+      ],
+      [
+        "ப்படுத்திய",
+        "ப்படுத்தியது"
+      ],
+      [
+        "ப்பட்டுள்ள",
+        "ப்பட்டுள்ளது",
+        "ப்பட்டுள்ளன"
+      ],
+      [
+        "ருங்காட்சிய",
+        "ருங்காட்சியக"
+      ],
+      [
+        "ಿಸುತ್ತಿದ್ದ",
+        "ಿಸುತ್ತಿದ್ದರು"
+      ],
+      [
+        "പ്പെടുത്തി",
+        "പ്പെടുത്തിയ"
+      ],
+      [
+        "ിക്കപ്പെട്ട",
+        "ിക്കപ്പെട്ടു"
+      ],
+      [
+        "ിക്കുന്നതിന",
+        "ിക്കുന്നതിന്",
+        "ിക്കുന്നതിൽ"
+      ]
+    ],
+    "irreducible_groups": 95,
+    "irreducible_tokens": 190,
+    "irreducible_examples": [
+      [
+        "\t",
+        "<0x09>"
+      ],
+      [
+        "\n",
+        "<0x0A>"
+      ],
+      [
+        "\r",
+        "<0x0D>"
+      ],
+      [
+        "!",
+        "<0x21>"
+      ],
+      [
+        "\"",
+        "<0x22>"
+      ],
+      [
+        "#",
+        "<0x23>"
+      ]
+    ],
+    "gate_dynamic_zero_collisions": true,
+    "gate_shipped_loses_tokens": true
+  },
+  "e2_margin": {
+    "onehot pos_dim=32": {
+      "adversarial_max_cosine": 0.9999974370002747,
+      "pool_max_cosine": 0.9999995827674866,
+      "n_pool": 4316
+    },
+    "dynamic m=8": {
+      "adversarial_max_cosine": 0.9644342064857483,
+      "pool_max_cosine": 0.9644307494163513,
+      "n_pool": 4316
+    },
+    "gate_dynamic_separates": true,
+    "gate_onehot_identical": true
+  },
+  "e3_learnability": {
+    "onehot pos_dim=32": {
+      "accuracy": 0.5208333134651184,
+      "final_loss": 0.6861118674278259,
+      "input_path_params_at_demo": 524288
+    },
+    "dynamic m=8": {
+      "accuracy": 1.0,
+      "final_loss": 3.0410248655243777e-05,
+      "input_path_params_at_demo": 131072
+    },
+    "dense table (control)": {
+      "accuracy": 1.0,
+      "final_loss": 9.529589419798867e-07,
+      "input_path_params_at_demo": 21504
+    },
+    "ceiling_if_colliding": 0.5208333333333334,
+    "steps": 400,
+    "gate_onehot_at_ceiling": true,
+    "gate_dynamic_beats_ceiling": true
+  },
+  "e4_unbounded": {
+    "rows": [
+      {
+        "bytes": 96,
+        "onehot_collides": true,
+        "dynamic_collides": false
+      },
+      {
+        "bytes": 192,
+        "onehot_collides": true,
+        "dynamic_collides": false
+      },
+      {
+        "bytes": 384,
+        "onehot_collides": true,
+        "dynamic_collides": false
+      },
+      {
+        "bytes": 1536,
+        "onehot_collides": true,
+        "dynamic_collides": false
+      },
+      {
+        "bytes": 6144,
+        "onehot_collides": true,
+        "dynamic_collides": false
+      }
+    ],
+    "gate_dynamic_never_collides": true,
+    "gate_onehot_always_collides": true
+  },
+  "e5_budget": {
+    "dense table V x D": {
+      "params": 1061158912,
+      "train_gb": 16.978542592,
+      "reduction_vs_dense": 0.0
+    },
+    "kronecker onehot pos_dim=32": {
+      "params": 66322432,
+      "train_gb": 1.061158912,
+      "reduction_vs_dense": 0.9375
+    },
+    "kronecker onehot pos_dim=64": {
+      "params": 132644864,
+      "train_gb": 2.122317824,
+      "reduction_vs_dense": 0.875
+    },
+    "dynamic m=8 (this work)": {
+      "params": 16580608,
+      "train_gb": 0.265289728,
+      "reduction_vs_dense": 0.984375
+    },
+    "gate_smaller_than_shipped": true
+  },
+  "e6_similarity": {
+    "related": [
+      0.8406581633183104,
+      0.8434587930637178,
+      0.7811496034899155,
+      0.8385291804381051
+    ],
+    "unrelated": [
+      -0.005376135240864876,
+      -0.0029679393041563158,
+      -0.007877382199185132
+    ],
+    "gate_similarity_preserved": true
+  },
+  "e7_choose_m": {
+    "grid": [
+      {
+        "m": 2,
+        "code_dim": 512,
+        "max_cosine": {
+          "10.0": 0.990023540335587,
+          "100.0": 0.990023540335587,
+          "1000.0": 0.990023540335587,
+          "10000.0": 0.990023540335587
+        }
+      },
+      {
+        "m": 4,
+        "code_dim": 1024,
+        "max_cosine": {
+          "10.0": 0.9737348050510096,
+          "100.0": 0.9858670472022818,
+          "1000.0": 0.9954551185173061,
+          "10000.0": 0.9995074835404479
+        }
+      },
+      {
+        "m": 8,
+        "code_dim": 2048,
+        "max_cosine": {
+          "10.0": 0.9644339585126234,
+          "100.0": 0.9894384728774941,
+          "1000.0": 0.9953576228765737,
+          "10000.0": 0.9959850741929315
+        }
+      },
+      {
+        "m": 16,
+        "code_dim": 4096,
+        "max_cosine": {
+          "10.0": 0.9626959781636139,
+          "100.0": 0.9915555420426804,
+          "1000.0": 0.9962653253739184,
+          "10000.0": 0.9971386485022553
+        }
+      }
+    ],
+    "rows": [
+      {
+        "m": 2,
+        "code_dim": 512,
+        "tokens_lost": 0,
+        "max_cosine": 0.990023540335587,
+        "params_at_ref": 4145152
+      },
+      {
+        "m": 4,
+        "code_dim": 1024,
+        "tokens_lost": 0,
+        "max_cosine": 0.9737348050510096,
+        "params_at_ref": 8290304
+      },
+      {
+        "m": 8,
+        "code_dim": 2048,
+        "tokens_lost": 0,
+        "max_cosine": 0.9644339585126234,
+        "params_at_ref": 16580608
+      },
+      {
+        "m": 16,
+        "code_dim": 4096,
+        "tokens_lost": 0,
+        "max_cosine": 0.9626959781636139,
+        "params_at_ref": 33161216
+      }
+    ],
+    "chosen_m": 8,
+    "gate_zero_collisions_at_all_m": true,
+    "gate_calibrated_base_beats_default": true
+  },
+  "e8_corpus_impact": {
+    "agentic": {
+      "tokens": 85202,
+      "whitespace": 3,
+      "content": 0,
+      "pct_content": 0.0,
+      "pct_whitespace": 0.0035210441069458464
+    },
+    "code": {
+      "tokens": 103922,
+      "whitespace": 681,
+      "content": 0,
+      "pct_content": 0.0,
+      "pct_whitespace": 0.6552991666827044
+    },
+    "eval_registry_docs": {
+      "tokens": 33726,
+      "whitespace": 0,
+      "content": 10,
+      "pct_content": 0.029650714582221432,
+      "pct_whitespace": 0.0
+    },
+    "general_web": {
+      "tokens": 74383,
+      "whitespace": 0,
+      "content": 0,
+      "pct_content": 0.0,
+      "pct_whitespace": 0.0
+    },
+    "indic": {
+      "tokens": 199332,
+      "whitespace": 61,
+      "content": 385,
+      "pct_content": 0.19314510464952944,
+      "pct_whitespace": 0.030602211386029338
+    },
+    "long_context": {
+      "tokens": 76463,
+      "whitespace": 157,
+      "content": 0,
+      "pct_content": 0.0,
+      "pct_whitespace": 0.20532806716974222
+    },
+    "reasoning": {
+      "tokens": 96033,
+      "whitespace": 5,
+      "content": 0,
+      "pct_content": 0.0,
+      "pct_whitespace": 0.005206543583976341
+    },
+    "stem_math": {
+      "tokens": 20997,
+      "whitespace": 1,
+      "content": 0,
+      "pct_content": 0.0,
+      "pct_whitespace": 0.00476258513120922
+    },
+    "gate_indic_content_worse_than_latin": true
+  },
+  "_meta": {
+    "tokenizer_sha256": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+    "vocab_size": 63997,
+    "seed": 1337,
+    "gates": {
+      "e1_census.gate_dynamic_zero_collisions": true,
+      "e1_census.gate_shipped_loses_tokens": true,
+      "e2_margin.gate_dynamic_separates": true,
+      "e2_margin.gate_onehot_identical": true,
+      "e3_learnability.gate_onehot_at_ceiling": true,
+      "e3_learnability.gate_dynamic_beats_ceiling": true,
+      "e4_unbounded.gate_dynamic_never_collides": true,
+      "e4_unbounded.gate_onehot_always_collides": true,
+      "e5_budget.gate_smaller_than_shipped": true,
+      "e6_similarity.gate_similarity_preserved": true,
+      "e7_choose_m.gate_zero_collisions_at_all_m": true,
+      "e7_choose_m.gate_calibrated_base_beats_default": true,
+      "e8_corpus_impact.gate_indic_content_worse_than_latin": true
+    },
+    "passed": 13,
+    "total": 13,
+    "seconds": 68.2
+  }
+}

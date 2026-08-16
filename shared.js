@@ -7,7 +7,8 @@ const ICONS = {
     tokenizer: '<path d="M4 7V5h10v2"/><path d="M9 5v10"/><path d="M7 15h4"/><path d="m14 20 3.5-8 3.5 8"/><path d="M15 17h5"/>',
     'india-first-llm': '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/>',
     'data-cleaning': '<path d="M21 4H3l7 8.5V19l4 2v-8.5L21 4Z"/>',
-    'dataset-creation': '<path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/><circle cx="18.5" cy="18" r="2.5"/><path d="m20.3 19.8 1.7 1.7"/>'
+    'dataset-creation': '<path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/><circle cx="18.5" cy="18" r="2.5"/><path d="m20.3 19.8 1.7 1.7"/>',
+    'fourier-embeddings': '<path d="M2 12c2-6 4-6 6 0s4 6 6 0 4-6 6 0"/><circle cx="12" cy="12" r="1.4"/>'
 };
 
 const NAV_SECTIONS = [
@@ -24,7 +25,8 @@ const NAV_SECTIONS = [
     { label: 'S2 · Tokenizer', pages: [{ id: 'tokenizer', label: 'One Vocab, Four Languages', href: 's2-tokenizer/tokenizer.html' }] },
     { label: 'S3 · India-First LLM', pages: [{ id: 'india-first-llm', label: 'The World, Viewed From India', href: 's3-india-first-llm/india-first-llm.html' }] },
     { label: 'S4 · Data Cleaning', pages: [{ id: 'data-cleaning', label: 'Raw Data Is Not Training Data', href: 's4-data-cleaning/data-cleaning.html' }] },
-    { label: 'S6 · Building the Dataset', pages: [{ id: 'dataset-creation', label: 'Prove What You Trained On', href: 's6-dataset-creation/dataset-creation.html' }] }
+    { label: 'S6 · Building the Dataset', pages: [{ id: 'dataset-creation', label: 'Prove What You Trained On', href: 's6-dataset-creation/dataset-creation.html' }] },
+    { label: 'S7 · Model Internals', pages: [{ id: 'fourier-embeddings', label: 'Words Made of Waves', href: 's7-model-internals/fourier-embeddings.html' }] }
 ];
 
 function iconSvg(id) {

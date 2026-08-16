@@ -1,0 +1,176 @@
+Session 7 assignment -- problem 3: dynamic byte budget for Kronecker embeddings
+tokenizer sarvamai/sarvam-1 sha256=bb5115a36ddb956a  vocab=68096
+excluded 4099 special tokens (paper Table 3 methodology); census vocab = 63997
+
+==============================================================================
+E1  COLLISION CENSUS -- real vocabulary, one codec variable
+==============================================================================
+
+  95 irreducible groups (190 tokens): tokens whose
+  FULL bytes are identical -- byte-fallback aliases, e.g. '\t' == '<0x09>', '\n' == '<0x0A>', '\r' == '<0x0D>'
+  No position factor can separate these. Excluded from every count below.
+
+  coverage (paper Table 3 metric): d_p=16 69.65%  d_p=32 97.90%  d_p=64 100.00%
+
+  codec-induced collisions (irreducible aliases excluded):
+  codec                   code_dim   groups  tokens lost
+  onehot pos_dim=16           4096     5278        16963
+  onehot pos_dim=24           6144      983         2417
+  onehot pos_dim=32           8192      155          336
+  onehot pos_dim=48          12288        0            0
+  dynamic m=8                 2048        0            0
+  dynamic m=12                3072        0            0
+  dynamic m=16                4096        0            0
+
+  shipped pos_dim=32, tokens lost per script:
+    DEVANAGARI        69
+    BENGALI           57
+    TAMIL             54
+    KANNADA           45
+    MALAYALAM         41
+    TELUGU            39
+    GUJARATI          20
+    GURMUKHI           4
+    ORIYA              4
+    OTHER              3
+    collide: বিদ্যালয়ে  ==  বিদ্যালয়ের
+    collide: ப்படுத்திய  ==  ப்படுத்தியது
+    collide: ப்பட்டுள்ள  ==  ப்பட்டுள்ளது  ==  ப்பட்டுள்ளன
+    collide: ருங்காட்சிய  ==  ருங்காட்சியக
+    collide: ಿಸುತ್ತಿದ್ದ  ==  ಿಸುತ್ತಿದ್ದರು
+    collide: പ്പെടുത്തി  ==  പ്പെടുത്തിയ
+    collide: ിക്കപ്പെട്ട  ==  ിക്കപ്പെട്ടു
+    collide: ിക്കുന്നതിന  ==  ിക്കുന്നതിന്  ==  ിക്കുന്നതിൽ
+
+==============================================================================
+E2  SEPARATION MARGIN -- exact-distinctness is not the claim; distance is
+==============================================================================
+
+  onehot pos_dim=32
+    max cosine within the 155 shipped-collision groups : 0.999997
+    max cosine over the whole 4316-token pool : 1.000000
+
+  dynamic m=8
+    max cosine within the 155 shipped-collision groups : 0.964434
+    max cosine over the whole 4316-token pool : 0.964431
+
+==============================================================================
+E3  LEARNABILITY -- can a trained model tell the colliding tokens apart?
+==============================================================================
+
+  Task, built the way section 10's experiment was: every token carries a label that
+  is deterministic for that token, and inside each shipped-collision group the labels
+  disagree. A model whose input path cannot distinguish two tokens is capped at the
+  majority share of the group -- 50% for a pair -- no matter how long it trains or how
+  large the layers above it are. This is a capacity test, so train and eval are the
+  same set deliberately: the question is whether the representation CAN hold the
+  distinction, not whether it generalises.
+
+  336 tokens, 155 collision groups
+  theoretical ceiling for a codec that collides them: 52.1%
+  onehot pos_dim=32        acc= 52.1%  loss=0.6861  input-path params=524,288
+  dynamic m=8              acc=100.0%  loss=0.0000  input-path params=131,072
+  dense table (control)    acc=100.0%  loss=0.0000  input-path params=21,504
+
+==============================================================================
+E4  UNBOUNDED LENGTH -- the crop is gone, not merely widened
+==============================================================================
+      96 bytes   onehot collides with its own extension: True    dynamic: False
+     192 bytes   onehot collides with its own extension: True    dynamic: False
+     384 bytes   onehot collides with its own extension: True    dynamic: False
+    1536 bytes   onehot collides with its own extension: True    dynamic: False
+    6144 bytes   onehot collides with its own extension: True    dynamic: False
+
+  code_dim is a constant in both codecs -- length costs nothing extra:
+    onehot pos_dim=32 : 8192 (but only the first 32 bytes exist)
+    dynamic m=8       : 2048 (every byte contributes)
+
+==============================================================================
+E5  PARAMETER BILL at V5 reference shape (D=8096)
+==============================================================================
+
+  input path                              params    train mem   vs dense
+  dense table V x D                1,061,158,912      16.98 GB      0.00%
+  kronecker onehot pos_dim=32         66,322,432       1.06 GB     93.75%
+  kronecker onehot pos_dim=64        132,644,864       2.12 GB     87.50%
+  dynamic m=8 (this work)             16,580,608       0.27 GB     98.44%
+
+  The shipped fix for the crop is pos_dim=64, which DOUBLES the projection to
+  132,644,864. Computing position instead reaches zero collisions at 16,580,608
+  -- 8x smaller than that fix, 4x smaller than the shipped codec.
+
+==============================================================================
+E6  REGRESSION -- similar spellings must still start out similar
+==============================================================================
+  related   train      training     cos=+0.8407
+  related   train      trainer      cos=+0.8435
+  related   भारत       भारतीय       cos=+0.7811
+  related   తెలుగు     తెలుగులో     cos=+0.8385
+  unrelated train      भारत         cos=-0.0054
+  unrelated apple      తెలుగు       cos=-0.0030
+  unrelated zebra      quilt        cos=-0.0079
+
+  min(related)=+0.7811  >  max(unrelated)=-0.0030: True
+
+==============================================================================
+E7  CHOOSING m -- zero collisions is necessary, not sufficient
+==============================================================================
+
+  Exact-collision counts hit zero at every m tested, so the count alone cannot choose
+  m -- a code that is merely non-identical can still be unlearnable. Margin decides.
+  Sweeping m against the sinusoid `base` shows the inherited default is wrong: at
+  base=10000 (the Transformer's, chosen for sequence positions in the thousands) the
+  low-frequency channels barely turn across a 36-byte token, so they add shared mass
+  and margin gets WORSE as m grows. Re-tuning base to the range byte positions
+  actually span restores the expected behaviour.
+
+  max adversarial cosine (lower = better separated); all cells have 0 collisions
+    m  code_dim base=10      base=100     base=1000    base=10000  
+    2       512     0.99002     0.99002     0.99002     0.99002
+    4      1024     0.97373     0.98587     0.99546     0.99951
+    8      2048     0.96443     0.98944     0.99536     0.99599
+   16      4096     0.96270     0.99156     0.99627     0.99714
+
+  At the inherited base=10000, margin degrades as m grows -- the opposite of
+  what more dimensions should buy. At the calibrated base it improves with m.
+  Chosen: m=8 (code_dim 2048, 16.6M params), best margin at m=16.
+
+==============================================================================
+E8  CORPUS IMPACT -- 336 of 63,997 tokens is 0.5% of the vocabulary.
+    The question that matters is what share of a real STREAM it is.
+==============================================================================
+
+  of 336 collided tokens: 3 are whitespace runs,
+  333 are content words. Counted separately below.
+  agentic                  85,202 tok   content     0 (0.000%)   whitespace     3 (0.004%)
+  code                    103,922 tok   content     0 (0.000%)   whitespace   681 (0.655%)
+  eval_registry_docs       33,726 tok   content    10 (0.030%)   whitespace     0 (0.000%)
+  general_web              74,383 tok   content     0 (0.000%)   whitespace     0 (0.000%)
+  indic                   199,332 tok   content   385 (0.193%)   whitespace    61 (0.031%)
+  long_context             76,463 tok   content     0 (0.000%)   whitespace   157 (0.205%)
+  reasoning                96,033 tok   content     0 (0.000%)   whitespace     5 (0.005%)
+  stem_math                20,997 tok   content     0 (0.000%)   whitespace     1 (0.005%)
+
+  CONTENT-word collisions -- indic lane 0.193%, worst Latin-dominant lane 0.030%
+  The whitespace collisions are real but benign-ish: a run of indentation
+  loses its exact width. The content collisions merge distinct words, and
+  they fall almost entirely on the lane this course exists to serve.
+
+==============================================================================
+EVIDENCE
+==============================================================================
+  [PASS] e1_census.gate_dynamic_zero_collisions
+  [PASS] e1_census.gate_shipped_loses_tokens
+  [PASS] e2_margin.gate_dynamic_separates
+  [PASS] e2_margin.gate_onehot_identical
+  [PASS] e3_learnability.gate_onehot_at_ceiling
+  [PASS] e3_learnability.gate_dynamic_beats_ceiling
+  [PASS] e4_unbounded.gate_dynamic_never_collides
+  [PASS] e4_unbounded.gate_onehot_always_collides
+  [PASS] e5_budget.gate_smaller_than_shipped
+  [PASS] e6_similarity.gate_similarity_preserved
+  [PASS] e7_choose_m.gate_zero_collisions_at_all_m
+  [PASS] e7_choose_m.gate_calibrated_base_beats_default
+  [PASS] e8_corpus_impact.gate_indic_content_worse_than_latin
+
+  13/13 gates passed   (68.2s)
