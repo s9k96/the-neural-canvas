@@ -386,7 +386,101 @@
 
                 <!-- ============================================================ -->
                 <div class="panel report-section">
-                    <h2><span class="num">06</span>What it costs, side by side</h2>
+                    <h2><span class="num">06</span>The algebra: joining words is adding their codes</h2>
+                    <p class="report-lead">Because binding is a convolution, the codec turns
+                        <strong>concatenation into addition</strong>. The code for <code class="mono">ab</code> can be
+                        built out of the code for <code class="mono">a</code> and the code for
+                        <code class="mono">b</code> &mdash; without ever looking at the bytes of
+                        <code class="mono">ab</code>.</p>
+                    <p style="text-align:center;font-family:var(--font-mono);font-size:14px;color:var(--text);
+                              background:rgba(255,255,255,.04);border:1px solid var(--panel-border);
+                              border-radius:10px;padding:12px;overflow-x:auto">
+                        &kappa;(xy) &nbsp;=&nbsp; [ &radic;L<sub>x</sub>&middot;&kappa;(x) &nbsp;+&nbsp;
+                        &radic;L<sub>y</sub>&middot;<strong style="color:var(--four)">rot</strong><sup>L<sub>x</sub></sup>(&kappa;(y)) ]
+                        &nbsp;/&nbsp; &radic;(L<sub>x</sub>+L<sub>y</sub>)
+                    </p>
+                    <div class="box scroll-x">
+                        <h4>What every symbol means</h4>
+                        <table class="cmp">
+                            <tbody>
+                                <tr><td style="width:150px"><code class="mono">x</code>, <code
+                                            class="mono">y</code></td>
+                                    <td>the two pieces being joined. Any byte strings &mdash; a character, a syllable,
+                                        a whole token. In <code class="mono">tra</code>+<code
+                                            class="mono">in</code>, x is <code class="mono">tra</code> and y is
+                                        <code class="mono">in</code>.</td></tr>
+                                <tr><td><code class="mono">xy</code></td>
+                                    <td>the two written together, as one string &mdash; <code
+                                            class="mono">train</code>. Not multiplication.</td></tr>
+                                <tr><td><code class="mono">&kappa;( &middot; )</code></td>
+                                    <td>the codec itself: give it a string, it returns that string's code &mdash; the
+                                        <code class="mono">d</code> numbers from section 03. <code
+                                            class="mono">&kappa;(x)</code> is x's code.</td></tr>
+                                <tr><td><code class="mono">L<sub>x</sub></code>, <code
+                                            class="mono">L<sub>y</sub></code></td>
+                                    <td>how many <strong>bytes</strong> are in x and in y &mdash; not characters.
+                                        <code class="mono">tra</code> is 3 bytes, but <code class="mono">भा</code> is
+                                        <strong>6</strong>, because Devanagari costs 3 bytes per character.</td></tr>
+                                <tr><td><code class="mono">rot( &middot; )</code></td>
+                                    <td><strong>the operation.</strong> Advances a code by <em>one</em> byte position
+                                        &mdash; a circular convolution with the one fixed position kernel. With the
+                                        canonical ramp it is literally a circular <em>shift</em> of the waveform.</td>
+                                </tr>
+                                <tr class="hl"><td><code class="mono">rot<sup>L<sub>x</sub></sup>( &middot; )</code>
+                                    </td>
+                                    <td>apply <code class="mono">rot</code> that many times. y's bytes do not start at
+                                        position 0 in the joined string &mdash; they start <em>after</em> all of x's
+                                        bytes, so y's code is slid forward by exactly <code
+                                            class="mono">L<sub>x</sub></code> places.</td></tr>
+                                <tr><td><code class="mono">&radic;L</code> factors</td>
+                                    <td>bookkeeping. Every code already carries a <code class="mono">1/&radic;L</code>
+                                        scale of its own, so combining means undoing each part's scale and reapplying
+                                        the joined one, <code class="mono">1/&radic;(L<sub>x</sub>+L<sub>y</sub>)</code>.
+                                    </td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p style="margin-top:14px">Read plainly: <strong>take x's wave, take y's wave, slide y's forward
+                            by the number of bytes in x, add them, rescale.</strong> That is the whole construction —
+                        and it is why "represent each character as a wave and add them up" is not a metaphor here.</p>
+                    <div id="algWorked"></div>
+
+                    <div class="ctl-row">
+                        <div class="ctl"><label for="algX">First piece (x)</label>
+                            <input type="text" id="algX" value="a" style="min-width:120px" /></div>
+                        <div class="ctl"><label for="algY">Second piece (y)</label>
+                            <input type="text" id="algY" value="b" style="min-width:120px" /></div>
+                        <div class="ctl"><label>Try one</label>
+                            <div class="chipset" id="algChips"></div></div>
+                    </div>
+
+                    <div class="box scroll-x">
+                        <h4>Built from the parts, versus computed from the joined bytes</h4>
+                        <p class="sub">the bottom panel draws both curves &mdash; if the law holds they lie exactly
+                            on top of each other</p>
+                        <div id="algWaves"></div>
+                    </div>
+                    <div id="algVerdict"></div>
+
+                    <div class="box scroll-x" style="margin-top:16px">
+                        <h4>The same step, as arrows</h4>
+                        <p class="sub">one channel: x's arrow, y's arrow, y rotated forward, and the sum</p>
+                        <div id="algPhasor"></div>
+                    </div>
+
+                    <p class="muted-note" style="margin-top:14px"><strong>Two honest footnotes.</strong> The identity
+                        is exact on the raw code; the shipped codec adds a per-token z-normalisation, which is an
+                        affine rescale, so downstream it holds up to that constant. And it only <em>became</em> exact
+                        once the DC and Nyquist channels were forced real &mdash; with arbitrary phases there, the
+                        inverse transform silently discards an imaginary part worth 0.65 at Nyquist and the law misses
+                        by about 1e-2. The Kronecker grid has no law of this kind at all: its code is a set of marked
+                        cells, so joining two tokens means re-marking the grid from scratch at new positions.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">07</span>What it costs, side by side</h2>
                     <p>At V5's reference width (<code class="mono">d_model = 8096</code>), the input path is one shared
                         projection from the code into the model. Its size is <code class="mono">code_dim &times;
                             8096</code>, so <strong>code_dim is the entire bill</strong>. Kronecker's is forced by
@@ -398,6 +492,97 @@
                         <strong>d&nbsp;=&nbsp;64</strong> &mdash; 128&times; smaller than the grid it replaces &mdash;
                         or full byte-exact invertibility at d&nbsp;=&nbsp;2048, for the same budget the dynamic
                         Kronecker codec needs just to avoid collisions.
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">08</span>What it buys, and what it costs</h2>
+                    <p class="report-lead">Every line below is a measured number from the run in
+                        <code class="mono">fourier/submission_artifacts/</code>, not a design intention. The losses
+                        are listed at the same weight as the wins, because a compression scheme that only reports its
+                        wins is not a result.</p>
+
+                    <div class="split">
+                        <div class="box">
+                            <h4 style="color:var(--good)">What it buys</h4>
+                            <table class="cmp">
+                                <tbody>
+                                    <tr><td><strong>Dimension stops being forced.</strong> Kronecker's 8,192 is
+                                            arithmetic (256&times;32). Here <code class="mono">d</code> is free, and
+                                            zero collisions hold down to <strong>d=64</strong> &mdash; 128&times;
+                                            smaller, 518K projection parameters against 66.3M.</td></tr>
+                                    <tr><td><strong>Nothing is silently merged.</strong> The shipped grid loses
+                                            <strong>336 tokens</strong> on this vocabulary, every one Indic. This
+                                            codec loses none, at any dimension tested.</td></tr>
+                                    <tr><td><strong>No length limit.</strong> A 6,144-byte token encodes. There is no
+                                            window to fall off, so the crop and its collisions cannot occur.</td></tr>
+                                    <tr><td><strong>The code is readable back out.</strong> 100% byte-exact decode at
+                                            d=2048; 100% nearest-code retrieval at d=64. Kronecker has no such
+                                            property, and it is what an output-head replacement would need.</td></tr>
+                                    <tr><td><strong>Rare tokens stop being second-class.</strong> On tokens never
+                                            trained on once, a dense table scores <strong>22%</strong> against a 20%
+                                            chance floor; this codec scores <strong>99%</strong>. With no rows there
+                                            are no per-row learning rates for a Zipfian corpus to skew.</td></tr>
+                                    <tr><td><strong>Vocabulary size is free.</strong> No <code class="mono">V</code>
+                                            appears in the cost. Growing the vocabulary costs nothing on the input
+                                            side.</td></tr>
+                                    <tr><td><strong>Concatenation becomes arithmetic.</strong> &kappa;(xy) builds from
+                                            &kappa;(x) and &kappa;(y) to 2e-15. The grid has no such law.</td></tr>
+                                    <tr><td><strong>The capacity law is predictive, not fitted.</strong> Measured SNR
+                                            tracks &radic;(d/L) to within 5.2% across a 16&times; range, and predicts
+                                            where decoding collapses.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="box">
+                            <h4 style="color:var(--crit)">What it costs</h4>
+                            <table class="cmp">
+                                <tbody>
+                                    <tr><td><strong>It is lossy where Kronecker is exact.</strong> The grid marks
+                                            <code class="mono">L</code> cells with no interference. This superposes
+                                            waves that leak into each other, so capacity is
+                                            <em>statistical</em> &mdash; good to a probability, not a guarantee.</td>
+                                    </tr>
+                                    <tr><td><strong>Separation does not improve with d.</strong> 0.982 at d=128,
+                                            0.974 at d=2048 &mdash; flat. On near-identical strings a tuned dynamic
+                                            Kronecker reaches 0.964, which is <em>better</em>. This scheme is not
+                                            strictly dominant.</td></tr>
+                                    <tr><td><strong>Byte similarity is arbitrary.</strong> Random phases mean
+                                            <code class="mono">a</code> and <code class="mono">b</code> get unrelated
+                                            waves. Parity with Kronecker's one-hot, but the word "wave" invites the
+                                            hope that similar bytes sound similar, and they do not.</td></tr>
+                                    <tr><td><strong>A weaker adapter, by construction.</strong> The whole input path
+                                            is one projection &mdash; at d=64, 128&times; smaller than Kronecker's.
+                                            Freezing it raises the sustained gradient load on the layers above in
+                                            every matched pair tested. &sect;9's warning applies here <em>harder</em>,
+                                            not less.</td></tr>
+                                    <tr><td><strong>Codes are dense.</strong> The sparse-gather implementations the
+                                            paper ships, and its compact <code class="mono">uint8</code> byte buffer,
+                                            do not carry over.</td></tr>
+                                    <tr><td><strong>Weight tying is impossible.</strong>
+                                            <code class="mono">code_dim &ne; d_model</code>, so there is no transpose
+                                            to reuse. Costs nothing only because V5 chose an untied head anyway.</td>
+                                    </tr>
+                                    <tr><td><strong>A new thing that can silently break a checkpoint.</strong> The
+                                            PRNG seed fixes every wave. Change it and every embedding changes while
+                                            the tokenizer hash still looks fine &mdash; so it has to be pinned in the
+                                            ledger.</td></tr>
+                                    <tr><td><strong>No training-loss claim.</strong> Representability, decodability,
+                                            parameter cost and the rare-token mechanism are measured. Whether any of
+                                            it converts into better validation loss needs a real training run, and is
+                                            not claimed here.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="verdict" style="margin-top:18px"><strong>The short version.</strong> Kronecker pays in
+                        <em>space</em> &mdash; an exact, sparse grid whose size is forced by its own arithmetic.
+                        Fourier pays in <em>noise</em> &mdash; a compressed, approximate code whose size you choose.
+                        Whether that is a good trade depends on which of the two you have to spend, and on this
+                        vocabulary the noise stayed far below the level at which anything measured cared.
                     </div>
                 </div>
 
@@ -446,6 +631,14 @@
                 }
                 this.pp = new Float64Array(this.nf);
                 for (let k = 0; k < this.nf; k++) this.pp[k] = r() * TAU;
+                // DC and Nyquist have no conjugate partner, so a real-valued code can
+                // only carry a real value there. Give them +-1 phases; otherwise the
+                // imaginary part is silently discarded and the algebra in section 06
+                // misses by ~1e-2 instead of being exact.
+                for (const k of [0, this.nf - 1]) {
+                    for (let v = 0; v < 256; v++) this.bp[v][k] = r() < 0.5 ? 0 : Math.PI;
+                    this.pp[k] = 0;
+                }
             }
             angle(v, p, k) { return this.bp[v][k] + p * this.pp[k]; }
             spectrum(bytes) {
@@ -896,7 +1089,147 @@
             renderDecode(); renderChart();
         })();
 
-        // ================= 06 the bill =================
+        // ================= 06 the algebra =================
+        (function () {
+            const algC = new Fourier(128);          // small d: the waveform stays legible
+            const xi = document.getElementById('algX');
+            const yi = document.getElementById('algY');
+            const wavesHost = document.getElementById('algWaves');
+            const phHost = document.getElementById('algPhasor');
+            const verdict = document.getElementById('algVerdict');
+
+            // rot^m in the spectrum domain: multiply by exp(i * pp * m)
+            const rotSpec = (s, m) => {
+                const re = new Float64Array(algC.nf), im = new Float64Array(algC.nf);
+                for (let k = 0; k < algC.nf; k++) {
+                    const a = algC.pp[k] * m, c = Math.cos(a), si = Math.sin(a);
+                    re[k] = s.re[k] * c - s.im[k] * si;
+                    im[k] = s.re[k] * si + s.im[k] * c;
+                }
+                return { re, im };
+            };
+
+            function waveSvg(sig, colour, W, H, overlay) {
+                let mx = 0;
+                for (const v of sig) mx = Math.max(mx, Math.abs(v));
+                if (overlay) for (const v of overlay) mx = Math.max(mx, Math.abs(v));
+                mx = mx || 1;
+                const pt = (arr) => arr.map((v, i) =>
+                    `${i ? 'L' : 'M'}${(i / (arr.length - 1) * W).toFixed(2)},${(H / 2 - v / mx * (H / 2 - 6)).toFixed(2)}`).join('');
+                return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none"
+                          role="img" aria-label="code waveform">
+                   <line x1="0" y1="${H / 2}" x2="${W}" y2="${H / 2}" stroke="var(--axis)" stroke-width="1"/>
+                   <path d="${pt(Array.from(sig))}" fill="none" stroke="${colour}" stroke-width="2"/>
+                   ${overlay ? `<path d="${pt(Array.from(overlay))}" fill="none" stroke="var(--good)"
+                        stroke-width="2" stroke-dasharray="5 4"/>` : ''}
+                 </svg>`;
+            }
+
+            function render() {
+                const x = xi.value || 'a', y = yi.value || 'b';
+                const bx = bytesOf(x), by = bytesOf(y);
+                const Lx = Math.max(bx.length, 1), Ly = Math.max(by.length, 1);
+                const sx = algC.spectrum(bx), sy = algC.spectrum(by);
+                const syRot = rotSpec(sy, Lx);
+                const built = { re: new Float64Array(algC.nf), im: new Float64Array(algC.nf) };
+                const s = 1 / Math.sqrt(Lx + Ly);
+                for (let k = 0; k < algC.nf; k++) {
+                    built.re[k] = (Math.sqrt(Lx) * sx.re[k] + Math.sqrt(Ly) * syRot.re[k]) * s;
+                    built.im[k] = (Math.sqrt(Lx) * sx.im[k] + Math.sqrt(Ly) * syRot.im[k]) * s;
+                }
+                const direct = algC.spectrum(bytesOf(x + y));
+
+                document.getElementById('algWorked').innerHTML =
+                    `<div class="box" style="margin-top:4px"><h4>This example, with the numbers filled in</h4>
+                       <p class="sub">x = <code class="mono">${esc(x)}</code> (${Lx} byte${Lx === 1 ? '' : 's'}),
+                          y = <code class="mono">${esc(y)}</code> (${Ly} byte${Ly === 1 ? '' : 's'}),
+                          so xy = <code class="mono">${esc(x + y)}</code> (${Lx + Ly} bytes)</p>
+                       <div style="font-family:var(--font-mono);font-size:13.5px;color:var(--text);
+                                   overflow-x:auto;padding:4px 0">
+                         &kappa;(<span style="color:var(--four)">${esc(x + y)}</span>) =
+                         [ &radic;${Lx}&middot;&kappa;(${esc(x)}) + &radic;${Ly}&middot;rot<sup>${Lx}</sup>(&kappa;(${esc(y)})) ]
+                         / &radic;${Lx + Ly}
+                       </div>
+                       <p class="muted-note" style="margin-top:6px">y's code is slid forward
+                         <strong>${Lx}</strong> place${Lx === 1 ? '' : 's'} because that is how many bytes of x sit in
+                         front of it.</p></div>`;
+
+                const gBuilt = algC.signal(built, algC.d);
+                const gDirect = algC.signal(direct, algC.d);
+                let resid = 0, scale = 0;
+                for (let i = 0; i < gBuilt.length; i++) {
+                    resid = Math.max(resid, Math.abs(gBuilt[i] - gDirect[i]));
+                    scale = Math.max(scale, Math.abs(gDirect[i]));
+                }
+                const rel = resid / (scale || 1);
+
+                const W = 900, H = 74;
+                wavesHost.innerHTML =
+                    `<div style="display:grid;gap:10px">
+                       <div><div class="muted-note" style="font-family:var(--font-mono)">
+                            &kappa;(<strong style="color:var(--text)">${esc(x)}</strong>) &mdash; ${Lx} byte${Lx === 1 ? '' : 's'}</div>
+                            ${waveSvg(algC.signal(sx, algC.d), 'rgba(255,255,255,.62)', W, H)}</div>
+                       <div><div class="muted-note" style="font-family:var(--font-mono)">
+                            rot<sup>${Lx}</sup>( &kappa;(<strong style="color:var(--text)">${esc(y)}</strong>) )
+                            &mdash; y's wave, advanced ${Lx} position${Lx === 1 ? '' : 's'}</div>
+                            ${waveSvg(algC.signal(syRot, algC.d), 'rgba(255,255,255,.62)', W, H)}</div>
+                       <div><div class="muted-note" style="font-family:var(--font-mono)">
+                            <span style="color:var(--four)">&#9473;</span> their weighted sum &nbsp;vs&nbsp;
+                            <span style="color:var(--good)">&#9476;</span> &kappa;(<strong
+                              style="color:var(--text)">${esc(x + y)}</strong>) computed straight from the bytes</div>
+                            ${waveSvg(gBuilt, 'var(--four)', W, H, gDirect)}</div>
+                     </div>`;
+
+                verdict.innerHTML =
+                    `<div class="verdict ${rel < 1e-9 ? 'good' : 'bad'}">
+                       Largest gap between the two curves: <strong>${resid.toExponential(2)}</strong>
+                       (${rel.toExponential(2)} relative). ${rel < 1e-9
+                        ? 'That is floating-point noise &mdash; the curves are <strong>the same curve</strong>, and the code for the joined string really was built from its parts.'
+                        : 'These do not coincide; the byte mapping for one of these pieces is not plain concatenation (byte-fallback tokens like <code class="mono">&lt;0x1B&gt;</code> stand for one byte by convention, and that convention breaks when they are joined).'}
+                     </div>`;
+
+                // one channel, as arrows. These are the exact vectors the formula adds:
+                //   ax = sqrt(Lx)*kappa(x),  ay = sqrt(Ly)*rot^Lx(kappa(y)),  ax + ay
+                const k = 7, R = 62, PAD = 16, size = (R + PAD) * 2, cx = size / 2, cy = size / 2;
+                const ax = [Math.sqrt(Lx) * sx.re[k], Math.sqrt(Lx) * sx.im[k]];
+                const ayR = [Math.sqrt(Ly) * syRot.re[k], Math.sqrt(Ly) * syRot.im[k]];
+                const asum = [ax[0] + ayR[0], ax[1] + ayR[1]];
+                const M = Math.max(Math.hypot(...ax), Math.hypot(...ayR), Math.hypot(...asum), 1e-9);
+                const arrow = (v, col, w, lbl, from) => {
+                    const o = from || [0, 0];
+                    return `<line x1="${cx + o[0] / M * R * .82}" y1="${cy - o[1] / M * R * .82}"
+                             x2="${cx + (o[0] + v[0]) / M * R * .82}" y2="${cy - (o[1] + v[1]) / M * R * .82}"
+                             stroke="${col}" stroke-width="${w}" stroke-linecap="round"><title>${lbl}</title></line>`;
+                };
+                const circle = (inner, cap) => `<figure style="margin:0;display:inline-block;text-align:center">
+                    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+                      <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--axis)"/>
+                      <line x1="${cx - R}" y1="${cy}" x2="${cx + R}" y2="${cy}" stroke="var(--axis)"/>
+                      <line x1="${cx}" y1="${cy - R}" x2="${cx}" y2="${cy + R}" stroke="var(--axis)"/>
+                      ${inner}</svg>
+                    <figcaption style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">${cap}</figcaption>
+                  </figure>`;
+                const ay0 = [Math.sqrt(Ly) * sy.re[k], Math.sqrt(Ly) * sy.im[k]];
+                phHost.innerHTML = `<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
+                    ${circle(arrow(ax, 'rgba(255,255,255,.8)', 2.5, 'x'), '&kappa;(x)')}
+                    ${circle(arrow(ay0, 'rgba(255,255,255,.45)', 2, 'y, unrotated'), '&kappa;(y)')}
+                    ${circle(arrow(ayR, 'var(--amber)', 2.5, 'y rotated'),
+                        'rot<sup>' + Lx + '</sup>(&kappa;(y))')}
+                    ${circle(arrow(ax, 'rgba(255,255,255,.55)', 2, 'x')
+                        + arrow(ayR, 'var(--amber)', 2, 'y rotated, tip to tail', ax)
+                        + arrow(asum, 'var(--four)', 3.5, 'sum'), 'sum &prop; &kappa;(xy)')}
+                  </div>
+                  <p class="muted-note" style="margin-top:8px">Channel ${k}. Rotating is what carries y past x's
+                  bytes; adding is what joins them. Every one of the ${algC.nf} channels does this at once.</p>`;
+            }
+            xi.addEventListener('input', render);
+            yi.addEventListener('input', render);
+            chips(document.getElementById('algChips'), ['a + b', 'tra + in', 'भा + रत', 'train + er'],
+                t => { const [a, b] = t.split(' + '); xi.value = a; yi.value = b; render(); });
+            render();
+        })();
+
+        // ================= 07 the bill =================
         (function () {
             const D_MODEL = 8096, DENSE_V = 131072;
             const rows = [

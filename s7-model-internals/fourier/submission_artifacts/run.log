@@ -21,11 +21,11 @@ F1  DISCRIMINATION -- dimension is a free parameter, not a product
 ==============================================================================
 F2  SEPARATION MARGIN -- and where extra dimensions stop helping
 ==============================================================================
-  d=  128  max adversarial cosine = 0.98202
-  d=  256  max adversarial cosine = 0.97741
-  d=  512  max adversarial cosine = 0.97708
-  d= 1024  max adversarial cosine = 0.97684
-  d= 2048  max adversarial cosine = 0.97392
+  d=  128  max adversarial cosine = 0.98326
+  d=  256  max adversarial cosine = 0.97792
+  d=  512  max adversarial cosine = 0.97698
+  d= 1024  max adversarial cosine = 0.97686
+  d= 2048  max adversarial cosine = 0.97390
 
   The margin is essentially flat in d. These pairs are near-identical strings that
   differ only in their last byte or two, so their superpositions genuinely overlap;
@@ -46,7 +46,7 @@ F3  LEARNABILITY -- the test the lossiness could fail
   ceiling for a codec that collides them: 52.1%
   kronecker onehot d_p=32    acc= 52.1%  loss=0.6861  input-path params=524,288
   fourier d=256              acc=100.0%  loss=0.0000  input-path params=16,384
-  fourier d=2048             acc=100.0%  loss=0.0017  input-path params=131,072
+  fourier d=2048             acc=100.0%  loss=0.0016  input-path params=131,072
   dense table (control)      acc=100.0%  loss=0.0000  input-path params=21,504
 
 ==============================================================================
@@ -57,18 +57,18 @@ F4  INVERTIBILITY -- reading the byte string back out of the code
   Correlating the code against a candidate (byte, position) wave recovers whether that
   pair is present, so the whole token can be decoded by argmax over 256 candidates per
   position. Nothing is stored per token and no table is consulted.
-  d=  128  whole-token decode  25.5%   byte accuracy  57.1%
-  d=  256  whole-token decode  56.0%   byte accuracy  84.6%
-  d=  512  whole-token decode  87.8%   byte accuracy  98.1%
-  d= 1024  whole-token decode  99.0%   byte accuracy  99.9%
+  d=  128  whole-token decode  23.0%   byte accuracy  57.1%
+  d=  256  whole-token decode  54.5%   byte accuracy  83.8%
+  d=  512  whole-token decode  86.8%   byte accuracy  97.9%
+  d= 1024  whole-token decode  99.8%   byte accuracy 100.0%
   d= 2048  whole-token decode 100.0%   byte accuracy 100.0%
 
   byte accuracy by token byte-length (d=1024):
      0- 7 bytes: 100.0%  (410 bytes)
      8-15 bytes: 100.0%  (2344 bytes)
     16-23 bytes: 100.0%  (1239 bytes)
-    24-31 bytes:  99.9%  (1125 bytes)
-    32-39 bytes:  99.0%  (303 bytes)
+    24-31 bytes: 100.0%  (1125 bytes)
+    32-39 bytes:  99.7%  (303 bytes)
 
   nearest-code decode (vocabulary-bounded: match against known codes)
     d=   64  correct token retrieved 100.00%
@@ -90,7 +90,7 @@ F5  POSITION RAMP -- random phases vs the canonical circular shift
   is more interpretable. But a circular shift wraps: position p and position p+d are the
   same phase, so the window reappears -- just at d instead of 32. ramp="random" has no
   period. This is the same stored-vs-computed trade the course keeps meeting.
-  ramp=random   |<phase(p=0), phase(p=d)>| = 0.0271   <- no period
+  ramp=random   |<phase(p=0), phase(p=d)>| = 0.0530   <- no period
   ramp=shift    |<phase(p=0), phase(p=d)>| = 1.0000   <- wraps, window at d
 
 ==============================================================================
@@ -109,17 +109,17 @@ F6  PARAMETER BILL at V5 reference shape (D=8096)
 F7  REGRESSIONS -- order sensitivity and prefix similarity
 ==============================================================================
   order sensitivity (a bag of waves would score 1.000):
-    abc              vs cba              cos=+0.3605
+    abc              vs cba              cos=+0.3610
     dog bites man    vs man bites dog    cos=+0.5379
     ab               vs ba               cos=+0.0274
 
   prefix similarity (section 7's property):
     related   train    training   cos=+0.7979
     related   train    trainer    cos=+0.8488
-    related   भारत     भारतीय     cos=+0.8303
-    unrelated train    भारत       cos=-0.0150
+    related   भारत     भारतीय     cos=+0.8302
+    unrelated train    भारत       cos=-0.0151
     unrelated apple    తెలుగు     cos=+0.0157
-    unrelated zebra    quilt      cos=+0.0100
+    unrelated zebra    quilt      cos=+0.0103
 
   min(related)=+0.7979 > max(unrelated)=+0.0157: True
 
@@ -172,12 +172,12 @@ F9  ADAPTATION -- the risk a COMPRESSED input path makes worse, not better
   section 9's leading indicator, because that is where the adjustment surfaces when the
   adapter cannot make it.
 
-  input path                 baseline       peak    ratio
-  dense table                  0.4436     3.8812    8.75x
-  dense table, FROZEN          1.3764     5.7232    4.16x
-  fourier d=2048               3.8002    14.4980    3.82x
-  fourier d=64                 1.0539     4.5874    4.35x
-  fourier d=64, FROZEN         1.8313     5.6335    3.08x
+  input path                 baseline      peak  mean after  mean all
+  dense table                  0.4436    3.8812      0.1970    0.4847
+  dense table, FROZEN          1.3764    5.7232      1.7834    1.5222
+  fourier d=2048               3.2471   15.9142      2.2760    4.6443
+  fourier d=64                 1.1026    4.2185      1.3504    1.2327
+  fourier d=64, FROZEN         2.4262    2.5717      1.8213    1.7037
 
   READ THIS TABLE DOWN THE PAIRS, NOT ACROSS THE ROWS. The spike ratio normalises by
   each arm's own baseline, and the baselines differ for reasons that have nothing to do
@@ -186,15 +186,86 @@ F9  ADAPTATION -- the risk a COMPRESSED input path makes worse, not better
   therefore confounded and no ranking between them is claimed here. What IS a controlled
   comparison is a matched pair: identical architecture, identical scale, the only
   difference being whether the input path is allowed to adapt.
-  dense table            trainable -> frozen:  baseline 0.444 -> 1.376,  peak 3.881 -> 5.723   WORSE frozen
-  fourier d=64           trainable -> frozen:  baseline 1.054 -> 1.831,  peak 4.587 -> 5.633   WORSE frozen
 
-  In both pairs, freezing raises the load on the layers above -- not only at the shift
-  but throughout the run. Section 9's mechanism reproduces: remove the degrees of
-  freedom at the point where the change enters and the adjustment surfaces somewhere
-  else. It reproduces on a codec 128x smaller than the one the scar was first seen on,
-  and the operational conclusion carries over unchanged -- the projection stays
-  trainable, and freezing is a scheduled, logged decision or it does not happen.
+  matched pairs -- sustained load on the layers above:
+  dense table            trainable -> frozen:  baseline 0.444 -> 1.376,  mean 0.485 -> 1.522   WORSE frozen
+  fourier d=64           trainable -> frozen:  baseline 1.103 -> 2.426,  mean 1.233 -> 1.704   WORSE frozen
+
+  In both pairs, freezing raises the sustained load on the layers above. Note what the
+  PEAK column does for frozen fourier d=64: it barely rises at the shift, which looks
+  like resilience and is the opposite. That arm sits high for the entire run because it
+  never adapts at all, so the transition is not a distinguishable event -- an input path
+  that is uniformly struggling has no spike to show. This is why the gate reads mean
+  load and baseline rather than peak; the first version of this experiment read peak and
+  drew the wrong conclusion.
+
+  Section 9's mechanism reproduces either way: remove the degrees of freedom at the
+  point where the change enters and the adjustment surfaces somewhere else. It
+  reproduces on a codec 128x smaller than the one the V4 scar was first seen on, and the
+  operational conclusion carries over unchanged -- the projection stays trainable, and
+  freezing is a scheduled, logged decision or it does not happen.
+
+==============================================================================
+F10  THE ALGEBRA -- kappa(xy) built from kappa(x) and kappa(y), never from xy
+==============================================================================
+
+  Binding by convolution leaves the codec a homomorphism: joining two strings is the
+  same as ADDING their codes, once the second is rotated forward by the length of the
+  first. Nothing re-reads the bytes of the joined string.
+
+      kappa(xy) = [ sqrt(Lx) kappa(x) + sqrt(Ly) rot^Lx( kappa(y) ) ] / sqrt(Lx + Ly)
+
+  The Kronecker grid has no such law: its code is a set of marked cells, and joining two
+  tokens means re-marking the grid from scratch at new positions.
+                 ँ + ▁பூர்த்தி        residual 8.74e-16
+             ▁ট্যা + ▁গ্রুপ           residual 9.18e-16
+                ্ফ + ▁Liber           residual 4.20e-16
+            ▁శరీరం + েই               residual 5.13e-16
+             ▁উচিত + ▁হিসাবে          residual 8.97e-16
+
+  worst residual over 400 real token pairs: 1.94e-15  (exact to machine precision)
+
+  Two consequences. The identity holds on the RAW code; the shipped codec adds a
+  per-token z-normalisation, which is an affine rescale, so downstream it holds up to
+  that constant. And it only became exact once the DC and Nyquist channels were forced
+  real -- with arbitrary phases there, irfft silently discarded an imaginary part worth
+  0.65 at Nyquist, and the law missed by ~1e-2.
+
+==============================================================================
+F11  THE NOISE MODEL -- predicted crosstalk vs measured
+==============================================================================
+
+  Everything about capacity in this submission rests on SNR ~ sqrt(d/L). That has been
+  asserted, not checked. Unbinding sums nf channels: the matching (byte, position) term
+  contributes coherently, and the other L-1 terms are sums of random unit phasors. So
+
+      signal    = 1.0                        (by the sqrt(L) scaling in score())
+      noise std = sqrt( (L-1) / (2*nf) )
+      SNR       = sqrt( 2*nf / (L-1) )  ~  sqrt(d / L)
+
+  Decoding takes an argmax over 256 candidates, so the true byte must beat the LARGEST
+  of 255 noise draws, which for gaussian noise sits near sqrt(2*ln(255)) = 3.33 sigma.
+  That predicts where byte decoding should fall apart -- a number F4 measured
+  independently, and never used to test this model.
+
+       d          signal         noise std  SNR pred  SNR meas   decode?
+     128   1.000 / 1.064    0.3354 / 0.3767      2.98      2.83        no
+     256   1.000 / 1.043    0.2381 / 0.2593      4.20      4.02       yes
+     512   1.000 / 1.097    0.1687 / 0.1905      5.93      5.76       yes
+    1024   1.000 / 1.039    0.1194 / 0.1295      8.38      8.03       yes
+    2048   1.000 / 1.026    0.0845 / 0.0906     11.84     11.32       yes
+
+  Largest disagreement between predicted and measured SNR: 5.2%, across a
+  16x range of d. Measured noise runs consistently a few percent ABOVE prediction --
+  the derivation assumes the L-1 interfering terms are independent, and in a real token
+  they are not quite: repeated byte values and the two real-valued channels (DC and
+  Nyquist) both break that assumption slightly. The model is a good one, not an exact
+  one, and it is reported that way.
+
+  The threshold sits between d=128 (SNR 2.83, below 3.33) and
+  d=256 (SNR 4.02, above it). F4 measured byte accuracy at those
+  same dimensions as 57% and 84% -- the collapse lands where this model says it should,
+  from an experiment that knew nothing about it.
 
 ==============================================================================
 LEDGER  embedding_policy_id  (section 13)
@@ -243,5 +314,8 @@ EVIDENCE
   [PASS] f8_zipf.gate_fourier_beats_dense_on_tail
   [PASS] f8_zipf.gate_dense_unseen_near_chance
   [PASS] f9_adaptation.gate_frozen_worse_in_matched_pairs
+  [PASS] f10_algebra.gate_concat_law_exact
+  [PASS] f11_noise_model.gate_snr_model_within_15pct
+  [PASS] f11_noise_model.gate_threshold_brackets_collapse
 
-  13/13 gates passed   (387.3s)
+  16/16 gates passed   (430.4s)

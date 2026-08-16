@@ -13,11 +13,11 @@ theorem.
 ## Run it
 
 ```bash
-.venv/Scripts/python s7-model-internals/fourier/run_demo.py   # 9 experiments, 13 gates, ~6.5 min
+.venv/Scripts/python s7-model-internals/fourier/run_demo.py   # 11 experiments, 16 gates, ~7 min
 .venv/Scripts/python s7-model-internals/fourier/fourier.py    # codec self-check
 ```
 
-Exits 0 only if all thirteen gates pass. Writes `submission_artifacts/evidence.json`,
+Exits 0 only if all sixteen gates pass. Writes `submission_artifacts/evidence.json`,
 `run.log`, and the `embedding_policy_id.json` ledger record §13 asks for.
 Measured against **Sarvam-1**, sha256 `bb5115a3…`, the tokenizer s6 froze — 63,997 tokens after
 excluding 4,099 special tokens, matching the paper's Table 3 methodology.
@@ -79,7 +79,7 @@ in a scheme with no rows.**
 
 ## How it is proved
 
-Seven experiments. The census, margin and learnability harness is **imported from the problem-3
+Eleven experiments. The census, margin and learnability harness is **imported from the problem-3
 submission rather than reimplemented**, so both codecs are judged by identical instruments.
 
 ### F1 — Discrimination: how small can `d` go?
@@ -271,6 +271,69 @@ the run. §9's mechanism reproduces on a codec 128× smaller than the one the V4
 on, and its operational conclusion carries over unchanged: **the projection stays trainable, and
 freezing is a scheduled, logged decision or it does not happen.**
 
+### F10 — Concatenation is addition, exactly
+
+Because binding is a convolution, the codec is a **homomorphism**: joining two strings is adding
+their codes, once the second is rotated forward by the length of the first.
+
+```
+κ(xy) = [ √Lx·κ(x) + √Ly·rot^Lx(κ(y)) ] / √(Lx + Ly)
+```
+
+`Lx`, `Ly` are **byte** counts (not characters); `rot` advances a code by one byte position — the
+circular convolution binding is built from. Nothing re-reads the bytes of the joined string.
+
+**Worst residual over 400 real token pairs: 1.94e-15** — exact to machine precision. The Kronecker
+grid has no law of this kind: its code is a set of marked cells, so joining two tokens means
+re-marking the grid from scratch at new positions.
+
+Two things this experiment forced:
+
+- **It found a real defect.** The law held at 1e-15 in the frequency domain but missed by **1e-2**
+  in the time domain — the space the model actually sees. `irfft` requires the DC and Nyquist
+  channels to be real, and with arbitrary phases there it was silently discarding
+  `Im(spec[Nyquist]) = 0.65`. Those two channels now carry ±1 phases; round-trip error went from
+  0.65 to 4e-16 and every downstream number was re-measured.
+- **Byte-fallback tokens are excluded, and not as a hedge.** `token_bytes('<0x1B>')` is one byte
+  *by convention*, but `token_bytes('<0x1B>' + 'x')` is the literal string, because the joined text
+  no longer matches the `<0xNN>` form. The byte *mapping* is not a homomorphism over concatenation;
+  the codec still is. Exactly 4 of 400 pairs were affected, all of them byte-fallback.
+
+The identity is exact on the **raw** code. The shipped codec adds a per-token z-normalisation — an
+affine rescale — so downstream it holds up to that constant. Compose in raw space and normalise
+last if you want to use it.
+
+### F11 — The crosstalk model, checked rather than asserted
+
+Every capacity claim here rests on `SNR ≈ √(d/L)`, which had been stated and never tested.
+Unbinding sums `nf` channels: the matching term adds coherently, the other `L−1` are sums of
+random unit phasors. So `signal = 1.0`, `noise std = √((L−1)/2nf)`, `SNR = √(2nf/(L−1)) ≈ √(d/L)`.
+
+| d | SNR predicted | SNR measured | decodable? |
+|---|---|---|---|
+| 128 | 2.98 | 2.83 | **no** |
+| 256 | 4.20 | 4.02 | yes |
+| 512 | 5.93 | 5.76 | yes |
+| 1024 | 8.38 | 8.03 | yes |
+| 2048 | 11.84 | 11.32 | yes |
+
+**Worst disagreement: 5.2% across a 16× range of `d`.**
+
+The cross-check matters more than the fit. Decoding is an argmax over 256 candidates, so the true
+byte must beat the *largest* of 255 noise draws — for Gaussian noise, ≈ `√(2 ln 255)` = **3.33σ**.
+That threshold falls between d=128 (2.83, below) and d=256 (4.02, above). F4 independently
+measured byte accuracy at those dimensions as **57% and 84%**: the collapse lands where this model
+says it should, from an experiment that knew nothing about it.
+
+So `d` is not a knob found by trial. **Per-byte decoding needs roughly `d ≳ 11·L`**, and
+whole-token exactness is stricter because every byte must land — which is why d=2048 covers a
+36-byte vocabulary while d=64 suffices for discrimination alone.
+
+Reported honestly: measured noise runs a few percent **above** prediction at every `d`, never
+below. That is a bias, not scatter. The derivation assumes the `L−1` interfering terms are
+independent and in a real token they are not quite — repeated byte values correlate, and the two
+real-valued channels contribute different variance. A good model, not an exact one.
+
 ### The ledger record
 
 §13 requires a checkpoint to be able to say what its input path was doing, so `run_demo.py` emits
@@ -336,7 +399,7 @@ constraint on the geometry is not.
 | file | what |
 |---|---|
 | `fourier.py` | the codec, embedding layer, decode/unbind, self-check |
-| `run_demo.py` | seven experiments, ten gates, evidence bundle |
+| `run_demo.py` | eleven experiments, sixteen gates, evidence bundle |
 | `submission_artifacts/evidence.json` | every number above, machine-readable |
 | `submission_artifacts/embedding_policy_id.json` | the §13 ledger record for this input path |
 | `submission_artifacts/run.log` | the full run |

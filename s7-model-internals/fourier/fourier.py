@@ -27,6 +27,7 @@ seed now joins the tokenizer hash as part of the artifact's identity.
 """
 from __future__ import annotations
 
+import math
 import sys
 from pathlib import Path
 
@@ -72,6 +73,15 @@ class FourierCodec:
         self.byte_phase = rng.uniform(0, 2 * np.pi, size=(256, self.nf))
         self.pos_phase = (rng.uniform(0, 2 * np.pi, size=self.nf) if ramp == "random"
                           else 2 * np.pi * np.arange(self.nf) / d)
+        # The DC and Nyquist channels have no conjugate partner, so irfft requires them
+        # to be real -- give them an arbitrary phase and irfft silently discards the
+        # imaginary part (measured: 0.65 at Nyquist, real information thrown away). Use
+        # +-1 there instead: still unit modulus, still informative, and now the code
+        # survives the trip to the time domain intact, which is what makes the
+        # concatenation law hold in the space the model actually sees.
+        for k in (0, self.nf - 1):
+            self.byte_phase[:, k] = np.pi * (rng.random(256) < 0.5)
+            self.pos_phase[k] = 0.0
 
     # -- core -------------------------------------------------------------
     def _spectrum(self, text: str) -> np.ndarray:
@@ -99,6 +109,27 @@ class FourierCodec:
 
     def truncates(self) -> bool:
         return False
+
+    # -- the algebra ------------------------------------------------------
+    def rotate(self, code: np.ndarray, times: int = 1) -> np.ndarray:
+        """Advance a code by `times` byte positions. This is the circular convolution
+        that binding is built from; with ramp="shift" it is literally a circular shift."""
+        return np.fft.irfft(np.fft.rfft(code) * np.exp(1j * self.pos_phase * times),
+                            n=self.d)
+
+    def concat(self, x: str, y: str) -> np.ndarray:
+        """kappa(xy) built from kappa(x) and kappa(y) WITHOUT looking at the bytes of
+        the joined string -- concatenation becomes addition after rotation.
+
+            kappa(xy) = [ sqrt(Lx) kappa(x) + sqrt(Ly) rot^Lx( kappa(y) ) ] / sqrt(Lx+Ly)
+
+        Exact only without z-normalisation, which is a per-token affine rescale.
+        """
+        assert not self.znorm, "the algebra is exact on raw codes; use znorm=False"
+        lx, ly = max(len(token_bytes(x)), 1), max(len(token_bytes(y)), 1)
+        return ((math.sqrt(lx) * self.encode_one(x)
+                 + math.sqrt(ly) * self.rotate(self.encode_one(y), lx))
+                / math.sqrt(lx + ly))
 
     # -- the property Kronecker does not have -----------------------------
     def score(self, text: str, value: int, pos: int) -> float:
@@ -169,6 +200,11 @@ def demo():
         assert big.decode(w) == token_bytes(w), f"failed to decode {w}"
     assert big.score("भारत", token_bytes("भारत")[0], 0) > 0.5
     assert big.score("भारत", (token_bytes("भारत")[0] + 7) % 256, 0) < 0.3
+
+    # 4b. concatenation is addition after rotation, exactly
+    raw = FourierCodec(d=64, znorm=False)
+    for x, y in [("a", "b"), ("tra", "in"), ("भा", "रत")]:
+        assert np.abs(raw.encode_one(x + y) - raw.concat(x, y)).max() < 1e-12, (x, y)
 
     # 5. the seam holds, and only the projection is trainable
     emb = FourierEmbedding(["a", "bb", "ccc", "dddd"], d_model=16, codec=c)
