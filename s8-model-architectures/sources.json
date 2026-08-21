@@ -1,0 +1,351 @@
+{
+  "_comment": [
+    "Chronology evidence for the Session 8 attention timeline.",
+    "",
+    "Every `date` here is a V1 SUBMISSION DATE, not a publication or conference date, and not",
+    "the date implied by the arXiv ID prefix. verify_sources.py re-fetches each arxiv_id from",
+    "the arXiv Atom API and asserts that the <published> field matches `date` exactly. A claim",
+    "that cannot be machine-checked carries source_type != 'arxiv' and states why in `caveat`.",
+    "",
+    "The arXiv ID prefix is NOT the date. YaRN is 2309.00071 but was submitted 2023-08-31.",
+    "This file exists because that class of error is invisible once it is in prose."
+  ],
+  "generated_by": "verify_sources.py",
+  "baseline_note": "KV-cache yardstick from the Session 8 notes, section 10: 48 layers, 8 KV heads, head_dim 128, bf16. Reproduces the notes' published figures exactly: 6.44 GB for one user at 32,768 tokens, 51.54 GB for eight.",
+  "entries": [
+    {
+      "id": "memory-networks",
+      "label": "Position encoding in memory networks",
+      "date": "2015-03-31",
+      "source_type": "arxiv",
+      "arxiv_id": "1503.08895",
+      "title": "End-To-End Memory Networks",
+      "role": "precursor",
+      "card": false,
+      "claim": "Explicit position-dependent encoding of a token's slot predates the Transformer by over two years."
+    },
+    {
+      "id": "learned-absolute",
+      "label": "Learned absolute position embeddings",
+      "date": "2017-05-08",
+      "source_type": "arxiv",
+      "arxiv_id": "1705.03122",
+      "title": "Convolutional Sequence to Sequence Learning",
+      "role": "required",
+      "claim": "Learned absolute position embeddings appear here, five weeks BEFORE 'Attention Is All You Need'. They are not a Transformer invention.",
+      "trap": "Both learned-absolute and sinusoidal are commonly attributed to the Transformer paper because that is where most readers first meet them. Only sinusoidal originates there."
+    },
+    {
+      "id": "standard-attention",
+      "label": "Scaled dot-product attention, MHA, sinusoidal positions",
+      "date": "2017-06-12",
+      "source_type": "arxiv",
+      "arxiv_id": "1706.03762",
+      "title": "Attention Is All You Need",
+      "role": "required",
+      "claim": "Origin of scaled dot-product attention, multi-head attention, and sinusoidal position encoding. Everything else on this timeline is a response to a cost this paper introduced."
+    },
+    {
+      "id": "sinusoidal",
+      "label": "Sinusoidal position encoding",
+      "date": "2017-06-12",
+      "source_type": "arxiv",
+      "arxiv_id": "1706.03762",
+      "title": "Attention Is All You Need",
+      "role": "required",
+      "claim": "Fixed sin/cos of position at geometrically spaced frequencies. The first widely used instance of computing position from a function instead of storing it in a table.",
+      "caveat": "Same paper and therefore the same date as the standard-attention entry. It is listed separately because the assignment names sinusoidal and standard attention as two distinct mechanisms, and they answer two different problems. Co-dating is deliberate, not a duplicate."
+    },
+    {
+      "id": "transformer-xl",
+      "label": "Transformer-XL: segment recurrence + relative positions",
+      "date": "2019-01-09",
+      "source_type": "arxiv",
+      "arxiv_id": "1901.02860",
+      "title": "Transformer-XL: Attentive Language Models Beyond a Fixed-Length Context",
+      "role": "added",
+      "claim": "First mainstream answer to 'what crosses a chunk boundary'. Direct ancestor of the Memory Stream idea in section 14 of the notes."
+    },
+    {
+      "id": "sparse-transformer",
+      "label": "Sparse Transformer: strided and local attention",
+      "date": "2019-04-23",
+      "source_type": "arxiv",
+      "arxiv_id": "1904.10509",
+      "title": "Generating Long Sequences with Sparse Transformers",
+      "role": "required",
+      "claim": "Origin of structured sparsity in attention. Ancestor of both sliding-window and top-k selection."
+    },
+    {
+      "id": "t5-relative-bias",
+      "label": "T5 relative position bias",
+      "date": "2019-10-23",
+      "source_type": "arxiv",
+      "arxiv_id": "1910.10683",
+      "title": "Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer",
+      "role": "added",
+      "claim": "Learned scalar bias per relative-distance bucket, added to the score. The conceptual bridge from sinusoidal encoding to ALiBi's fixed linear bias."
+    },
+    {
+      "id": "mqa",
+      "label": "Multi-Query Attention",
+      "date": "2019-11-06",
+      "source_type": "arxiv",
+      "arxiv_id": "1911.02150",
+      "title": "Fast Transformer Decoding: One Write-Head is All You Need",
+      "role": "required",
+      "claim": "First attack on the KV-cache bill specifically. Predates GQA by three and a half years.",
+      "trap": "Frequently mis-dated to the 2023 GQA era because that is when it became widely deployed."
+    },
+    {
+      "id": "longformer",
+      "label": "Longformer: sliding window + global tokens",
+      "date": "2020-04-10",
+      "source_type": "arxiv",
+      "arxiv_id": "2004.05150",
+      "title": "Longformer: The Long-Document Transformer",
+      "role": "required",
+      "claim": "Canonical sliding-window attention with a few global tokens escaping the window."
+    },
+    {
+      "id": "linear-attention",
+      "label": "Linear attention / Transformers are RNNs",
+      "date": "2020-06-29",
+      "source_type": "arxiv",
+      "arxiv_id": "2006.16236",
+      "title": "Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention",
+      "role": "required",
+      "claim": "Drops softmax so the sum can be regrouped into a fixed-size running state. This is exactly the arithmetic in section 4 of the notes."
+    },
+    {
+      "id": "delta-rule",
+      "label": "The delta rule as a fast-weight write",
+      "date": "2021-02-22",
+      "source_type": "arxiv",
+      "arxiv_id": "2102.11174",
+      "title": "Linear Transformers Are Secretly Fast Weight Programmers",
+      "role": "required",
+      "claim": "Identifies the add-only write as the defect and applies the delta rule as the correction. This is section 5 to section 6 of the notes.",
+      "caveat": "The delta rule itself is Widrow-Hoff (1960) and far predates attention. This entry dates its use as a linear-attention state write, which is the claim the timeline actually makes."
+    },
+    {
+      "id": "rope",
+      "label": "RoPE (Rotary Position Embedding)",
+      "date": "2021-04-20",
+      "source_type": "arxiv",
+      "arxiv_id": "2104.09864",
+      "title": "RoFormer: Enhanced Transformer with Rotary Position Embedding",
+      "role": "required",
+      "claim": "Replaces a stored position table with a computed rotation, so the score depends on relative distance and the rule is defined at any position."
+    },
+    {
+      "id": "alibi",
+      "label": "ALiBi (Attention with Linear Biases)",
+      "date": "2021-08-27",
+      "source_type": "arxiv",
+      "arxiv_id": "2108.12409",
+      "title": "Train Short, Test Long: Attention with Linear Biases Enables Input Length Extrapolation",
+      "role": "required",
+      "claim": "No position embedding at all: a fixed per-head linear penalty on distance, added to the score."
+    },
+    {
+      "id": "flashattention",
+      "label": "FlashAttention",
+      "date": "2022-05-27",
+      "source_type": "arxiv",
+      "arxiv_id": "2205.14135",
+      "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",
+      "role": "added",
+      "claim": "The counter-example the timeline needs: the bill got dramatically cheaper with NO change to the mathematics. Same outputs, different memory traffic.",
+      "why_added": "Without it, the timeline reads as 'every saving requires an approximation'. FlashAttention proves that is false, and it is why exact attention stayed competitive far longer than the 2020 efficiency wave predicted."
+    },
+    {
+      "id": "gqa",
+      "label": "Grouped-Query Attention",
+      "date": "2023-05-22",
+      "source_type": "arxiv",
+      "arxiv_id": "2305.13245",
+      "title": "GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints",
+      "role": "required",
+      "claim": "Interpolates between MHA and MQA, and can be uptrained from an existing MHA checkpoint rather than trained fresh."
+    },
+    {
+      "id": "position-interpolation",
+      "label": "Position Interpolation (PI)",
+      "date": "2023-06-27",
+      "source_type": "arxiv",
+      "arxiv_id": "2306.15595",
+      "title": "Extending Context Window of Large Language Models via Positional Interpolation",
+      "role": "added",
+      "claim": "Squeeze positions into the trained range instead of extrapolating past it. The direct predecessor NTK-aware scaling was written to fix.",
+      "why_added": "The notes jump from RoPE to NTK-aware to YaRN. That chain is not coherent without PI: NTK-aware exists specifically because PI loses high-frequency information."
+    },
+    {
+      "id": "ntk-aware",
+      "label": "NTK-aware scaled RoPE",
+      "date": "2023-06",
+      "date_precision": "month",
+      "source_type": "community_post",
+      "url": "https://www.reddit.com/r/LocalLLaMA/comments/14lz7j5/ntkaware_scaled_rope_allows_llama_models_to_have/",
+      "author": "u/bloc97",
+      "title": "NTK-Aware Scaled RoPE allows LLaMA models to have extended (8k+) context size without any fine-tuning and minimal perplexity degradation",
+      "role": "required",
+      "claim": "Scale low frequencies more than high ones, so fine detail survives the stretch. Requires no fine-tuning.",
+      "caveat": "NOT A PAPER. A community forum post, never published to arXiv. It has no DOI and no v1 timestamp we can machine-verify, so this entry is exempt from the arXiv check by design.",
+      "ordering_evidence": "Day-level date could not be established from a reachable primary source, so it is recorded to month precision only. Its position AFTER Position Interpolation is not asserted from a timestamp: the YaRN paper states that NTK-aware interpolation addresses PI's loss of high-frequency information, which establishes the causal order independently of the calendar.",
+      "trap": "An agent asked to cite this will readily produce a plausible arXiv ID. There isn't one. Inventing a citation here is the single easiest way to fail this assignment."
+    },
+    {
+      "id": "yarn",
+      "label": "YaRN",
+      "date": "2023-08-31",
+      "source_type": "arxiv",
+      "arxiv_id": "2309.00071",
+      "title": "YaRN: Efficient Context Window Extension of Large Language Models",
+      "role": "required",
+      "claim": "Combines NTK-by-parts frequency handling with an attention-temperature correction, reaching target context with far less fine-tuning than PI.",
+      "trap": "The arXiv ID begins 2309, so this is very widely cited as September 2023. The v1 submission is 2023-08-31. This is the clearest example on the timeline of the ID prefix not being the date."
+    },
+    {
+      "id": "paged-attention",
+      "label": "PagedAttention / vLLM",
+      "date": "2023-09-12",
+      "source_type": "arxiv",
+      "arxiv_id": "2309.06180",
+      "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention",
+      "role": "added",
+      "claim": "Treats the KV cache as virtual memory with paging, attacking fragmentation and enabling sharing across sequences.",
+      "why_added": "Section 10 frames KV cache as a per-user serving cost. PagedAttention is the systems-layer answer to that exact framing, and it changed serving economics without touching the architecture."
+    },
+    {
+      "id": "attention-sinks",
+      "label": "Attention sinks / StreamingLLM",
+      "date": "2023-09-29",
+      "source_type": "arxiv",
+      "arxiv_id": "2309.17453",
+      "title": "Efficient Streaming Language Models with Attention Sinks",
+      "role": "required",
+      "claim": "Keeping the first few tokens pinned in the cache stops a sliding window from collapsing, because softmax needs somewhere to dump probability mass."
+    },
+    {
+      "id": "mistral-swa",
+      "label": "Sliding-window attention in a production LLM",
+      "date": "2023-10-10",
+      "source_type": "arxiv",
+      "arxiv_id": "2310.06825",
+      "title": "Mistral 7B",
+      "role": "required",
+      "claim": "Where sliding-window attention became a mainstream decoder-LLM default rather than an encoder/long-document technique.",
+      "caveat": "This is a deployment milestone, not the invention. Sliding-window attention originates with Sparse Transformer (2019) and Longformer (2020)."
+    },
+    {
+      "id": "mamba",
+      "label": "Mamba (selective state space)",
+      "date": "2023-12-01",
+      "source_type": "arxiv",
+      "arxiv_id": "2312.00752",
+      "title": "Mamba: Linear-Time Sequence Modeling with Selective State Spaces",
+      "role": "added",
+      "claim": "The other fixed-state family, arriving at the same place as linear attention from signal-processing rather than from dropping softmax.",
+      "why_added": "The notes' fixed-state layers (the D in DDDGDDDG) descend from this line as much as from linear attention. Mamba-2 later proved the two families are formally related."
+    },
+    {
+      "id": "mla",
+      "label": "Multi-head Latent Attention (MLA)",
+      "date": "2024-05-07",
+      "source_type": "arxiv",
+      "arxiv_id": "2405.04434",
+      "title": "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model",
+      "role": "required",
+      "claim": "Caches a low-rank latent vector instead of full K and V, with a small decoupled RoPE component carried separately."
+    },
+    {
+      "id": "ssd",
+      "label": "State Space Duality (Mamba-2)",
+      "date": "2024-05-31",
+      "source_type": "arxiv",
+      "arxiv_id": "2405.21060",
+      "title": "Transformers are SSMs: Generalized Models and Efficient Algorithms Through Structured State Space Duality",
+      "role": "added",
+      "claim": "Shows linear attention and state space models are two views of one structure, which is why later work mixes their ideas freely."
+    },
+    {
+      "id": "parallel-deltanet",
+      "label": "DeltaNet parallelised over sequence length",
+      "date": "2024-06-10",
+      "source_type": "arxiv",
+      "arxiv_id": "2406.06484",
+      "title": "Parallelizing Linear Transformers with the Delta Rule over Sequence Length",
+      "role": "required",
+      "claim": "Made the delta rule trainable at scale. A sequential write rule is useless if it cannot be parallelised across the sequence."
+    },
+    {
+      "id": "gated-deltanet",
+      "label": "Gated DeltaNet",
+      "date": "2024-12-09",
+      "source_type": "arxiv",
+      "arxiv_id": "2412.06464",
+      "title": "Gated Delta Networks: Improving Mamba2 with Delta Rule",
+      "role": "required",
+      "claim": "Adds a decay gate to the delta rule, so the state can forget as well as correct."
+    },
+    {
+      "id": "nsa",
+      "label": "Native Sparse Attention (NSA)",
+      "date": "2025-02-16",
+      "source_type": "arxiv",
+      "arxiv_id": "2502.11089",
+      "title": "Native Sparse Attention: Hardware-Aligned and Natively Trainable Sparse Attention",
+      "role": "required",
+      "claim": "Sparsity trained in from the start rather than applied to a dense-trained model, with kernels designed around the access pattern."
+    },
+    {
+      "id": "dsa",
+      "label": "DeepSeek Sparse Attention (DSA) with lightning indexer",
+      "date": "2025-09-29",
+      "source_type": "release",
+      "url": "https://api-docs.deepseek.com/news/news250929/",
+      "title": "Introducing DeepSeek-V3.2-Exp",
+      "role": "required",
+      "claim": "A cheap lightning indexer keeps a small key cache per token, scores incoming queries, and forwards only the top candidates to sparse MLA. This is the 'cheaper proposal step' section 7 of the notes argues sparse attention requires.",
+      "caveat": "Dated by official release announcement, not an arXiv submission, so it is exempt from the arXiv check."
+    },
+    {
+      "id": "drope",
+      "label": "DroPE",
+      "date": "2025-12-13",
+      "source_type": "arxiv",
+      "arxiv_id": "2512.12167",
+      "title": "Extending the Context of Pretrained LLMs by Dropping Their Positional Embeddings",
+      "authors": "Yoav Gelberg, Koshi Eguchi, Takuya Akiba, Edoardo Cetin (Sakana AI)",
+      "code": "https://github.com/SakanaAI/DroPE",
+      "role": "required",
+      "claim": "Use RoPE as a training-time scaffold for convergence, then remove positional embeddings entirely and briefly recalibrate at the original length. Costs under 1% of the pretraining budget and extends context with no long-context fine-tuning.",
+      "trap": "There are TWO papers one capital letter apart. DRoPE (arXiv 2503.15029, 2025-03-19) is 'Directional Rotary Position Embedding', an autonomous-driving trajectory method with nothing to do with context extension, and it is the top search hit for the query 'DroPE'. Citing it here would be confidently, checkably wrong.",
+      "notes_correction": "Section 9 of the class notes states that 'the available record does not establish the exact DroPE algorithm or which rotary dimensions it changes.' Both halves are now superseded: the algorithm is published with reference code, and the mechanism does not change rotary dimensions at all -- it removes positional embeddings outright. The notes appear to predate publication."
+    },
+    {
+      "id": "deepseek-v4-csa",
+      "label": "Compressed Sparse Attention + Heavily Compressed Attention",
+      "date": "2026-04-26",
+      "source_type": "arxiv",
+      "arxiv_id": "2606.19348",
+      "title": "DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence",
+      "role": "required",
+      "claim": "CSA consolidates every m tokens of KV cache into one entry then applies top-k selection over those entries; HCA compresses far harder but keeps dense attention over the result. Interleaved, they cut both KV memory and per-token FLOPs at million-token context.",
+      "verified_note": "This entry was initially suspected to be an error in the class notes, on the assumption that DeepSeek-V4 did not exist. It does. The notes are accurate and the suspicion was wrong -- recorded here because the correction is the point."
+    },
+    {
+      "id": "qwen36-hybrid",
+      "label": "Qwen3.6 hybrid Gated DeltaNet schedule",
+      "date": "2026-04-27",
+      "source_type": "release",
+      "url": "https://huggingface.co/Qwen",
+      "title": "Qwen3.6 (35B-A3B)",
+      "role": "added",
+      "claim": "Ships a repeating cycle of three Gated DeltaNet blocks followed by one gated attention block, so roughly three quarters of layers carry a fixed-size recurrent state.",
+      "why_added": "Independent convergence on the depth-schedule idea in section 13 of the notes, at the same 3:1 fixed-state-to-attention ratio as DDDGDDDG. Corroborating evidence from a different lab is worth more than a second citation of the same one.",
+      "caveat": "Dated by model release, not an arXiv submission, so it is exempt from the arXiv check."
+    }
+  ]
+}

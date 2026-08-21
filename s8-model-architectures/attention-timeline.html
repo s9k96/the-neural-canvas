@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neural Canvas — The Field Changes Its Mind</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <link rel="stylesheet" href="../shared.css" />
+    <style>
+        /* ---- palette ------------------------------------------------------------
+           One hue per BILL, held constant everywhere on the page: a mechanism's dot on
+           the timeline, its card border and its row in the cost table are always the
+           same colour. Reuses this site's validated categorical hues (s6/s7).
+           Status hues (good/crit) are reserved for verdicts and never used for a bill. */
+        .viz {
+            --compute: #d95926;
+            --kv: #3987e5;
+            --pos: #199e70;
+            --sys: #9a6dd7;
+            --good: #199e70;
+            --amber: #c98500;
+            --crit: #d03b3b;
+            --grid: #2c2c2a;
+            --axis: #45453f;
+        }
+
+        .report-section { margin: 0 auto 20px; max-width: 1040px; text-align: left; }
+        .report-section h2 { text-align: left; font-size: 20px; margin: 0 0 10px; letter-spacing: 0; }
+        .report-section h2 .num { color: var(--accent); font-family: var(--font-mono); font-size: 15px; margin-right: 10px; }
+        .report-section h3 { font-size: 13.5px; color: var(--text); margin: 22px 0 8px; }
+        .report-section p { color: var(--muted); font-size: 14.5px; line-height: 1.7; margin: 0 0 12px; }
+        .report-section p:last-child { margin-bottom: 0; }
+        .report-section strong { color: var(--text); font-weight: 600; }
+        .report-lead { font-size: 15.5px !important; color: var(--text) !important; }
+        code.mono { font-family: var(--font-mono); background: rgba(255, 255, 255, .06); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--text); }
+        .muted-note { color: var(--muted); font-size: 12.5px; }
+
+        .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 14px 0 4px; }
+        .tile { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 13px 15px; }
+        .tile .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .tile .v { font-size: 23px; font-weight: 700; color: var(--text); margin-top: 4px; line-height: 1.1; }
+        .tile .v small { font-size: 12px; font-weight: 500; color: var(--muted); }
+
+        .ctl-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin: 4px 0 16px; }
+        .ctl { display: flex; flex-direction: column; gap: 5px; }
+        .ctl label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .ctl input[type=range] { width: 190px; accent-color: var(--accent); }
+        .ctl .val { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
+        .chipset { display: flex; gap: 6px; flex-wrap: wrap; }
+        .chip { background: rgba(255, 255, 255, .05); border: 1px solid var(--panel-border); color: var(--muted); border-radius: 999px; padding: 4px 11px; font-size: 12px; cursor: pointer; font-family: var(--font-sans); }
+        .chip:hover { color: var(--text); border-color: var(--muted); }
+        .chip.on { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+
+        .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+        .box { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px; min-width: 0; }
+        .box h4 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+        .box .sub { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+        .scroll-x { overflow-x: auto; }
+
+        .verdict { border-left: 3px solid var(--accent); padding: 8px 0 8px 13px; margin: 14px 0 4px; font-size: 14.5px; color: var(--text); }
+        .verdict.good { border-left-color: var(--good); }
+        .verdict.bad { border-left-color: var(--crit); }
+        canvas, svg { max-width: 100%; display: block; }
+
+        /* ---- attention walkthrough ---- */
+        .attn-grid { border-collapse: collapse; font-family: var(--font-mono); font-size: 11px; }
+        .attn-grid th { color: var(--muted); font-weight: 600; padding: 3px 6px; font-size: 10.5px; }
+        .attn-grid td { width: 52px; height: 30px; text-align: center; border: 1px solid rgba(255, 255, 255, .07); color: var(--text); transition: background .18s var(--ease); }
+        .attn-grid td.masked { color: #6a6a64; background: repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,.045) 3px, rgba(255,255,255,.045) 6px); }
+        .steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+        .step { flex: 1 1 auto; min-width: 96px; text-align: left; background: rgba(255, 255, 255, .04); border: 1px solid var(--panel-border); border-radius: 9px; padding: 8px 11px; cursor: pointer; }
+        .step .n { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+        .step .t { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+        .step.on { border-color: var(--accent); background: var(--accent-dim); }
+        .step.on .t, .step.on .n { color: #fff; }
+
+        /* ---- timeline ---- */
+        .tl-wrap { overflow-x: auto; padding-bottom: 4px; }
+        .tl-dot { cursor: pointer; }
+        .tl-dot circle { transition: r .15s var(--ease), opacity .15s var(--ease); }
+        .tl-dot:hover circle { r: 8; }
+        .tl-dot.dim { opacity: .18; }
+        .tl-dot.sel circle { stroke: #fff; stroke-width: 2; }
+        .lane-label { font-size: 10.5px; fill: var(--muted); font-family: var(--font-sans); text-transform: uppercase; letter-spacing: .06em; }
+        .tl-year { font-size: 10.5px; fill: var(--muted); font-family: var(--font-mono); }
+        .tl-tip { position: fixed; pointer-events: none; background: #16161a; border: 1px solid var(--panel-border); border-radius: 8px; padding: 7px 10px; font-size: 12px; color: var(--text); box-shadow: var(--glass-shadow); z-index: 60; max-width: 260px; opacity: 0; transition: opacity .12s; }
+        .tl-tip .d { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
+
+        /* ---- mechanism cards ---- */
+        .cards { display: flex; flex-direction: column; gap: 13px; }
+        .mcard { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-left: 3px solid var(--muted); border-radius: 12px; padding: 15px 17px; scroll-margin-top: 20px; }
+        .mcard.flash { animation: flash 1.4s var(--ease); }
+        @keyframes flash { 0%, 30% { background: var(--accent-dim); } 100% { background: rgba(255, 255, 255, .03); } }
+        .mcard .hd { display: flex; flex-wrap: wrap; gap: 9px; align-items: baseline; margin-bottom: 3px; }
+        .mcard .date { font-family: var(--font-mono); font-size: 11.5px; color: var(--accent); }
+        .mcard .nm { font-size: 16px; font-weight: 650; color: var(--text); }
+        .mcard .src { font-size: 11.5px; color: var(--muted); }
+        .mcard .src a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+        .mcard .src a:hover { color: var(--accent); }
+        .qa { margin-top: 11px; display: grid; grid-template-columns: 88px 1fr; gap: 5px 13px; align-items: baseline; }
+        .qa dt { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding-top: 2px; }
+        .qa dd { margin: 0; font-size: 13.5px; line-height: 1.62; color: var(--muted); }
+        .qa dd.buys { color: #cfe8dc; }
+        .qa dd.costs { color: #f0d3cc; }
+        .qa dd.pick { color: var(--text); }
+        .mcard .note { margin-top: 11px; font-size: 12.5px; line-height: 1.6; color: var(--muted); border-top: 1px dashed var(--panel-border); padding-top: 9px; }
+        .mcard .note b { color: var(--amber); font-weight: 700; }
+        .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+        .bdg { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; border-radius: 999px; padding: 2px 8px; border: 1px solid; }
+        .vd { font-size: 12.5px; margin-top: 11px; padding: 7px 11px; border-radius: 8px; display: flex; gap: 9px; align-items: baseline; }
+        .vd .lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+        .vd.pick { background: rgba(25, 158, 112, .13); color: #b9e6d3; }
+        .vd.ok { background: rgba(201, 133, 0, .13); color: #ecd4a4; }
+        .vd.avoid { background: rgba(208, 59, 59, .13); color: #f2c0c0; }
+
+        /* ---- per-mechanism visuals ---- */
+        .viz-row { display: flex; gap: 16px; align-items: flex-start; margin-top: 13px; padding-top: 12px; border-top: 1px dashed var(--panel-border); flex-wrap: wrap; }
+        .viz-art { flex: 0 0 auto; }
+        .viz-cap { flex: 1 1 210px; min-width: 190px; }
+        .viz-cap .vt { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+        .viz-cap .vn { font-size: 12.5px; line-height: 1.6; color: var(--muted); margin-top: 5px; }
+        .viz-cap .vstat { font-family: var(--font-mono); font-size: 12px; color: var(--text); margin-top: 7px; }
+        .viz-cap .vstat b { color: var(--accent); font-weight: 700; }
+        .vlegend { display: flex; gap: 11px; flex-wrap: wrap; font-size: 10.5px; color: var(--muted); margin-top: 7px; }
+        .vlegend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+
+        table.cmp { width: 100%; border-collapse: collapse; font-size: 13px; }
+        table.cmp th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--panel-border); }
+        table.cmp td { padding: 7px 8px; border-bottom: 1px solid rgba(255, 255, 255, .06); color: var(--muted); }
+        table.cmp td.n { font-family: var(--font-mono); color: var(--text); text-align: right; white-space: nowrap; }
+        table.cmp td a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+        .footnote { max-width: 1040px; margin: 26px auto 0; font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <button class="nav-toggle" id="sidebarToggle" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="7" x2="20" y2="7"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="17" x2="20" y2="17"></line>
+            </svg>
+        </button>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Sections</h3>
+                <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">&times;</button>
+            </div>
+            <div class="nav-list"></div>
+        </aside>
+
+        <main class="content viz">
+            <div class="wrapper">
+                <h1>The Field Changes Its Mind</h1>
+                <div class="subtitle">Vanilla attention was never wrong. It was <strong>expensive</strong>, and
+                    every mechanism since is somebody looking at that bill and trying to pay less of it. Laid out by
+                    the date each one actually appeared &mdash; not by family, not by teaching order &mdash; you can
+                    watch the field's priorities move: exactness, then decode memory, then length, then recurrent
+                    state coming back, then sparsity coming back, then compression getting aggressive.
+                    Every mechanism is <strong>drawn from its own rule</strong> — the grids below run the real
+                    selection function rather than illustrating it — and
+                    <strong>every date was checked against the paper's v1 record</strong>, not recalled.
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">01</span>First, the thing everything else modifies</h2>
+                    <p class="report-lead">Nothing after this makes sense without it. Six tokens, four numbers each,
+                        every value computed live. Step through and watch one query turn into one output vector.</p>
+
+                    <div class="steps" id="attnSteps"></div>
+                    <div class="box scroll-x">
+                        <h4 id="attnTitle">Scores</h4>
+                        <p class="sub" id="attnSub"></p>
+                        <div id="attnGrid"></div>
+                    </div>
+                    <div id="attnVerdict"></div>
+
+                    <h3>Two facts that generate the rest of this page</h3>
+                    <p><strong>Every token is compared with every other token.</strong> Six tokens give 36 scores.
+                        Ten thousand give one hundred million. <strong>And attention itself does not know order</strong>
+                        &mdash; the same word in two places projects to the same query, key and value. Those two facts
+                        are the compute bill and the position problem, and between them they account for every
+                        mechanism below.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">02</span>The bill, calculated</h2>
+                    <p>The two costs arrive at different moments. Compute lands during training and prefill and grows
+                        as <code class="mono">T&sup2;</code>. KV cache lands during generation, grows as
+                        <code class="mono">T</code>, and is <strong>private to each conversation</strong> &mdash;
+                        model weights load once and are shared, but eight users means eight caches.</p>
+                    <p class="muted-note">Yardstick from &sect;10 of the class notes: 48 layers, head dim 128, bf16.
+                        <code class="mono">2 &times; layers &times; kv_heads &times; head_dim &times; T &times; batch &times; bytes</code>.
+                        At 8 KV heads and 32,768 tokens this page computes 6.44 GB for one user and 51.54 GB for
+                        eight &mdash; the notes' own published figures, reproduced rather than copied.</p>
+
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label for="ctxSlider">Context length <span class="val" id="ctxVal"></span></label>
+                            <input type="range" id="ctxSlider" min="10" max="20" step="1" value="15" />
+                        </div>
+                        <div class="ctl">
+                            <label for="usrSlider">Concurrent users <span class="val" id="usrVal"></span></label>
+                            <input type="range" id="usrSlider" min="1" max="32" step="1" value="1" />
+                        </div>
+                    </div>
+                    <div class="tiles" id="billTiles"></div>
+                    <div id="billVerdict"></div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">03</span>The timeline</h2>
+                    <p class="report-lead">One row per bill. A dot sits at the date its mechanism appeared, in the
+                        row of the cost it attacks. <strong>Read it left to right and the activity migrates between
+                        rows</strong> &mdash; that migration is the field changing its mind, and it is the thing a
+                        list cannot show you.</p>
+                    <p class="muted-note">Click any dot to jump to its card. Filter by row to isolate one storyline.</p>
+
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label>Show</label>
+                            <div class="chipset" id="billChips"></div>
+                        </div>
+                    </div>
+                    <div class="box tl-wrap">
+                        <svg id="timeline" width="1000" height="330" role="img"
+                            aria-label="Attention mechanisms plotted by launch date, grouped by which cost they attack"></svg>
+                    </div>
+                    <div id="tlRead"></div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">04</span>Every mechanism, and what it costs you</h2>
+                    <p class="report-lead">Each card answers three questions: what it buys, what it gives up, and
+                        when you would actually pick it. <strong>A mechanism that is right for a 2K chatbot and wrong
+                        for a 1M agent is not a bad mechanism</strong> &mdash; so set the workload and the verdicts
+                        move.</p>
+
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label>Target context</label>
+                            <div class="chipset" id="wlChips"></div>
+                        </div>
+                        <div class="ctl">
+                            <label>Memory budget per user <span class="val" id="budVal"></span></label>
+                            <input type="range" id="budSlider" min="2" max="80" step="2" value="16" />
+                        </div>
+                    </div>
+                    <div id="wlNote"></div>
+                    <div class="cards" id="cards"></div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">05</span>Where the dates came from</h2>
+                    <p class="report-lead">The assignment warns that an agent will invent a launch date and describe
+                        a half-remembered technique. So none of these are recalled. Every arXiv entry below was
+                        re-fetched and its <code class="mono">&lt;published&gt;</code> field &mdash; the v1 submission
+                        timestamp &mdash; compared against the date this page displays.</p>
+                    <p>Run <code class="mono">python verify_sources.py</code> and it exits non-zero if any date has
+                        moved, if the chronology is out of order, or if a card on this page disagrees with the
+                        evidence file. The three claims that <em>cannot</em> be machine-checked are listed as exempt
+                        with the reason, never silently skipped.</p>
+
+                    <div class="tiles" id="evTiles"></div>
+
+                    <h3>Four places this was easy to get wrong</h3>
+                    <div id="traps"></div>
+
+                    <h3>Full chronology</h3>
+                    <div class="box scroll-x">
+                        <table class="cmp" id="srcTable"></table>
+                    </div>
+                </div>
+
+                <div class="footnote">
+                    <strong>What this page does not claim.</strong> The cost model is the KV-cache formula from
+                    &sect;10 applied to one fixed reference shape, so it compares mechanisms against each other on
+                    equal terms &mdash; it does not predict any real deployment's memory, which also pays for
+                    weights, activations, attention workspaces and allocator headroom. Nothing here measures
+                    <em>quality</em>: every quality statement on a card is attributed to its paper's own reported
+                    results, not re-measured. And a reported extension factor or speedup is evidence for that model
+                    and that procedure, not a promise that it transfers.
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>window.PAGE_ID = 'attention-timeline'; window.ROOT_PATH = '../';</script>
+    <script src="../shared.js"></script>
+    <script src="mechanisms.js"></script>
+    <script>
+        const $ = id => document.getElementById(id);
+        const fmtT = t => t >= 1048576 ? (t / 1048576) + 'M' : t >= 1024 ? (t / 1024) + 'K' : String(t);
+        const gb = b => b >= 1e9 ? (b / 1e9).toFixed(b / 1e9 < 10 ? 2 : 1) + ' GB'
+            : b >= 1e6 ? (b / 1e6).toFixed(0) + ' MB' : (b / 1e3).toFixed(0) + ' KB';
+
+        // ================= 01 standard attention, computed =================
+        (function () {
+            const WORDS = ['The', 'cat', 'sat', 'on', 'the', 'mat'], D = 4, N = 6;
+            // deterministic pseudo-random projections -- same numbers every load
+            let s = 7;
+            const rnd = () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff * 2 - 1;
+            const emb = WORDS.map(() => Array.from({ length: D }, () => +(rnd() * 1.4).toFixed(2)));
+            const mat = () => Array.from({ length: D }, () => Array.from({ length: D }, () => +(rnd() * .9).toFixed(2)));
+            const Wq = mat(), Wk = mat(), Wv = mat();
+            const proj = (x, W) => W.map((_, j) => +x.reduce((a, v, i) => a + v * W[i][j], 0).toFixed(2));
+            const Q = emb.map(e => proj(e, Wq)), K = emb.map(e => proj(e, Wk)), V = emb.map(e => proj(e, Wv));
+            const dot = (a, b) => a.reduce((s, v, i) => s + v * b[i], 0);
+
+            const raw = Q.map(q => K.map(k => dot(q, k)));
+            const scaled = raw.map(r => r.map(v => v / Math.sqrt(D)));
+            const masked = scaled.map((r, i) => r.map((v, j) => j > i ? -Infinity : v));
+            const soft = masked.map(r => {
+                const m = Math.max(...r.filter(isFinite));
+                const e = r.map(v => isFinite(v) ? Math.exp(v - m) : 0);
+                const t = e.reduce((a, b) => a + b, 0);
+                return e.map(v => v / t);
+            });
+
+            const STEPS = [
+                { n: '1', t: 'Project', title: 'Q, K and V', sub: 'One vector in, three vectors out. Looking for information and offering it are different jobs.', kind: 'qkv' },
+                { n: '2', t: 'Score', title: 'QKᵀ — every query against every key', sub: '6 × 6 = 36 dot products. This grid is the compute bill.', grid: raw },
+                { n: '3', t: 'Scale', title: 'Divide by √d_k', sub: 'd_k = 4, so √d_k = 2. Keeps scores in a range where softmax is not saturated.', grid: scaled },
+                { n: '4', t: 'Mask', title: 'Add −∞ above the diagonal', sub: 'Token 4 may read 0–3. Hatched cells are the future, set to −∞ before softmax.', grid: masked },
+                { n: '5', t: 'Softmax', title: 'Each row becomes weights summing to 1', sub: 'Note the shared denominator: change one score and every weight in the row moves. That tie is what linear attention later removes.', grid: soft, heat: true },
+                { n: '6', t: 'Weighted sum', title: 'Multiply values by weights and add', sub: 'One new vector per token, now carrying information from the tokens it chose.', kind: 'out' }
+            ];
+            let cur = 1;
+
+            $('attnSteps').innerHTML = STEPS.map((s, i) =>
+                `<button class="step" data-i="${i}"><div class="n">${s.n}</div><div class="t">${s.t}</div></button>`).join('');
+
+            function cell(v, i, j, heat) {
+                if (!isFinite(v)) return `<td class="masked">−∞</td>`;
+                const bg = heat ? `background:rgba(57,135,229,${(v * .85).toFixed(3)})` : '';
+                return `<td style="${bg}">${heat ? v.toFixed(2) : v.toFixed(2)}</td>`;
+            }
+            function render() {
+                const st = STEPS[cur];
+                $('attnTitle').textContent = st.title;
+                $('attnSub').textContent = st.sub;
+                document.querySelectorAll('.step').forEach((b, i) => b.classList.toggle('on', i === cur));
+
+                if (st.kind === 'qkv') {
+                    $('attnGrid').innerHTML = `<table class="attn-grid"><tr><th></th>${['embedding', 'query', 'key', 'value'].map(h => `<th colspan="4">${h}</th>`).join('')}</tr>` +
+                        WORDS.map((w, i) => `<tr><th style="text-align:right">${w}</th>` +
+                            [emb[i], Q[i], K[i], V[i]].map(v => v.map(x => `<td>${x.toFixed(2)}</td>`).join('')).join('') + `</tr>`).join('') + `</table>`;
+                    $('attnVerdict').innerHTML = `<div class="verdict">Same word, different slot: <strong>“The” at 0 and “the” at 4 produce identical rows</strong>. Attention has no idea they are in different places. That is the position problem, and §03's green row is the whole history of fixing it.</div>`;
+                    return;
+                }
+                if (st.kind === 'out') {
+                    const out = soft.map(w => V[0].map((_, d) => w.reduce((a, wt, j) => a + wt * V[j][d], 0)));
+                    $('attnGrid').innerHTML = `<table class="attn-grid"><tr><th></th><th colspan="4">output vector</th><th style="padding-left:14px">attends most to</th></tr>` +
+                        WORDS.map((w, i) => {
+                            const best = soft[i].indexOf(Math.max(...soft[i]));
+                            return `<tr><th style="text-align:right">${w}</th>` + out[i].map(x => `<td>${x.toFixed(2)}</td>`).join('') +
+                                `<td style="padding-left:14px;color:var(--accent)">${WORDS[best]} (${(soft[i][best] * 100).toFixed(0)}%)</td></tr>`;
+                        }).join('') + `</table>`;
+                    $('attnVerdict').innerHTML = `<div class="verdict good">Each token now holds a blend of the earlier tokens it selected. <strong>Every one of the 36 scores had to exist to produce these six vectors</strong> — that is what costs T², and what the rest of the page is trying to avoid paying.</div>`;
+                    return;
+                }
+                $('attnGrid').innerHTML = `<table class="attn-grid"><tr><th></th>${WORDS.map(w => `<th>${w}</th>`).join('')}</tr>` +
+                    st.grid.map((r, i) => `<tr><th style="text-align:right">${WORDS[i]}</th>` +
+                        r.map((v, j) => cell(v, i, j, st.heat)).join('') + `</tr>`).join('') + `</table>`;
+                $('attnVerdict').innerHTML = cur === 4
+                    ? `<div class="verdict bad">Turn the mask off and weight moves onto tokens that have not happened yet. During training the whole sequence runs in parallel, so the future is not skipped — it is set to −∞ and softmax sends it to exactly zero.</div>`
+                    : cur === 5
+                        ? `<div class="verdict">Each row sums to 1.00. The denominator is shared across the row, so <strong>to compute the weight for one key you need the scores of all the others</strong> — which is precisely why exact softmax attention cannot fold its history into a fixed-size state.</div>`
+                        : '';
+            }
+            $('attnSteps').addEventListener('click', e => {
+                const b = e.target.closest('.step'); if (!b) return; cur = +b.dataset.i; render();
+            });
+            render();
+        })();
+
+        // ================= 02 the bill =================
+        const billState = { T: 32768, users: 1 };
+        (function () {
+            function render() {
+                const { T, users } = billState;
+                const mha = kvBytes({ t: 'mha' }, T, users);
+                const gqa = kvBytes({ t: 'heads', h: 8 }, T, users);
+                const cmp = T * T, base = 32768 * 32768;
+                $('ctxVal').textContent = fmtT(T);
+                $('usrVal').textContent = users;
+                $('billTiles').innerHTML = [
+                    ['KV cache · MHA (64 heads)', gb(mha), 'grows with T and with users'],
+                    ['KV cache · GQA (8 heads)', gb(gqa), '8× less, same slope'],
+                    ['Score matrix', (cmp / 1e9).toFixed(cmp / 1e9 < 10 ? 2 : 0) + 'B', 'query–key comparisons'],
+                    ['Compute vs 32K', (cmp / base).toFixed(cmp / base < 10 ? 2 : 0) + '×', 'doubling T quadruples this']
+                ].map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v} <small>${s}</small></div></div>`).join('');
+
+                const b = gqa / 1e9;
+                $('billVerdict').innerHTML = b > 40
+                    ? `<div class="verdict bad">At ${fmtT(T)} with ${users} user${users > 1 ? 's' : ''}, the cache alone is <strong>${gb(gqa)}</strong> — more than a single 40 GB accelerator holds before you have loaded a single weight. GQA is not going to save this. This is the point where the mechanisms in §03's blue and orange rows stop being optional.</div>`
+                    : `<div class="verdict good">At ${fmtT(T)} with ${users} user${users > 1 ? 's' : ''}, GQA holds the cache to <strong>${gb(gqa)}</strong>. Comfortable — and the reason GQA alone was good enough for so long.</div>`;
+            }
+            $('ctxSlider').addEventListener('input', e => { billState.T = 2 ** +e.target.value; render(); });
+            $('usrSlider').addEventListener('input', e => { billState.users = +e.target.value; render(); });
+            render();
+        })();
+
+        // ================= 03 timeline =================
+        const CARDED = MECHANISMS;
+        let activeBills = new Set(Object.keys(BILLS));
+        (function () {
+            const svg = $('timeline'), W = 1000, PADL = 146, PADR = 26, PADT = 34;
+            const LANES = ['compute', 'kv', 'pos', 'sys'], LH = 62;
+            const toT = d => { const [y, m, dd] = d.split('-'); return new Date(+y, (+m || 1) - 1, +dd || 15).getTime(); };
+            const t0 = toT('2017-01-01'), t1 = toT('2026-10-01');
+            const x = d => PADL + (toT(d) - t0) / (t1 - t0) * (W - PADL - PADR);
+
+            $('billChips').innerHTML = Object.entries(BILLS).map(([k, v]) =>
+                `<button class="chip on" data-b="${k}"><span style="color:${v.color}">●</span> ${v.label}</button>`).join('');
+
+            const tip = document.createElement('div'); tip.className = 'tl-tip'; document.body.appendChild(tip);
+
+            function draw() {
+                let h = PADT + LANES.length * LH + 26;
+                let s = `<rect x="0" y="0" width="${W}" height="${h}" fill="none"/>`;
+                for (let y = 2017; y <= 2026; y++) {
+                    const xx = x(`${y}-01-01`);
+                    s += `<line x1="${xx}" y1="${PADT - 12}" x2="${xx}" y2="${PADT + LANES.length * LH - 8}" stroke="var(--grid)" stroke-width="1"/>`;
+                    s += `<text class="tl-year" x="${xx}" y="${PADT - 18}" text-anchor="middle">${y}</text>`;
+                }
+                LANES.forEach((ln, li) => {
+                    const cy = PADT + li * LH + LH / 2 - 8;
+                    s += `<line x1="${PADL}" y1="${cy}" x2="${W - PADR}" y2="${cy}" stroke="var(--axis)" stroke-width="1"/>`;
+                    s += `<text class="lane-label" x="${PADL - 12}" y="${cy + 4}" text-anchor="end" fill="${BILLS[ln].color}">${BILLS[ln].label}</text>`;
+                });
+                // stagger overlapping dots within a lane
+                const placed = {};
+                MECHANISMS.forEach(m => {
+                    const bills = m.bill.length ? m.bill : ['compute'];
+                    bills.forEach(b => {
+                        const li = LANES.indexOf(b); if (li < 0) return;
+                        const xx = x(m.date);
+                        const key = b + '|' + Math.round(xx / 16);
+                        const k = placed[key] = (placed[key] || 0) + 1;
+                        const cy = PADT + li * LH + LH / 2 - 8 + (k - 1) * 15 - (k > 1 ? 7 : 0);
+                        const on = activeBills.has(b);
+                        s += `<g class="tl-dot ${on ? '' : 'dim'}" data-id="${m.id}" data-nm="${m.name}" data-dt="${m.date}">
+                                <circle cx="${xx}" cy="${cy}" r="${m.anchor ? 6.5 : 4.8}" fill="${BILLS[b].color}"
+                                        opacity="${m.anchor ? 1 : .78}"/></g>`;
+                    });
+                });
+                svg.setAttribute('height', h);
+                svg.innerHTML = s;
+            }
+            svg.addEventListener('mousemove', e => {
+                const g = e.target.closest('.tl-dot');
+                if (!g) { tip.style.opacity = 0; return; }
+                tip.innerHTML = `<div class="d">${g.dataset.dt}</div>${g.dataset.nm}`;
+                tip.style.left = Math.min(e.clientX + 14, innerWidth - 275) + 'px';
+                tip.style.top = (e.clientY + 16) + 'px';
+                tip.style.opacity = 1;
+            });
+            svg.addEventListener('mouseleave', () => tip.style.opacity = 0);
+            svg.addEventListener('click', e => {
+                const g = e.target.closest('.tl-dot'); if (!g) return;
+                const el = $('c-' + g.dataset.id); if (!el) return;
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+            });
+            $('billChips').addEventListener('click', e => {
+                const b = e.target.closest('.chip'); if (!b) return;
+                const k = b.dataset.b;
+                activeBills.has(k) ? activeBills.delete(k) : activeBills.add(k);
+                if (!activeBills.size) activeBills = new Set(Object.keys(BILLS));
+                document.querySelectorAll('#billChips .chip').forEach(c => c.classList.toggle('on', activeBills.has(c.dataset.b)));
+                draw();
+            });
+            draw();
+
+            $('tlRead').innerHTML = `<div class="verdict">How to read it. <strong>2017</strong> is one orange dot creating the bill,
+                flanked by two green ones — position was already a problem before anyone worried about cost.
+                <strong>2019–2020</strong> orange and blue open up as sequences get long enough for T² and the cache to hurt.
+                <strong>2021–2023</strong> green returns hard: RoPE creates a length problem and PI, NTK-aware and YaRN all
+                arrive within ten weeks of each other to fix it. <strong>2023–2024</strong> blue dominates — GQA, MLA — while
+                fixed state quietly comes back after a three-year gap. <strong>2025–2026</strong> orange returns as sparsity
+                and compression, now trained in from the start rather than bolted on.
+                The gaps matter as much as the clusters: nothing serious touched the cache between 2019 and 2023,
+                because <strong>FlashAttention had just made exact attention cheap enough that nobody had to.</strong></div>`;
+        })();
+
+        // ================= 04 cards =================
+        const wl = { T: 32768, budget: 16 };
+        (function () {
+            const TARGETS = [[2048, '2K chatbot'], [32768, '32K assistant'], [262144, '256K docs'], [1048576, '1M agent']];
+            // Practical reach of each position mechanism, in tokens. Sourced from each
+            // paper's own reported results -- these are claims made by the authors, not
+            // measurements this page performs.
+            const REACH = {
+                'learned-absolute': 4096, 'sinusoidal': 4096, 't5-relative-bias': 8192,
+                'rope': 8192, 'alibi': 262144, 'position-interpolation': 65536,
+                'ntk-aware': 65536, 'yarn': 262144, 'drope': 1048576
+            };
+            $('wlChips').innerHTML = TARGETS.map(([t, l]) =>
+                `<button class="chip ${t === wl.T ? 'on' : ''}" data-t="${t}">${l}</button>`).join('');
+
+            function verdict(m) {
+                const T = wl.T, budget = wl.budget * 1e9;
+                if (m.family === 'position') {
+                    const r = REACH[m.id];
+                    if (r === undefined) return null;
+                    if (T <= r) return { k: 'pick', why: `Reaches ${fmtT(T)} — its own reported results cover this length.` };
+                    if (T <= r * 4) return { k: 'ok', why: `${fmtT(T)} is past its comfortable range (${fmtT(r)}); expect degradation without extension.` };
+                    return { k: 'avoid', why: `Reported to about ${fmtT(r)}. At ${fmtT(T)} you are far outside anything it was shown to do.` };
+                }
+                if (m.family === 'systems') return { k: 'pick', why: 'Orthogonal to context length — composes with every other choice here.' };
+                if (m.family === 'foundation') {
+                    const c = kvBytes({ t: 'mha' }, T, 1);
+                    return c > budget
+                        ? { k: 'avoid', why: `Full MHA cache is ${gb(c)} per user at ${fmtT(T)}, over your ${wl.budget} GB budget.` }
+                        : { k: 'pick', why: `${gb(c)} per user fits — and nothing beats exact attention on quality.` };
+                }
+                const c = kvBytes(m.kv, T, 1);
+                if (c > budget) return { k: 'avoid', why: `${gb(c)} of cache per user at ${fmtT(T)} — over your ${wl.budget} GB budget.` };
+                if (c > budget * .4) return { k: 'ok', why: `${gb(c)} per user. Fits, but it is most of your budget.` };
+                return { k: 'pick', why: `${gb(c)} of cache per user at ${fmtT(T)} — comfortably inside budget.` };
+            }
+
+            // Cards are built once. Only the verdict line depends on the workload, so a
+            // slider move repaints one element per card rather than 30 canvases.
+            function updateVerdicts() {
+                $('budVal').textContent = wl.budget + ' GB';
+                const over = MECHANISMS.filter(m => { const v = verdict(m); return v && v.k === 'avoid'; }).length;
+                $('wlNote').innerHTML = `<div class="verdict">At <strong>${fmtT(wl.T)}</strong> with a
+                    <strong>${wl.budget} GB</strong> per-user cache budget, <strong>${over} of ${MECHANISMS.length}</strong>
+                    mechanisms are the wrong tool. Move the target to 2K and most of that objection disappears — which is
+                    the point. These are trades, not rankings.</div>`;
+                MECHANISMS.forEach(m => {
+                    const el = document.querySelector(`#c-${m.id} .vd`); if (!el) return;
+                    const v = verdict(m); if (!v) return;
+                    el.className = 'vd ' + v.k;
+                    el.innerHTML = `<span class="lbl">${v.k === 'pick' ? '✓ fits' : v.k === 'ok' ? '~ tight' : '✕ wrong tool'}</span><span>${v.why}</span>`;
+                });
+            }
+
+            function render() {
+                $('cards').innerHTML = MECHANISMS.map(m => {
+                    const v = verdict(m);
+                    const col = hueOf(m);
+                    const src = m.arxiv
+                        ? `<a href="https://arxiv.org/abs/${m.arxiv}" target="_blank" rel="noopener">${m.src} · arXiv:${m.arxiv}</a>`
+                        : m.url ? `<a href="${m.url}" target="_blank" rel="noopener">${m.src}</a>` : m.src;
+                    const badges = m.bill.map(b => `<span class="bdg" style="color:${BILLS[b].color};border-color:${BILLS[b].color}">${BILLS[b].label}</span>`).join('');
+                    return `<article class="mcard" id="c-${m.id}" style="border-left-color:${col}">
+                        <div class="hd"><span class="date">${m.date}${m.datePrec === 'month' ? ' (month only)' : ''}</span>
+                            <span class="nm">${m.name}</span><span class="badges">${badges}</span></div>
+                        <div class="src">${src}</div>
+                        <dl class="qa">
+                            <dt>Problem</dt><dd>${m.problem}</dd>
+                            <dt>Mechanism</dt><dd>${m.mech}</dd>
+                            <dt>Buys</dt><dd class="buys">${m.buys}</dd>
+                            <dt>Gives up</dt><dd class="costs">${m.costs}</dd>
+                            <dt>Pick it when</dt><dd class="pick">${m.pick}</dd>
+                            <dt>Left open</dt><dd>${m.broke}</dd>
+                        </dl>
+                        <div class="viz-row"><div class="viz-art" id="v-${m.id}"></div>
+                            <div class="viz-cap" id="vc-${m.id}"></div></div>
+                        ${v ? `<div class="vd ${v.k}"></div>` : ''}
+                        ${m.note ? `<div class="note"><b>Note.</b> ${m.note}</div>` : ''}
+                    </article>`;
+                }).join('');
+                MECHANISMS.forEach(m => paintViz(m));
+                updateVerdicts();
+            }
+            $('wlChips').addEventListener('click', e => {
+                const b = e.target.closest('.chip'); if (!b) return;
+                wl.T = +b.dataset.t;
+                document.querySelectorAll('#wlChips .chip').forEach(c => c.classList.toggle('on', +c.dataset.t === wl.T));
+                updateVerdicts();
+            });
+            $('budSlider').addEventListener('input', e => { wl.budget = +e.target.value; updateVerdicts(); });
+            render();
+        })();
+
+        // ================= per-mechanism visuals =================
+        // Each renderer runs the mechanism's actual rule and draws the result. Nothing here
+        // is a hand-drawn impression of a technique -- the grids call readMask(), the curves
+        // call posCurve(), so a wrong rule shows up as a wrong picture rather than a pretty one.
+        const FAMILY_HUE = {
+            foundation: BILLS.compute.color, sparse: BILLS.compute.color,
+            state: BILLS.kv.color, kv: BILLS.kv.color,
+            position: BILLS.pos.color, systems: BILLS.sys.color
+        };
+        const hueOf = m => m.bill.length ? BILLS[m.bill[0]].color : (FAMILY_HUE[m.family] || '#8a8a82');
+
+        function paintViz(m) {
+            const v = VIZ[m.id], art = document.getElementById('v-' + m.id), cap = document.getElementById('vc-' + m.id);
+            if (!v || !art || !cap) return;
+            const col = hueOf(m);
+            ({ pattern: vizPattern, pos: vizPos, heads: vizHeads, state: vizState, sys: vizSys, sched: vizSched }[v.k])(v, art, cap, col, m);
+        }
+
+        function vizPattern(v, art, cap, col) {
+            const N = 32, C = 7, PAD = 1, S = N * (C + PAD);
+            const cv = document.createElement('canvas');
+            cv.width = S; cv.height = S; cv.style.width = S + 'px';
+            const g = cv.getContext('2d');
+            const M = readMask(v, N);
+            let read = 0, comp = 0, allowed = 0;
+            for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+                const x = j * (C + PAD), y = i * (C + PAD);
+                if (j > i) { g.fillStyle = '#141414'; }
+                else {
+                    allowed++;
+                    const w = M[i][j];
+                    if (v.fn === 'decay') {
+                        if (w > 0) { g.globalAlpha = Math.max(.10, w); g.fillStyle = col; comp++; }
+                        else { g.globalAlpha = 1; g.fillStyle = '#242422'; }
+                    }
+                    else if (w === 1) { g.fillStyle = col; read++; }
+                    else if (w === 2) { g.fillStyle = col + '66'; comp++; }
+                    else { g.fillStyle = '#242422'; }
+                }
+                g.fillRect(x, y, C, C);
+                g.globalAlpha = 1;
+            }
+            art.appendChild(cv);
+            const touched = read + comp, pct = (touched / allowed * 100).toFixed(0);
+            if (v.fn === 'decay') {
+                cap.innerHTML = `<div class="vt">The matrix a fixed state implies</div>
+                    <div class="vn">A recurrent state does not look like attention, but it is equivalent to applying this
+                    matrix: lower-triangular with weight decaying by distance. That equivalence is the result — it is why
+                    optimisations built for attention transfer to state models.</div>
+                    <div class="vstat">weight fades with distance &middot; <b>no query-specific choice</b></div>
+                    <div class="vlegend"><span><i style="background:${col}"></i>brighter = weighted more</span>
+                    <span><i style="background:#141414"></i>future</span></div>`;
+                return;
+            }
+            cap.innerHTML = `<div class="vt">What each query reads</div>
+                <div class="vn">Row <em>i</em> is one query; column <em>j</em> is a key it could read. Black is the future, blocked by the causal mask.</div>
+                <div class="vstat">touches <b>${pct}%</b> of the ${allowed} allowed pairs${comp ? ` &middot; ${comp} via summaries` : ''}</div>
+                <div class="vlegend"><span><i style="background:${col}"></i>read exactly</span>
+                ${comp ? `<span><i style="background:${col}66"></i>read via a compressed entry</span>` : ''}
+                <span><i style="background:#242422"></i>skipped</span><span><i style="background:#141414"></i>future</span></div>`;
+        }
+
+        function vizPos(v, art, cap, col) {
+            const W = 250, H = 96, N = 60, train = 26, P = 6;
+            const c = posCurve(v.fn, N, train);
+            const x = i => P + i / (N - 1) * (W - 2 * P), y = t => H - P - t * (H - 2 * P);
+            let path = '', started = false;
+            c.y.forEach((t, i) => {
+                if (isNaN(t)) { started = false; return; }
+                path += (started ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(t).toFixed(1) + ' '; started = true;
+            });
+            const firstNaN = c.y.findIndex(t => isNaN(t));
+            art.innerHTML = `<svg width="${W}" height="${H}">
+                <rect x="${x(train)}" y="0" width="${W - x(train)}" height="${H}" fill="rgba(208,59,59,.10)"/>
+                <line x1="${x(train)}" y1="0" x2="${x(train)}" y2="${H}" stroke="var(--crit)" stroke-width="1" stroke-dasharray="3 3"/>
+                <text x="${W - P}" y="${H - 2}" font-size="8.5" fill="var(--crit)" text-anchor="end" font-family="var(--font-mono)">past training length</text>
+                <path d="${path}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>
+                ${c.wall ? `<circle cx="${x(firstNaN - 1)}" cy="${y(c.y[firstNaN - 1])}" r="3.5" fill="var(--crit)"/>
+                            <text x="${x(firstNaN - 1) + 7}" y="${y(c.y[firstNaN - 1]) + 3}" font-size="9" fill="var(--crit)">stops</text>` : ''}
+            </svg>`;
+            cap.innerHTML = `<div class="vt">Positional signal vs distance</div>
+                <div class="vn">How much the position mechanism contributes to a score as two tokens move apart. Shaded is beyond where the model was trained.</div>
+                <div class="vstat"><b>${c.title}</b></div><div class="vn">${c.note}</div>`;
+        }
+
+        function vizHeads(v, art, cap, col) {
+            const W = 250, rowH = 17, H = v.q * rowH + 14, latent = v.kv === 'latent';
+            const nkv = latent ? 1 : v.kv;
+            let s = '';
+            for (let i = 0; i < v.q; i++) {
+                const qy = 10 + i * rowH, ki = latent ? 0 : Math.floor(i / (v.q / nkv));
+                const ky = latent ? H / 2 : 10 + (ki * (v.q / nkv) + (v.q / nkv - 1) / 2) * rowH;
+                s += `<path d="M52 ${qy} C 105 ${qy}, 130 ${ky}, 178 ${ky}" fill="none" stroke="${col}" stroke-width="1" opacity=".45"/>`;
+                s += `<rect x="14" y="${qy - 6}" width="38" height="12" rx="3" fill="${col}" opacity=".85"/>`;
+                s += `<text x="33" y="${qy + 3.5}" font-size="8" fill="#0d0d0d" text-anchor="middle" font-family="var(--font-mono)">Q${i + 1}</text>`;
+            }
+            for (let k = 0; k < nkv; k++) {
+                const ky = latent ? H / 2 : 10 + (k * (v.q / nkv) + (v.q / nkv - 1) / 2) * rowH;
+                s += `<rect x="178" y="${ky - 8}" width="${latent ? 62 : 46}" height="16" rx="3" fill="none" stroke="${col}" stroke-width="1.5"/>`;
+                s += `<text x="${latent ? 209 : 201}" y="${ky + 4}" font-size="8.5" fill="${col}" text-anchor="middle" font-family="var(--font-mono)">${latent ? 'latent 576' : 'KV' + (k + 1)}</text>`;
+            }
+            s += `<text x="33" y="${H - 1}" font-size="8" fill="var(--muted)" text-anchor="middle">query heads</text>`;
+            s += `<text x="205" y="${H - 1}" font-size="8" fill="var(--muted)" text-anchor="middle">what is cached</text>`;
+            art.innerHTML = `<svg width="${W}" height="${H}">${s}</svg>`;
+            const saving = latent ? '576 numbers per token per layer' : `${nkv} of ${v.q} K/V heads stored`;
+            cap.innerHTML = `<div class="vt">What actually gets cached</div>
+                <div class="vn">All ${v.q} query heads keep asking their own questions. The change is on the right: how many distinct key/value sets have to be kept for them to search.</div>
+                <div class="vstat"><b>${saving}</b>${latent ? '' : ` &middot; ${(v.q / nkv).toFixed(0)}× less cache than MHA`}</div>`;
+        }
+
+        function vizState(v, art, cap, col) {
+            // Runs the real write rule from sections 5 and 6 of the notes.
+            const seq = [['write A → 40', 40], ['write A → 55', 55]];
+            let held = 0, log = [];
+            seq.forEach(([lbl, want]) => {
+                if (v.fn === 'add') held = held + want;
+                else if (v.fn === 'gated') held = held * 0.85 + (want - held * 0.85);
+                else held = held + (want - held);
+                log.push([lbl, held]);
+            });
+            const finalRead = log[log.length - 1][1], correct = Math.abs(finalRead - 55) < 0.01;
+            const boxes = log.map(([lbl, val], i) =>
+                `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                   <span style="font-size:10.5px;color:var(--muted);width:78px">${lbl}</span>
+                   <div style="width:${Math.min(val, 100)}px;height:15px;background:${col};opacity:${.5 + i * .35};border-radius:3px"></div>
+                   <span style="font-family:var(--font-mono);font-size:11px;color:var(--text)">reads ${val.toFixed(0)}</span>
+                 </div>`).join('');
+            art.innerHTML = `<div style="width:250px">${boxes}
+                <div style="font-size:10.5px;color:${correct ? 'var(--good)' : 'var(--crit)'};margin-top:2px">
+                  ${correct ? '✓ key A returns 55, as it should' : '✕ key A returns ' + finalRead.toFixed(0) + ', not 55'}</div></div>`;
+            const NOTE = {
+                add: ['Add-only write', 'The new state is old state plus the whole new answer, so the old contribution is still inside the sum. One matrix, wrong value.'],
+                delta: ['Delta rule', 'Read what memory currently returns, take the difference, write only that. The association is corrected rather than piled onto.'],
+                gated: ['Delta plus decay', 'The same correction, but a gate also lets old content fade — so the state can forget as well as revise.'],
+                chunk: ['Delta rule, parallelised', 'Identical arithmetic to the delta rule. The contribution is that it can now be computed chunkwise across the sequence instead of one step at a time.'],
+                selective: ['Input-dependent write', 'The write and forget strengths are functions of the current token, so the state can decide what is worth keeping.']
+            }[v.fn];
+            cap.innerHTML = `<div class="vt">One fixed-size state, two writes</div>
+                <div class="vn">Key A is written twice. The state never grows — the only question is whether the second write can replace the first.</div>
+                <div class="vstat"><b>${NOTE[0]}</b></div><div class="vn">${NOTE[1]}</div>`;
+        }
+
+        function vizSys(v, art, cap, col) {
+            if (v.fn === 'flash') {
+                let s = '';
+                for (let i = 0; i < 16; i++) s += `<rect x="${14 + (i % 4) * 21}" y="${20 + Math.floor(i / 4) * 21}" width="18" height="18" rx="2" fill="${col}" opacity="${.25 + (i % 4) * .12}"/>`;
+                s += `<rect x="150" y="30" width="42" height="42" rx="3" fill="none" stroke="${col}" stroke-width="1.5"/>`;
+                s += `<rect x="157" y="37" width="28" height="28" rx="2" fill="${col}"/>`;
+                s += `<text x="49" y="14" font-size="9" fill="var(--muted)" text-anchor="middle">score matrix, tiled</text>`;
+                s += `<text x="171" y="14" font-size="9" fill="var(--muted)" text-anchor="middle">SRAM</text>`;
+                s += `<path d="M105 51 L142 51" stroke="${col}" stroke-width="1.5" marker-end="url(#ar)"/>`;
+                s += `<text x="123" y="45" font-size="8" fill="${col}" text-anchor="middle">one tile</text>`;
+                s += `<text x="125" y="120" font-size="9" fill="var(--good)" text-anchor="middle">full T×T matrix never written to HBM</text>`;
+                art.innerHTML = `<svg width="250" height="128"><defs><marker id="ar" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="${col}"/></marker></defs>${s}</svg>`;
+                cap.innerHTML = `<div class="vt">Same maths, different memory traffic</div>
+                    <div class="vn">Tiles of Q, K and V are pulled into on-chip SRAM and the softmax is accumulated there. The full score matrix is never materialised in HBM at all.</div>
+                    <div class="vstat"><b>outputs bit-identical</b> · nothing is approximated</div>`;
+                return;
+            }
+            let s = '', y0 = 18;
+            [[0, 6, 4], [1, 3, 7], [2, 8, 2]].forEach(([r, used, waste], i) => {
+                for (let k = 0; k < used + waste; k++)
+                    s += `<rect x="${12 + k * 13}" y="${y0 + r * 17}" width="11" height="12" rx="2" fill="${k < used ? col : '#2a2a28'}" opacity="${k < used ? .9 : 1}"/>`;
+            });
+            s += `<text x="12" y="12" font-size="9" fill="var(--muted)">contiguous: reserved for worst case</text>`;
+            s += `<text x="12" y="${y0 + 62}" font-size="9" fill="var(--muted)">paged: blocks allocated as needed</text>`;
+            let n = 0;
+            [6, 3, 8].forEach((used, r) => { for (let k = 0; k < used; k++, n++) s += `<rect x="${12 + (n % 17) * 13}" y="${y0 + 66 + Math.floor(n / 17) * 17}" width="11" height="12" rx="2" fill="${col}" opacity=".9"/>`; });
+            art.innerHTML = `<svg width="250" height="112">${s}</svg>`;
+            cap.innerHTML = `<div class="vt">The same cache, packed differently</div>
+                <div class="vn">Three sequences of different lengths. Contiguous allocation reserves each one's worst case; paging hands out fixed blocks on demand, so the gaps disappear.</div>
+                <div class="vstat"><b>cache is the same size</b> · the waste is what goes away</div>`;
+        }
+
+        function vizSched(v, art, cap, col) {
+            const motif = 'DDDG'.repeat(3), G = BILLS.kv.color;
+            let s = '';
+            motif.split('').forEach((ch, i) => {
+                const isG = ch === 'G';
+                s += `<rect x="${8 + i * 19}" y="14" width="16" height="34" rx="3" fill="${isG ? G : col}" opacity="${isG ? .95 : .45}"/>`;
+                s += `<text x="${16 + i * 19}" y="35" font-size="9" fill="${isG ? '#0d0d0d' : 'var(--text)'}" text-anchor="middle" font-family="var(--font-mono)">${ch}</text>`;
+            });
+            s += `<text x="8" y="9" font-size="9" fill="var(--muted)">input</text>`;
+            s += `<text x="235" y="9" font-size="9" fill="var(--muted)" text-anchor="end">output</text>`;
+            s += `<text x="8" y="61" font-size="9" fill="${col}">D · fixed state, cache does not grow</text>`;
+            s += `<text x="8" y="74" font-size="9" fill="${G}">G · attention, carries a KV cache</text>`;
+            art.innerHTML = `<svg width="250" height="80">${s}</svg>`;
+            cap.innerHTML = `<div class="vt">Memory system, chosen per layer</div>
+                <div class="vn">Not every layer needs the same kind of memory. Most compress the past into a fixed state; a few keep real attention so the model gets another exact look at earlier tokens.</div>
+                <div class="vstat"><b>3 fixed-state : 1 attention</b> · the same ratio as DDDGDDDG</div>`;
+        }
+
+        // ================= 05 sources =================
+        (function () {
+            const arx = MECHANISMS.filter(m => m.arxiv), non = MECHANISMS.filter(m => !m.arxiv);
+            const uniq = new Set(arx.map(m => m.arxiv));
+            $('evTiles').innerHTML = [
+                ['Mechanisms', MECHANISMS.length, 'on the timeline'],
+                ['arXiv-verified', uniq.size, 'v1 dates re-fetched'],
+                ['Not machine-checkable', non.length, 'declared, not skipped'],
+                ['Span', '2017–2026', 'nine years']
+            ].map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v} <small>${s}</small></div></div>`).join('');
+
+            $('traps').innerHTML = [
+                ['YaRN is August, not September.', 'Its arXiv ID is 2309.00071, so it is very widely cited as September 2023. The v1 submission is <strong>2023-08-31</strong>. The ID prefix is the announcement month, not the submission date, and that off-by-one-month error is invisible once it is written down as prose.'],
+                ['There are two papers called DroPE.', '<strong>DRoPE</strong> (arXiv 2503.15029) is Directional Rotary Position Embedding for autonomous-driving trajectories, and it is the top search result for the query. <strong>DroPE</strong> (arXiv 2512.12167, Sakana AI) is the context-extension method §9 of the notes is describing. Citing the first would be confidently and checkably wrong.'],
+                ['NTK-aware scaling has no paper.', 'It is a community post on r/LocalLLaMA by u/bloc97 — no arXiv ID, no DOI, no verifiable timestamp. It is dated here to the month only. Its position after Position Interpolation is established by <em>YaRN\'s own text</em> describing it as a fix for PI\'s high-frequency loss, not by a calendar. An agent asked to cite it will readily invent an ID.'],
+                ['Learned absolute positions predate the Transformer.', 'They appear in Convolutional Sequence to Sequence Learning on <strong>2017-05-08</strong>, five weeks before <em>Attention Is All You Need</em>, and position-dependent encoding goes back further still to End-To-End Memory Networks in 2015. Only <em>sinusoidal</em> originates in the Transformer paper.']
+            ].map(([h, b]) => `<div class="verdict"><strong>${h}</strong> ${b}</div>`).join('');
+
+            $('srcTable').innerHTML = `<thead><tr><th>date</th><th>mechanism</th><th>primary source</th><th>type</th></tr></thead><tbody>` +
+                MECHANISMS.map(m => {
+                    const t = m.arxiv ? `<a href="https://arxiv.org/abs/${m.arxiv}" target="_blank" rel="noopener">arXiv:${m.arxiv}</a>`
+                        : m.url ? `<a href="${m.url}" target="_blank" rel="noopener">${m.src}</a>` : m.src;
+                    const kind = m.arxiv ? '<span style="color:var(--good)">v1 verified</span>'
+                        : '<span style="color:var(--amber)">declared exempt</span>';
+                    return `<tr><td class="n" style="text-align:left">${m.date}</td><td style="color:var(--text)">${m.name}</td><td>${t}</td><td>${kind}</td></tr>`;
+                }).join('') + `</tbody>`;
+        })();
+    </script>
+</body>
+
+</html>

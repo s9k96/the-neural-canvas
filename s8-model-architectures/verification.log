@@ -1,0 +1,57 @@
+==============================================================================
+S8 chronology verification -- claimed dates vs arXiv <published> (v1 submission)
+==============================================================================
+entries total 31   arxiv-checkable 28   exempt 3
+
+cross-check: 30 cards in mechanisms.js vs 31 evidence entries -- OK
+
+  fetching 12 records from arXiv ...
+  fetching 12 records from arXiv ...
+  fetching 4 records from arXiv ...
+
+id                       claimed      arxiv v1          arxiv_id
+------------------------------------------------------------------------------
+memory-networks          2015-03-31   2015-03-31   ok   1503.08895
+learned-absolute         2017-05-08   2017-05-08   ok   1705.03122
+standard-attention       2017-06-12   2017-06-12   ok   1706.03762
+sinusoidal               2017-06-12   2017-06-12   ok   1706.03762
+transformer-xl           2019-01-09   2019-01-09   ok   1901.02860
+sparse-transformer       2019-04-23   2019-04-23   ok   1904.10509
+t5-relative-bias         2019-10-23   2019-10-23   ok   1910.10683
+mqa                      2019-11-06   2019-11-06   ok   1911.02150
+longformer               2020-04-10   2020-04-10   ok   2004.05150
+linear-attention         2020-06-29   2020-06-29   ok   2006.16236
+delta-rule               2021-02-22   2021-02-22   ok   2102.11174
+rope                     2021-04-20   2021-04-20   ok   2104.09864
+alibi                    2021-08-27   2021-08-27   ok   2108.12409
+flashattention           2022-05-27   2022-05-27   ok   2205.14135
+gqa                      2023-05-22   2023-05-22   ok   2305.13245
+position-interpolation   2023-06-27   2023-06-27   ok   2306.15595
+yarn                     2023-08-31   2023-08-31   ok   2309.00071
+paged-attention          2023-09-12   2023-09-12   ok   2309.06180
+attention-sinks          2023-09-29   2023-09-29   ok   2309.17453
+mistral-swa              2023-10-10   2023-10-10   ok   2310.06825
+mamba                    2023-12-01   2023-12-01   ok   2312.00752
+mla                      2024-05-07   2024-05-07   ok   2405.04434
+ssd                      2024-05-31   2024-05-31   ok   2405.21060
+parallel-deltanet        2024-06-10   2024-06-10   ok   2406.06484
+gated-deltanet           2024-12-09   2024-12-09   ok   2412.06464
+nsa                      2025-02-16   2025-02-16   ok   2502.11089
+drope                    2025-12-13   2025-12-13   ok   2512.12167
+deepseek-v4-csa          2026-04-26   2026-04-26   ok   2606.19348
+
+Exempt from the arXiv check (stated, not skipped):
+------------------------------------------------------------------------------
+  ntk-aware              2023-06    [community_post, month precision]
+    NOT A PAPER. A community forum post, never published to arXiv. It has no DOI and no v1 timestamp we can machine-verify, so this entry is exempt from the arXiv check by design.
+  dsa                    2025-09-29 [release, day precision]
+    Dated by official release announcement, not an arXiv submission, so it is exempt from the arXiv check.
+  qwen36-hybrid          2026-04-27 [release, day precision]
+    Dated by model release, not an arXiv submission, so it is exempt from the arXiv check.
+
+==============================================================================
+RESULT: PASS -- 28/28 arXiv dates match v1 submission,
+        31 entries in correct chronological order,
+        3 non-arXiv claim(s) declared with reasons above,
+        page cards and evidence entries in agreement.
+==============================================================================

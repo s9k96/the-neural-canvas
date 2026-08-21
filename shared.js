@@ -8,7 +8,8 @@ const ICONS = {
     'india-first-llm': '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/>',
     'data-cleaning': '<path d="M21 4H3l7 8.5V19l4 2v-8.5L21 4Z"/>',
     'dataset-creation': '<path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/><circle cx="18.5" cy="18" r="2.5"/><path d="m20.3 19.8 1.7 1.7"/>',
-    'fourier-embeddings': '<path d="M2 12c2-6 4-6 6 0s4 6 6 0 4-6 6 0"/><circle cx="12" cy="12" r="1.4"/>'
+    'fourier-embeddings': '<path d="M2 12c2-6 4-6 6 0s4 6 6 0 4-6 6 0"/><circle cx="12" cy="12" r="1.4"/>',
+    'attention-timeline': '<path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/><circle cx="7.5" cy="6" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="17" cy="18" r="1.9"/>'
 };
 
 const NAV_SECTIONS = [
@@ -26,7 +27,8 @@ const NAV_SECTIONS = [
     { label: 'S3 · India-First LLM', pages: [{ id: 'india-first-llm', label: 'The World, Viewed From India', href: 's3-india-first-llm/india-first-llm.html' }] },
     { label: 'S4 · Data Cleaning', pages: [{ id: 'data-cleaning', label: 'Raw Data Is Not Training Data', href: 's4-data-cleaning/data-cleaning.html' }] },
     { label: 'S6 · Building the Dataset', pages: [{ id: 'dataset-creation', label: 'Prove What You Trained On', href: 's6-dataset-creation/dataset-creation.html' }] },
-    { label: 'S7 · Model Internals', pages: [{ id: 'fourier-embeddings', label: 'Words Made of Waves', href: 's7-model-internals/fourier-embeddings.html' }] }
+    { label: 'S7 · Model Internals', pages: [{ id: 'fourier-embeddings', label: 'Words Made of Waves', href: 's7-model-internals/fourier-embeddings.html' }] },
+    { label: 'S8 · Model Architectures', pages: [{ id: 'attention-timeline', label: 'The Field Changes Its Mind', href: 's8-model-architectures/attention-timeline.html' }] }
 ];
 
 function iconSvg(id) {
