@@ -12,8 +12,18 @@ that is the one that is easiest to get wrong and easiest to check.
 ## Run the verification
 
 ```bash
-python verify_sources.py
+python verify_sources.py     # are the facts right?
+python check_page.py         # do they actually reach the screen?
 ```
+
+Two checks, because the first one is not enough. `verify_sources.py` confirms every date
+matches its primary source. `check_page.py` renders the page in headless Chrome and fails on
+any console error or missing content — it exists because a real bug shipped past a syntax
+check, a tag-balance check and a full date verification: `hueOf` was declared with `const`
+*after* the code that used it, so the cards block threw a temporal-dead-zone `ReferenceError`
+at runtime. The page parsed fine and every date verified, but **zero of the thirty cards
+rendered**, and because the sources section runs last it never executed either — leaving the
+chronology table empty. Parsing a script does not run it. Only running it finds that.
 
 Exits 0 only if every date on the page survives contact with its primary source. It re-fetches
 each entry from the arXiv API and compares our claimed date against the `<published>` field —
@@ -111,6 +121,73 @@ Transformer 2019, Longformer 2020, Mistral 2023), and **the delta rule** is thre
 formulation 2021, parallelisation 2024, gating 2024). Treating either as one dated event would
 hide the actual chronology.
 
+## What the timeline actually shows
+
+The assignment asks what became visible once the mechanisms were in date order that a list could
+not show. Section 04 of the page carries the full answer with every interval computed from the
+verified dates. The short version:
+
+**1. A 3.5-year hole where nobody touched the cache.** MQA (2019-11-06) already had the answer;
+GQA (2023-05-22) is **1,293 days** later. A family list puts them adjacent and they read as
+consecutive steps. In date order there is a hole — and FlashAttention (2022-05-27) sits in it.
+
+**2. 2023 is not a year, it is a 105-day pile-up.** Position Interpolation, NTK-aware, YaRN,
+PagedAttention, attention sinks and Mistral's sliding window all land between 2023-06-27 and
+2023-10-10. A taxonomy scatters them across three families and hides that they are one moment —
+the moment open weights meant everyone held a 2K–4K checkpoint they could not afford to retrain.
+
+**3. Position is both the oldest problem and the newest.** First entry on the timeline is a
+position mechanism; second-to-last is too — **3,141 days apart**. But the lane is empty for years
+at a stretch, reactivating only when something else moves.
+
+**4. Two correct ideas sat on a shelf.** The delta rule waited **1,204 days** for an algorithm that
+could parallelise it. MQA waited 1,293 days for its problem to bind. Same shape, twice.
+
+**5. Sparsity has two eras, 1,773 days apart, and they are different ideas.** 2019–2020 selects
+keys by *position*; 2025 selects by *content* and trains the sparsity in. One "sparse attention"
+bucket destroys that distinction.
+
+**6. Recurrence left and came back, and the dates measure the round trip.** Transformer-XL
+(2019-01-09) to Mamba (2023-12-01) is **1,787 days**, then four fixed-state entries land within a
+year of each other.
+
+**7. The two frontier labs made opposite bets one day apart.** DeepSeek-V4 (2026-04-26) compresses
+the sequence; Qwen3.6 (2026-04-27) goes fixed-state. **The closest pair on the entire timeline.**
+§16 lists this as an open question — the dates show it is being actively contested in the same
+week, which no taxonomy would ever put side by side.
+
+**8. FlashAttention is the hinge.** The only entry that made the bill dramatically cheaper while
+changing nothing about the mathematics. Before it, every answer is an approximation; after it,
+exact attention stays competitive for years.
+
+## Mechanisms not covered in the session
+
+Checked by searching the full session transcript and the assignment text for each name.
+**Qwen3.6 is deliberately excluded — §16 names it, so it is not a find.** Everything below
+returned zero matches in both documents.
+
+| Date | Mechanism | Source the date came from |
+|---|---|---|
+| 2022-05-27 | FlashAttention | [arXiv:2205.14135](https://arxiv.org/abs/2205.14135) |
+| 2023-06-27 | Position Interpolation | [arXiv:2306.15595](https://arxiv.org/abs/2306.15595) |
+| 2023-09-12 | PagedAttention / vLLM | [arXiv:2309.06180](https://arxiv.org/abs/2309.06180) |
+| 2023-12-01 | Mamba | [arXiv:2312.00752](https://arxiv.org/abs/2312.00752) |
+| 2024-05-31 | State Space Duality (Mamba-2) | [arXiv:2405.21060](https://arxiv.org/abs/2405.21060) |
+| 2025-02-16 | Native Sparse Attention | [arXiv:2502.11089](https://arxiv.org/abs/2502.11089) |
+
+Listed separately as weaker claims — origin papers behind concepts the session covered
+generically, rather than mechanisms it missed:
+
+| Date | Mechanism | Source | What it adds |
+|---|---|---|---|
+| 2019-01-09 | Transformer-XL | [arXiv:1901.02860](https://arxiv.org/abs/1901.02860) | Ancestor of §14's Memory Stream |
+| 2019-04-23 | Sparse Transformer | [arXiv:1904.10509](https://arxiv.org/abs/1904.10509) | Where §7's top-k idea starts |
+| 2019-10-23 | T5 relative position bias | [arXiv:1910.10683](https://arxiv.org/abs/1910.10683) | The bridge from sinusoidal to ALiBi |
+| 2020-04-10 | Longformer | [arXiv:2004.05150](https://arxiv.org/abs/2004.05150) | The sliding-window paper itself |
+| 2024-06-10 | Parallelizing DeltaNet | [arXiv:2406.06484](https://arxiv.org/abs/2406.06484) | What made the delta rule trainable |
+
+Every date above is machine-verified against arXiv's v1 record by `verify_sources.py`.
+
 ## How each mechanism is drawn
 
 The brief asks for every mechanism shown **visually**. Thirty bespoke animations would be thirty
@@ -170,5 +247,6 @@ re-measured here.
 | `mechanisms.js` | Thirty mechanisms: narrative, trade-offs, cost models. |
 | `sources.json` | Date evidence. The authority for every date on the page. |
 | `verify_sources.py` | Re-fetches arXiv, checks dates, ordering, and page/evidence agreement. |
+| `check_page.py` | Renders the page in headless Chrome; fails on console errors or missing content. |
 | `verification.log` | Generated. The last run's full output. |
 | `s8-class-notes/` | The session material this responds to. |

@@ -237,7 +237,31 @@
 
                 <!-- ============================================================ -->
                 <div class="panel report-section">
-                    <h2><span class="num">04</span>Every mechanism, and what it costs you</h2>
+                    <h2><span class="num">04</span>What the timeline actually shows</h2>
+                    <p class="report-lead">These are the things that only became visible once the mechanisms were in
+                        date order. Every one of them is invisible in a list grouped by family, and most are invisible
+                        in the order the session taught them. <strong>All intervals below are computed from the
+                        verified dates</strong>, not written by hand.</p>
+                    <div id="findings"></div>
+
+                    <h3>The shape underneath all of it</h3>
+                    <p>Put findings 1, 4 and 5 side by side and the same shape appears three times: <strong>the bottleneck
+                        is almost never the idea.</strong> MQA had the cache answer in 2019 and waited 3.5 years for the problem
+                        to become binding. The delta rule had the memory answer in 2021 and waited 3.3 years for an
+                        algorithm that could train it. Sparsity had the compute answer in 2019 and waited five years
+                        for someone to select keys by content instead of position. A list tells you these exist. Only
+                        the dates tell you that each one sat unusable while the field worked on something else.</p>
+
+                    <h3>Mechanisms not on the required list</h3>
+                    <p>Checked by searching the full session transcript and the assignment text for each name.
+                        <strong>Qwen3.6 is deliberately excluded</strong> &mdash; &sect;16 names it, so it is not a
+                        find. Everything below returned zero matches.</p>
+                    <div id="bonus"></div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">05</span>Every mechanism, and what it costs you</h2>
                     <p class="report-lead">Each card answers three questions: what it buys, what it gives up, and
                         when you would actually pick it. <strong>A mechanism that is right for a 2K chatbot and wrong
                         for a 1M agent is not a bad mechanism</strong> &mdash; so set the workload and the verdicts
@@ -259,7 +283,7 @@
 
                 <!-- ============================================================ -->
                 <div class="panel report-section">
-                    <h2><span class="num">05</span>Where the dates came from</h2>
+                    <h2><span class="num">06</span>Where the dates came from</h2>
                     <p class="report-lead">The assignment warns that an agent will invent a launch date and describe
                         a half-remembered technique. So none of these are recalled. Every arXiv entry below was
                         re-fetched and its <code class="mono">&lt;published&gt;</code> field &mdash; the v1 submission
@@ -301,6 +325,14 @@
         const fmtT = t => t >= 1048576 ? (t / 1048576) + 'M' : t >= 1024 ? (t / 1024) + 'K' : String(t);
         const gb = b => b >= 1e9 ? (b / 1e9).toFixed(b / 1e9 < 10 ? 2 : 1) + ' GB'
             : b >= 1e6 ? (b / 1e6).toFixed(0) + ' MB' : (b / 1e3).toFixed(0) + ' KB';
+
+        const FAMILY_HUE = {
+            foundation: BILLS.compute.color, sparse: BILLS.compute.color,
+            state: BILLS.kv.color, kv: BILLS.kv.color,
+            position: BILLS.pos.color, systems: BILLS.sys.color
+        };
+        const hueOf = m => m.bill.length ? BILLS[m.bill[0]].color : (FAMILY_HUE[m.family] || '#8a8a82');
+
 
         // ================= 01 standard attention, computed =================
         (function () {
@@ -492,7 +524,7 @@
                 because <strong>FlashAttention had just made exact attention cheap enough that nobody had to.</strong></div>`;
         })();
 
-        // ================= 04 cards =================
+        // ================= 05 cards =================
         const wl = { T: 32768, budget: 16 };
         (function () {
             const TARGETS = [[2048, '2K chatbot'], [32768, '32K assistant'], [262144, '256K docs'], [1048576, '1M agent']];
@@ -589,13 +621,6 @@
         // Each renderer runs the mechanism's actual rule and draws the result. Nothing here
         // is a hand-drawn impression of a technique -- the grids call readMask(), the curves
         // call posCurve(), so a wrong rule shows up as a wrong picture rather than a pretty one.
-        const FAMILY_HUE = {
-            foundation: BILLS.compute.color, sparse: BILLS.compute.color,
-            state: BILLS.kv.color, kv: BILLS.kv.color,
-            position: BILLS.pos.color, systems: BILLS.sys.color
-        };
-        const hueOf = m => m.bill.length ? BILLS[m.bill[0]].color : (FAMILY_HUE[m.family] || '#8a8a82');
-
         function paintViz(m) {
             const v = VIZ[m.id], art = document.getElementById('v-' + m.id), cap = document.getElementById('vc-' + m.id);
             if (!v || !art || !cap) return;
@@ -777,7 +802,108 @@
                 <div class="vstat"><b>3 fixed-state : 1 attention</b> · the same ratio as DDDGDDDG</div>`;
         }
 
-        // ================= 05 sources =================
+
+        // ================= 04 what the timeline shows =================
+        // Every interval is computed from the same verified dates the timeline plots, so a
+        // corrected date moves the prose too. Nothing here is a hand-typed number.
+        (function () {
+            const by = id => MECHANISMS.find(m => m.id === id);
+            const asDate = s => { const [y, mo, d] = s.split('-'); return new Date(+y, (+mo || 1) - 1, +d || 15); };
+            const gap = (a, b) => Math.round((asDate(by(b).date) - asDate(by(a).date)) / 864e5);
+            const yr = (a, b) => (gap(a, b) / 365.25).toFixed(1);
+            const D = id => by(id).date;
+
+            const FIND = [
+                ['A three-and-a-half-year hole where nobody touched the cache',
+                 `MQA (${D('mqa')}) already had the KV-cache answer. GQA (${D('gqa')}) is
+                  <b>${gap('mqa', 'gqa').toLocaleString()} days</b> later — ${yr('mqa', 'gqa')} years. In a family
+                  list these two sit adjacent and read as consecutive steps. In date order there is a hole, and what
+                  sits in it is <b>FlashAttention (${D('flashattention')})</b>. A plausible reading: cache only becomes
+                  the binding constraint at serving scale, and until exact attention got cheap and contexts got long,
+                  MQA was an answer waiting for its question. That is a hypothesis the dates suggest, not something
+                  they prove.`],
+                ['2023 is not a year, it is a 105-day pile-up',
+                 `Position Interpolation, NTK-aware, YaRN, PagedAttention, attention sinks and sliding window shipping
+                  in a frontier LLM all land between <b>${D('position-interpolation')}</b> and
+                  <b>${D('mistral-swa')}</b> — <b>six mechanisms in ${gap('position-interpolation', 'mistral-swa')}
+                  days</b>. A taxonomy scatters them across position, systems and sparse and you would never see they
+                  are the same moment. They are the signature of open weights arriving: everyone suddenly held a fixed
+                  2K–4K checkpoint they could not afford to retrain and wanted longer.`],
+                ['Position is simultaneously the oldest problem and the newest',
+                 `The first entry on the timeline is a position mechanism (${D('learned-absolute')}) and the
+                  second-to-last is a position mechanism (DroPE, ${D('drope')}) —
+                  <b>${gap('learned-absolute', 'drope').toLocaleString()} days apart, ${yr('learned-absolute', 'drope')}
+                  years</b>, spanning most of the timeline. But the green row is <i>empty for years at a stretch</i>.
+                  It reactivates only when something else moves: RoPE creates a length problem, so 2023 fixes it;
+                  contexts reach a million, so 2025 removes position entirely. A family-grouped list shows one solid
+                  block and hides that the field keeps having to come back.`],
+                ['Two correct ideas sat on a shelf, both blocked on something that was not the idea',
+                 `The delta rule (${D('delta-rule')}) fixed linear attention's memory and was then unusable for
+                  <b>${gap('delta-rule', 'parallel-deltanet').toLocaleString()} days</b> because its write was
+                  sequential — until ${D('parallel-deltanet')} made it parallel. That is the same shape as MQA→GQA:
+                  right answer, wrong decade. Ordering by date makes this a <i>pattern</i> rather than two anecdotes.`],
+                ['Sparsity has two eras five years apart, and they are not the same idea',
+                 `Sparse Transformer (${D('sparse-transformer')}) and Longformer (${D('longformer')}) choose keys by
+                  <b>position</b> — a fixed, content-blind pattern. NSA (${D('nsa')}) and DSA (${D('dsa')}) choose by
+                  <b>content</b> and train the sparsity in from the start.
+                  <b>${gap('longformer', 'nsa').toLocaleString()} days</b> separate the eras. A single
+                  “sparse attention” bucket merges them and destroys the distinction that matters.`],
+                ['Recurrence left, and the timeline dates its return',
+                 `Transformer-XL (${D('transformer-xl')}) was the last serious recurrence before attention took over.
+                  Mamba (${D('mamba')}) is <b>${gap('transformer-xl', 'mamba').toLocaleString()} days</b> later, and
+                  then Mamba-2/SSD, parallel DeltaNet and Gated DeltaNet all land within
+                  <b>${gap('mamba', 'gated-deltanet')} days</b> of it. The session's own phrase — “then it wants memory
+                  back again” — is not a metaphor. It is a ${yr('transformer-xl', 'mamba')}-year round trip with dates
+                  on both ends.`],
+                ['The two frontier labs made opposite bets one day apart',
+                 `DeepSeek-V4 (${D('deepseek-v4-csa')}) compresses the sequence and keeps attention. Qwen3.6
+                  (${D('qwen36-hybrid')}) makes three quarters of its layers fixed-state and keeps a little attention.
+                  <b>They are ${gap('deepseek-v4-csa', 'qwen36-hybrid')} day apart — the closest pair on the entire
+                  timeline.</b> §16 lists “linear state versus sequence compression” as an open question; the dates
+                  show it is not merely open, it is being actively contested in the same week by two labs that went
+                  opposite ways. A taxonomy files these in different families and never puts them side by side.`],
+                ['FlashAttention is the hinge, and only its date explains the shape',
+                 `It is the one entry that made the bill dramatically cheaper while changing <b>nothing</b> about the
+                  mathematics — same outputs, bit for bit. Before it, every answer on this page is an approximation.
+                  After it, the 2020 approximation wave largely stops being worth the quality risk and exact attention
+                  stays competitive for years. Placed by date it explains the quiet stretch around it; placed in a
+                  taxonomy it is just an implementation detail in a corner.`]
+            ];
+            $('findings').innerHTML = FIND.map(([h, b], i) =>
+                `<div class="verdict"><strong>${i + 1}. ${h}.</strong> ${b}</div>`).join('');
+
+            // Two tiers, because overclaiming here would be the same failure as a wrong date.
+            const NOTCOVERED = [
+                ['FlashAttention', 'flashattention', 'Not named anywhere. The counter-example the story needs.'],
+                ['Position Interpolation', 'position-interpolation', 'Not named. NTK-aware exists specifically to fix its high-frequency loss, so the RoPE→NTK→YaRN chain is incoherent without it.'],
+                ['PagedAttention / vLLM', 'paged-attention', 'Not named. The systems-layer answer to §10’s own framing of cache as a per-user cost.'],
+                ['Mamba', 'mamba', 'Not named. The other fixed-state family, reached from signal processing rather than from dropping softmax.'],
+                ['State Space Duality (Mamba-2)', 'ssd', 'Not named. Proves linear attention and SSMs are one structure, which is why later work mixes them freely.'],
+                ['Native Sparse Attention', 'nsa', 'Not named, and distinct from the DeepSeek CSA/DSA line that §12 covers. It set the standard that sparsity must be trained in.']
+            ];
+            const ORIGINS = [
+                ['Transformer-XL', 'transformer-xl', 'Segment recurrence — the direct ancestor of §14’s Memory Stream, which the notes present without it.'],
+                ['Sparse Transformer', 'sparse-transformer', 'The origin of structured sparsity. §7 covers top-k as a concept; this is where the concept starts.'],
+                ['T5 relative position bias', 't5-relative-bias', 'The bridge from sinusoidal to ALiBi: a learned bias on the score, which ALiBi then strips to a fixed slope.'],
+                ['Longformer', 'longformer', 'Canonical sliding window + global tokens. §7 covers windows; this is the paper.'],
+                ['Parallelizing DeltaNet', 'parallel-deltanet', '§13 names DeltaNet and Gated DeltaNet but not the result that made the delta rule trainable at scale.']
+            ];
+            const row = ([name, id, why]) => {
+                const m = by(id);
+                const src = m.arxiv ? `<a href="https://arxiv.org/abs/${m.arxiv}" target="_blank" rel="noopener">arXiv:${m.arxiv}</a>` : m.src;
+                return `<tr><td class="n" style="text-align:left">${m.date}</td>
+                        <td style="color:var(--text)">${name}</td><td>${src}</td><td>${why}</td></tr>`;
+            };
+            $('bonus').innerHTML = `<div class="box scroll-x"><h4>Not covered in the session at all</h4>
+                <table class="cmp"><thead><tr><th>date</th><th>mechanism</th><th>source the date came from</th><th>why it earns a place</th></tr></thead>
+                <tbody>${NOTCOVERED.map(row).join('')}</tbody></table></div>
+                <div class="box scroll-x" style="margin-top:14px"><h4>Origin papers behind concepts the session covered generically</h4>
+                <p class="sub">Weaker claims, listed separately rather than folded into the count.</p>
+                <table class="cmp"><thead><tr><th>date</th><th>mechanism</th><th>source the date came from</th><th>what it adds</th></tr></thead>
+                <tbody>${ORIGINS.map(row).join('')}</tbody></table></div>`;
+        })();
+
+        // ================= 06 sources =================
         (function () {
             const arx = MECHANISMS.filter(m => m.arxiv), non = MECHANISMS.filter(m => !m.arxiv);
             const uniq = new Set(arx.map(m => m.arxiv));
