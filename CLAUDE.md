@@ -25,12 +25,12 @@ markdown/notes-only deliverables and are deliberately absent from the site nav a
 - Pages set `window.PAGE_ID` (to highlight the active nav item) and optionally `window.ROOT_PATH`
   (relative prefix back to repo root) before loading `shared.js`.
 
-## The generate-then-bake pattern (S4, S6, S7)
+## The generate-then-bake pattern (S4, S6, S7, S9)
 
 Sessions with real data pipelines follow the same shape: a Python pipeline writes JSON/JS into an
-`out/` (or `submission_artifacts/`) folder, and a small `build_html_data.py` (S4, S6) or the
-`run_demo.py` itself (S7) injects that data as a literal `const DATASETS = {...}` / `s6data`
-blob directly into the session's `.html` file. The HTML has no fetch/XHR — page data is static and
+`out/` (or `submission_artifacts/`) folder, and a small `build_html_data.py` (S4, S6), the
+`run_demo.py` itself (S7), or `build_notebook.py` (S9) injects that data as a literal
+`const DATASETS = {...}` / `s6data` / `S9DATA` blob directly into the session's `.html` file. The HTML has no fetch/XHR — page data is static and
 inlined, so **the generated JS blob in the HTML must be regenerated any time the upstream Python
 output changes**; editing the JSON in `out/` alone does nothing until the build script re-runs.
 
@@ -62,7 +62,17 @@ python s6-dataset-creation/prepare_corpus.py
 # S7 — dynamic Kronecker embeddings (8 experiments, 13 gates, ~70s, CPU)
 python s7-model-internals/run_demo.py
 python s7-model-internals/dynkron.py     # codec self-check only
+
+# S9 — the loss harness (7 experiments + MTP, 11 gates, ~6 min, CPU)
+python s9-loss-functions/build_notebook.py   # .py -> executed .ipynb -> baked loss-harness.html
+python s9-loss-functions/s9_loss_harness.py  # or the harness alone, without rebuilding the notebook
+python s9-loss-functions/check_page.py       # renders the page in headless Chrome; needs Chrome
 ```
+
+S9's source of truth is `s9_loss_harness.py` (`# %%` cell-delimited). The `.ipynb` is a build
+artifact committed **with its outputs**, and both it and the page must be rebuilt when the `.py`
+changes. It downloads the Sarvam-1 tokenizer from the HF hub on first run and caches it; the
+corpus it reads is S6's committed `corpus/`, so nothing else needs network.
 
 Each `run_demo.py` exits non-zero if any gate/invariant fails — that exit code is the actual
 pass/fail signal, not just the printed summary.

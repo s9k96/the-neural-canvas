@@ -9,7 +9,8 @@ const ICONS = {
     'data-cleaning': '<path d="M21 4H3l7 8.5V19l4 2v-8.5L21 4Z"/>',
     'dataset-creation': '<path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/><circle cx="18.5" cy="18" r="2.5"/><path d="m20.3 19.8 1.7 1.7"/>',
     'fourier-embeddings': '<path d="M2 12c2-6 4-6 6 0s4 6 6 0 4-6 6 0"/><circle cx="12" cy="12" r="1.4"/>',
-    'attention-timeline': '<path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/><circle cx="7.5" cy="6" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="17" cy="18" r="1.9"/>'
+    'attention-timeline': '<path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/><circle cx="7.5" cy="6" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="17" cy="18" r="1.9"/>',
+    'loss-harness': '<path d="M4 4v15a1 1 0 0 0 1 1h15"/><path d="M7 16c3-1 4.5-8 7-8s2.5 4 5 3"/><circle cx="12" cy="10.5" r="1.6"/>'
 };
 
 const NAV_SECTIONS = [
@@ -28,7 +29,8 @@ const NAV_SECTIONS = [
     { label: 'S4 · Data Cleaning', pages: [{ id: 'data-cleaning', label: 'Raw Data Is Not Training Data', href: 's4-data-cleaning/data-cleaning.html' }] },
     { label: 'S6 · Building the Dataset', pages: [{ id: 'dataset-creation', label: 'Prove What You Trained On', href: 's6-dataset-creation/dataset-creation.html' }] },
     { label: 'S7 · Model Internals', pages: [{ id: 'fourier-embeddings', label: 'Words Made of Waves', href: 's7-model-internals/fourier-embeddings.html' }] },
-    { label: 'S8 · Model Architectures', pages: [{ id: 'attention-timeline', label: 'The Field Changes Its Mind', href: 's8-model-architectures/attention-timeline.html' }] }
+    { label: 'S8 · Model Architectures', pages: [{ id: 'attention-timeline', label: 'The Field Changes Its Mind', href: 's8-model-architectures/attention-timeline.html' }] },
+    { label: 'S9 · Loss Functions', pages: [{ id: 'loss-harness', label: 'Four Ways to Lie About a Loss', href: 's9-loss-functions/loss-harness.html' }] }
 ];
 
 function iconSvg(id) {
