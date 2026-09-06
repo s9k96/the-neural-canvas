@@ -38,64 +38,64 @@
                 <p>Interactive, in-browser visualizations of how standard machine learning algorithms actually
                     behave — watch models train, decision boundaries form, and architecture choices matter.</p>
                 <div class="topic-grid">
-                    <a class="topic-card" href="S1-understanding-network-components/beyond-straight-thinking.html">
+                    <a class="topic-card" href="s01-understanding-network-components/beyond-straight-thinking.html">
                         <h3>Beyond Straight Thinking</h3>
                         <p>See why a single linear layer fails on non-linearly separable data, and how adding a
                             ReLU hidden layer solves it.</p>
                     </a>
-                    <a class="topic-card" href="S1-understanding-network-components/depth-collapse.html">
+                    <a class="topic-card" href="s01-understanding-network-components/depth-collapse.html">
                         <h3>Depth Without Creativity</h3>
                         <p>Five stacked linear layers collapse into one linear map — proved both visually and by
                             multiplying the weight matrices together.</p>
                     </a>
-                    <a class="topic-card" href="S1-understanding-network-components/embedding-clustering.html">
+                    <a class="topic-card" href="s01-understanding-network-components/embedding-clustering.html">
                         <h3>The Company We Keep</h3>
                         <p>Trained only to predict the next token in a toy grammar, an embedding table clusters
                             same-category words — similarity was never part of the loss.</p>
                     </a>
-                    <a class="topic-card" href="S1-understanding-network-components/generalization-gap.html">
+                    <a class="topic-card" href="s01-understanding-network-components/generalization-gap.html">
                         <h3>Experience Shapes Understanding</h3>
                         <p>The same over-parameterized network trained on 20, 200, and 2000 noisy points side by
                             side — train loss hits zero every time, but test loss only catches up once there's
                             enough data to learn from.</p>
                     </a>
-                    <a class="topic-card" href="s2-tokenizer/tokenizer.html">
+                    <a class="topic-card" href="s02-tokenizer/tokenizer.html">
                         <h3>One Vocab, Four Languages</h3>
                         <p>A single 10,000-token BPE vocabulary trained jointly on English, Hindi, Telugu, and
                             Marathi Wikipedia &mdash; scored on how evenly it compresses each one.</p>
                     </a>
-                    <a class="topic-card" href="s3-india-first-llm/india-first-llm.html">
+                    <a class="topic-card" href="s03-india-first-llm/india-first-llm.html">
                         <h3>The World, Viewed From India</h3>
                         <p>Blueprint for Bharat-40B &mdash; a Gemma-4-class model's data, cleaning, tokenizer (why a
                             256k vocab), and evaluation, designed India-first across 11 scripts, coding, and agentic
                             work.</p>
                     </a>
-                    <a class="topic-card" href="s4-data-cleaning/data-cleaning.html">
+                    <a class="topic-card" href="s04-data-cleaning/data-cleaning.html">
                         <h3>Raw Data Is Not Training Data</h3>
                         <p>The 8 cleaning strategies of Session 4 run for real on 60k Hindi docs from AI4Bharat
                             Sangraha &mdash; and the measure of how much good Hindi an English-tuned filter would have
                             silently deleted.</p>
                     </a>
-                    <a class="topic-card" href="s6-dataset-creation/dataset-creation.html">
+                    <a class="topic-card" href="s06-dataset-creation/dataset-creation.html">
                         <h3>Prove What You Trained On</h3>
                         <p>A training data execution system that crashes on purpose, resumes, and proves the next
                             batch is bit-identical &mdash; immutable shards, an eval firewall, per-step lane quotas,
                             OPUS decisions and two ledgers, all checked by recomputing them from disk.</p>
                     </a>
-                    <a class="topic-card" href="s7-model-internals/fourier-embeddings.html">
+                    <a class="topic-card" href="s07-model-internals/fourier-embeddings.html">
                         <h3>Words Made of Waves</h3>
                         <p>The Kronecker embedding marks a 256&times;32 grid and throws away everything past byte 32
                             &mdash; which silently merges Indic words. Rebuild it out of waves that add together and
                             the grid stops being necessary: watch the arrows sum, then read the word back out of the
                             code.</p>
                     </a>
-                    <a class="topic-card" href="s8-model-architectures/attention-timeline.html">
+                    <a class="topic-card" href="s08-model-architectures/attention-timeline.html">
                         <h3>The Field Changes Its Mind</h3>
                         <p>Thirty attention mechanisms in the order they actually launched, each one an answer to a
                             bill the last one sent &mdash; every one drawn from its own rule, and every date re-fetched
                             from the paper's v1 record, because this is exactly where a confident agent invents things.</p>
                     </a>
-                    <a class="topic-card" href="s9-loss-functions/loss-harness.html">
+                    <a class="topic-card" href="s09-loss-functions/loss-harness.html">
                         <h3>Four Ways to Lie About a Loss</h3>
                         <p>Four lines stand between the model's output and the scalar the optimiser pushes down, and
                             every bug that lives in them is silent &mdash; three of them make the loss look

@@ -18,19 +18,19 @@ const NAV_SECTIONS = [
     {
         label: 'S1 · Network Components',
         pages: [
-            { id: 'linear', label: 'Beyond Straight Thinking', href: 'S1-understanding-network-components/beyond-straight-thinking.html' },
-            { id: 'depth-collapse', label: 'Depth Without Creativity', href: 'S1-understanding-network-components/depth-collapse.html' },
-            { id: 'embedding-clustering', label: 'The Company We Keep', href: 'S1-understanding-network-components/embedding-clustering.html' },
-            { id: 'generalization-gap', label: 'Experience Shapes Understanding', href: 'S1-understanding-network-components/generalization-gap.html' }
+            { id: 'linear', label: 'Beyond Straight Thinking', href: 's01-understanding-network-components/beyond-straight-thinking.html' },
+            { id: 'depth-collapse', label: 'Depth Without Creativity', href: 's01-understanding-network-components/depth-collapse.html' },
+            { id: 'embedding-clustering', label: 'The Company We Keep', href: 's01-understanding-network-components/embedding-clustering.html' },
+            { id: 'generalization-gap', label: 'Experience Shapes Understanding', href: 's01-understanding-network-components/generalization-gap.html' }
         ]
     },
-    { label: 'S2 · Tokenizer', pages: [{ id: 'tokenizer', label: 'One Vocab, Four Languages', href: 's2-tokenizer/tokenizer.html' }] },
-    { label: 'S3 · India-First LLM', pages: [{ id: 'india-first-llm', label: 'The World, Viewed From India', href: 's3-india-first-llm/india-first-llm.html' }] },
-    { label: 'S4 · Data Cleaning', pages: [{ id: 'data-cleaning', label: 'Raw Data Is Not Training Data', href: 's4-data-cleaning/data-cleaning.html' }] },
-    { label: 'S6 · Building the Dataset', pages: [{ id: 'dataset-creation', label: 'Prove What You Trained On', href: 's6-dataset-creation/dataset-creation.html' }] },
-    { label: 'S7 · Model Internals', pages: [{ id: 'fourier-embeddings', label: 'Words Made of Waves', href: 's7-model-internals/fourier-embeddings.html' }] },
-    { label: 'S8 · Model Architectures', pages: [{ id: 'attention-timeline', label: 'The Field Changes Its Mind', href: 's8-model-architectures/attention-timeline.html' }] },
-    { label: 'S9 · Loss Functions', pages: [{ id: 'loss-harness', label: 'Four Ways to Lie About a Loss', href: 's9-loss-functions/loss-harness.html' }] }
+    { label: 'S2 · Tokenizer', pages: [{ id: 'tokenizer', label: 'One Vocab, Four Languages', href: 's02-tokenizer/tokenizer.html' }] },
+    { label: 'S3 · India-First LLM', pages: [{ id: 'india-first-llm', label: 'The World, Viewed From India', href: 's03-india-first-llm/india-first-llm.html' }] },
+    { label: 'S4 · Data Cleaning', pages: [{ id: 'data-cleaning', label: 'Raw Data Is Not Training Data', href: 's04-data-cleaning/data-cleaning.html' }] },
+    { label: 'S6 · Building the Dataset', pages: [{ id: 'dataset-creation', label: 'Prove What You Trained On', href: 's06-dataset-creation/dataset-creation.html' }] },
+    { label: 'S7 · Model Internals', pages: [{ id: 'fourier-embeddings', label: 'Words Made of Waves', href: 's07-model-internals/fourier-embeddings.html' }] },
+    { label: 'S8 · Model Architectures', pages: [{ id: 'attention-timeline', label: 'The Field Changes Its Mind', href: 's08-model-architectures/attention-timeline.html' }] },
+    { label: 'S9 · Loss Functions', pages: [{ id: 'loss-harness', label: 'Four Ways to Lie About a Loss', href: 's09-loss-functions/loss-harness.html' }] }
 ];
 
 function iconSvg(id) {

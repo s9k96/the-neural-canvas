@@ -11,7 +11,7 @@ output is baked into the page as a JS data blob. There is no bundler, package.js
 every HTML file is opened directly or served as static files (deployed to Vercel; see
 `.agents/skills/`, a Vercel-CLI skill set unrelated to Claude Code).
 
-Not every session has a widget: S5 (`s5-data-mixtures`) and S8 (`s8-model-architectures`) are
+Not every session has a widget: S5 (`s05-data-mixtures`) and S8 (`s08-model-architectures`) are
 markdown/notes-only deliverables and are deliberately absent from the site nav and homepage.
 
 ## Site shell
@@ -50,23 +50,23 @@ whatever venv is active — no `.venv` or lockfile is currently committed, and `
 
 ```bash
 # S4 — data cleaning (after clean.py / export_examples.py produce out/*.json)
-python s4-data-cleaning/build_html_data.py
+python s04-data-cleaning/build_html_data.py
 
 # S6 — training data execution system (full demo + evidence bundle; ~50s, CPU, offline/deterministic)
-python s6-dataset-creation/run_demo.py
+python s06-dataset-creation/run_demo.py
 # 13 invariant tests, run only after run_demo.py (reads submission_artifacts/ + shards/)
-python s6-dataset-creation/tests/test_invariants.py     # also runnable via: python -m pytest
+python s06-dataset-creation/tests/test_invariants.py     # also runnable via: python -m pytest
 # refresh the committed corpus/ snapshot deliberately (normal runs never touch the network)
-python s6-dataset-creation/prepare_corpus.py
+python s06-dataset-creation/prepare_corpus.py
 
 # S7 — dynamic Kronecker embeddings (8 experiments, 13 gates, ~70s, CPU)
-python s7-model-internals/run_demo.py
-python s7-model-internals/dynkron.py     # codec self-check only
+python s07-model-internals/run_demo.py
+python s07-model-internals/dynkron.py     # codec self-check only
 
 # S9 — the loss harness (11 experiments + MTP, 16 gates, ~9 min, CPU)
-python s9-loss-functions/build_notebook.py   # .py -> executed .ipynb -> baked loss-harness.html
-python s9-loss-functions/s9_loss_harness.py  # or the harness alone, without rebuilding the notebook
-python s9-loss-functions/check_page.py       # renders the page in headless Chrome; needs Chrome
+python s09-loss-functions/build_notebook.py   # .py -> executed .ipynb -> baked loss-harness.html
+python s09-loss-functions/s9_loss_harness.py  # or the harness alone, without rebuilding the notebook
+python s09-loss-functions/check_page.py       # renders the page in headless Chrome; needs Chrome
 ```
 
 S9's source of truth is `s9_loss_harness.py` (`# %%` cell-delimited). The `.ipynb` is a build
