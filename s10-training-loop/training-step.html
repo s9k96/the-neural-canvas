@@ -1,0 +1,2533 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neural Canvas — One Step, and What It Costs</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <link rel="stylesheet" href="../shared.css" />
+    <style>
+        /* ---- palette ------------------------------------------------------------
+           Same validated categorical set as the Session 9 page, re-checked with
+           validate_palette.py against this site's dark surface #0a0a0c:
+             #3987e5, #d95926, #199e70 — lightness band PASS, chroma floor PASS,
+             contrast 5.44 / 5.09 / 5.81 : 1, worst adjacent normal-vision dE 20.9
+             (floor 15), worst CVD dE 9.4 (target 8).
+           Blue is always the correct thing (correct average, grad norm, bf16).
+           Orange is always the broken or costly one (wrong average, loss trace, fp16).
+           Green/red are STATUS only, never a series, and always ship with a glyph and a
+           word because that pair WARNs at deutan 7.2. The neutral grey #a3a3aa is used
+           only for controls and reference lines, never to carry identity. */
+        .viz {
+            --ok-c: #3987e5;
+            --bad-c: #d95926;
+            --third: #199e70;
+            --good: #199e70;
+            --crit: #d03b3b;
+            --grid: #24242a;
+            --axis: #45454f;
+            --neutral: #a3a3aa;
+        }
+
+        .report-section { margin: 0 auto 20px; max-width: 1040px; text-align: left; }
+        .report-section h2 { text-align: left; font-size: 20px; margin: 0 0 10px; letter-spacing: 0; }
+        .report-section h2 .num { color: var(--accent); font-family: var(--font-mono); font-size: 15px; margin-right: 10px; }
+        .report-section h3 { font-size: 13.5px; color: var(--text); margin: 22px 0 8px; }
+        .report-section p { color: var(--muted); font-size: 14.5px; line-height: 1.7; margin: 0 0 12px; }
+        .report-section p:last-child { margin-bottom: 0; }
+        .report-section strong { color: var(--text); font-weight: 600; }
+        .report-lead { font-size: 15.5px !important; color: var(--text) !important; }
+        code.mono { font-family: var(--font-mono); background: rgba(255, 255, 255, .06); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--text); }
+        .muted-note { color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+        .pill { display: inline-block; font-size: 10px; font-weight: 700; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 1px 8px; letter-spacing: .04em; text-transform: uppercase; }
+
+        pre.code { background: rgba(255, 255, 255, .04); border: 1px solid var(--panel-border); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.8; color: var(--text); margin: 0 0 14px; }
+        pre.code .c { color: var(--muted); }
+        pre.code .k { color: var(--ok-c); }
+
+        .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 12px; margin: 14px 0 4px; }
+        .tile { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 13px 15px; }
+        .tile .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .tile .v { font-size: 24px; font-weight: 700; color: var(--text); margin-top: 4px; line-height: 1.1; font-family: var(--font-mono); }
+        .tile .sub { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+
+        .readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(255, 255, 255, .03); }
+        .readout > div { padding: 15px 17px; border-right: 1px solid var(--panel-border); }
+        .readout > div:last-child { border-right: none; }
+        .readout .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .readout .v { font-size: 26px; font-weight: 700; font-family: var(--font-mono); margin-top: 5px; line-height: 1.05; color: var(--text); }
+        .readout .delta { font-size: 12px; font-family: var(--font-mono); margin-top: 5px; color: var(--muted); }
+
+        .ctl-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; margin: 4px 0 16px; }
+        .ctl { display: flex; flex-direction: column; gap: 5px; }
+        .ctl label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .ctl input[type=range] { width: 210px; accent-color: var(--accent); }
+        .ctl .val { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
+        .btn { background: rgba(255, 255, 255, .05); border: 1px solid var(--panel-border); color: var(--muted); border-radius: 999px; padding: 6px 14px; font-size: 12px; cursor: pointer; font-family: var(--font-sans); }
+        .btn:hover { color: var(--text); border-color: var(--muted); }
+        .btn.on { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+
+        table.dt { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0 4px; }
+        table.dt th { text-align: left; font-weight: 600; color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; padding: 7px 9px; border-bottom: 1px solid var(--panel-border); }
+        table.dt td { padding: 8px 9px; border-bottom: 1px solid rgba(255, 255, 255, .05); color: var(--text); }
+        table.dt td.n, table.dt th.n { text-align: right; font-family: var(--font-mono); }
+        table.dt tr.hl td { background: rgba(57, 135, 229, .10); }
+        table.dt tr.warn td { background: rgba(217, 89, 38, .10); }
+        table.dt tr:last-child td { border-bottom: none; }
+
+        .box { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+        .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+        .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
+        .legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+        .chartwrap { overflow-x: auto; }
+        svg.chart { display: block; width: 100%; height: auto; }
+        svg.chart text { font-family: var(--font-mono); fill: var(--muted); font-size: 10px; }
+        svg.chart .axis { stroke: var(--axis); stroke-width: 1; }
+        svg.chart .grid { stroke: var(--grid); stroke-width: 1; }
+        .tipbox { position: fixed; pointer-events: none; background: #16161a; border: 1px solid var(--panel-border); border-radius: 8px; padding: 7px 10px; font-family: var(--font-mono); font-size: 11.5px; color: var(--text); opacity: 0; transition: opacity .1s; z-index: 60; white-space: nowrap; box-shadow: 0 6px 20px rgba(0, 0, 0, .5); }
+        .tipbox.on { opacity: 1; }
+
+        .gate { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 12px; }
+        .gate.pass { color: var(--good); }
+        .gate.fail { color: var(--crit); }
+        .gatelist { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 7px 18px; margin-top: 10px; }
+        .verdict { font-family: var(--font-mono); font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
+        .verdict.lie { color: var(--bad-c); }
+        .verdict.true { color: var(--ok-c); }
+
+        .bits { font-family: var(--font-mono); font-size: 13px; letter-spacing: .06em; display: flex; gap: 3px; flex-wrap: wrap; align-items: center; }
+        .bits .grp { display: flex; gap: 1px; }
+        .bits b { display: inline-block; width: 15px; text-align: center; border-radius: 3px; font-weight: 600; padding: 2px 0; }
+        .bits .s b { background: rgba(163, 163, 170, .22); color: var(--neutral); }
+        .bits .e b { background: rgba(57, 135, 229, .22); color: var(--ok-c); }
+        .bits .m b { background: rgba(217, 89, 38, .22); color: var(--bad-c); }
+        .bitkey { display: flex; gap: 14px; font-size: 11px; color: var(--muted); margin-top: 8px; }
+        .bitkey i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <button class="nav-toggle" id="sidebarToggle" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="7" x2="20" y2="7"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="17" x2="20" y2="17"></line>
+            </svg>
+        </button>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Sections</h3>
+                <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">&times;</button>
+            </div>
+            <div class="nav-list"></div>
+        </aside>
+
+        <main class="content viz">
+            <div class="wrapper">
+                <h1>One Step, and What It Costs</h1>
+                <div class="subtitle">Session 9 ended holding a single number. This is how that number reaches back
+                    and moves every weight &mdash; and how you find out, over weeks, whether it is working. Five
+                    lines of code, and <strong>every serious bug in them is silent</strong>. The loss curve is not
+                    going to be the one that tells you.</div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">00</span>The five lines</h2>
+                    <pre class="code">logits = model(batch)        <span class="c"># forward</span>
+loss   = loss_fn(logits, y)  <span class="c"># one number</span>
+loss.backward()              <span class="c"># fill in every gradient</span>
+optimizer.step()             <span class="c"># move every weight</span>
+optimizer.zero_grad()        <span class="c"># wipe before the next batch</span></pre>
+                    <p class="report-lead">Every training run in the world is these repeated until the data runs
+                        out. Everything below was measured by <code class="mono">s10_training_loop.py</code> on a
+                        real loop &mdash; the same model, the same frozen Sarvam-1 tokenizer and the same S6 corpus
+                        as Session 9, because this is literally the next step after that session's scalar.</p>
+                    <div class="tiles" id="heroTiles"></div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">01</span>A gradient is the answer to a nudge</h2>
+                    <p>No calculus needed to start. Take a model with one weight, raise it a very small amount, and
+                        see how much the loss moved. That ratio is the most useful number in training: <strong>which
+                            way, and how urgently.</strong> A large value means this weight matters a great deal
+                        right now; near zero means the optimiser can leave it alone.</p>
+                    <p>The chain below is the notes' own: <code class="mono">h = w&#8321;·x</code>,
+                        <code class="mono">y = w&#8322;·h</code>, <code class="mono">loss = (y &minus; t)&sup2;</code>.
+                        Move the weight, then change how big the nudge is, and watch the slope settle on the same
+                        answer from either side.</p>
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label for="wSlider">w&#8321; <span class="val" id="wVal"></span></label>
+                            <input type="range" id="wSlider" min="0" max="600" step="1" value="300" />
+                        </div>
+                        <div class="ctl">
+                            <label for="hSlider">nudge size h <span class="val" id="hVal"></span></label>
+                            <input type="range" id="hSlider" min="0" max="5" step="1" value="3" />
+                        </div>
+                    </div>
+                    <div class="readout" id="nudgeReadout"></div>
+                    <p class="muted-note" style="margin-top:12px" id="nudgeNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">02</span>Every tensor in the step</h2>
+                    <p>Session 9 printed the shapes on the way <em>to</em> the loss. This is the rest of it: what
+                        <code class="mono">backward()</code> fills in, and what the optimiser keeps between steps.
+                        The last rows are the ones people forget when they size a machine.</p>
+                    <table class="dt" id="shapeTable"></table>
+                    <div class="readout" id="shapeReadout" style="margin-top:14px"></div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">03</span>Verify one gradient by hand</h2>
+                    <p>Nudge a weight, measure how the loss changed, compare against what
+                        <code class="mono">backward()</code> reported. They should agree to several decimals.</p>
+                    <p>They do &mdash; but only if you pick the step size well, and <strong>the finite difference is
+                            the imprecise one here, not autograd.</strong> Too large an <code class="mono">h</code>
+                        and the chord stops matching the tangent (truncation, ~h&sup2;). Too small and subtracting
+                        two nearly equal losses destroys the digits you are trying to compare (cancellation,
+                        ~&epsilon;·|L|/h). Sweeping <code class="mono">h</code> shows the U instead of asserting a
+                        tolerance.</p>
+                    <div class="legend" id="hLegend"></div>
+                    <div class="chartwrap"><svg class="chart" id="hChart" viewBox="0 0 900 300"
+                            preserveAspectRatio="xMidYMid meet"></svg></div>
+                    <table class="dt" id="hTable"></table>
+                    <p class="muted-note" style="margin-top:10px" id="hNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">04</span>The bug that lived in every framework until 2024</h2>
+                    <p>Gradient accumulation runs several small batches in turn, lets their gradients pile up, and
+                        steps once. The question is how to combine their losses. The correct combination adds up all
+                        the loss and divides by <strong>all the tokens</strong>, so every token carries equal weight.
+                        What the frameworks did instead was average the three averages &mdash; giving a short
+                        micro-batch exactly the same vote as a long one.</p>
+                    <p>Change the token counts below. <strong>Make them equal and watch the error drop to
+                            zero</strong> &mdash; which is exactly how this hid for years, because in casual testing
+                        micro-batches usually do hold equal counts.</p>
+                    <div id="microRows"></div>
+                    <div class="ctl-row" style="margin-top:6px">
+                        <button class="btn" id="btnNotes">the notes' case (4, 4, 2)</button>
+                        <button class="btn" id="btnEqual">make them equal (4, 4, 4)</button>
+                    </div>
+                    <div class="readout" id="avgReadout"></div>
+                    <p class="muted-note" style="margin-top:12px" id="avgNote"></p>
+
+                    <h3>What it does to the gradients</h3>
+                    <p>The loss value is a summary; the gradient is what the optimiser actually consumes. Accumulate
+                        the same four real micro-batches from the <em>same</em> weights under both schemes and
+                        compare the two vectors directly. This is deterministic, so it settles what the curves can
+                        only hint at.</p>
+                    <div class="readout" id="gradDiffReadout"></div>
+
+                    <h3>And what it does to the curves</h3>
+                    <div class="legend">
+                        <span><i style="background:var(--ok-c)"></i> correct &mdash; by token</span>
+                        <span><i style="background:var(--bad-c)"></i> wrong &mdash; by micro-batch</span>
+                    </div>
+                    <div class="chartwrap"><svg class="chart" id="accChart" viewBox="0 0 900 260"
+                            preserveAspectRatio="xMidYMid meet"></svg></div>
+                    <p style="margin-top:14px" id="accNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">05</span>The grad norm moves first</h2>
+                    <p>A single unusual batch can end a run that has gone well for weeks. The guard is a cap: measure
+                        the combined size of all the gradients, and when it exceeds a threshold shrink every one by
+                        the same factor &mdash; leaving the direction untouched and changing only the length.</p>
+                    <p>But the combined figure is worth more than the clipping it enables, because
+                        <strong>it moves before the loss does</strong>. Two traces from one run, sharing an x-axis
+                        (never one chart with two scales). The spike arrives in the norm first.</p>
+                    <div class="chartwrap"><svg class="chart" id="normChart" viewBox="0 0 900 420"
+                            preserveAspectRatio="xMidYMid meet"></svg></div>
+                    <div class="tiles" id="normTiles"></div>
+                    <p class="muted-note" style="margin-top:14px" id="normNote"></p>
+
+                    <h3>Clipping changes the length, not the direction</h3>
+                    <table class="dt" id="clipTable"></table>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">06</span>How a computer holds 0.1</h2>
+                    <p>A fixed number of bits must store values as large as 50,000 and as small as 0.00000001 in the
+                        same box, so the bits are split three ways: one for the <strong>sign</strong>, a few for the
+                        <strong>exponent</strong> (how big), and whatever remains for the
+                        <strong>mantissa</strong> (which digits). Every format is a different way of dividing the
+                        last two, and the trade is always the same one: <strong>exponent bits buy range, mantissa
+                            bits buy detail.</strong></p>
+                    <p><code class="mono">0.1 = 1.6 × 2⁻⁴</code>, so every format below stores the same exponent and
+                        differs only in how much of <code class="mono">0.6</code> survives in the mantissa. Each row
+                        was decomposed by hand and then checked against the machine.</p>
+                    <div id="bitRows"></div>
+                    <div class="bitkey">
+                        <span><i style="background:rgba(163,163,170,.5)"></i>sign</span>
+                        <span><i style="background:rgba(57,135,229,.5)"></i>exponent</span>
+                        <span><i style="background:rgba(217,89,38,.5)"></i>mantissa</span>
+                    </div>
+                    <table class="dt" id="fmtTable" style="margin-top:16px"></table>
+                    <p class="muted-note" style="margin-top:10px">0.1 is not representable in binary at any width
+                        &mdash; it is the repeating fraction 0.0001100110011&hellip; &mdash; so every row is wrong,
+                        and the only question is by how much.</p>
+
+                    <h3>Why bf16 replaced fp16, and it is not accuracy</h3>
+                    <p>bf16 keeps all eight of fp32's exponent bits, so it reaches just as far, paying with detail:
+                        7.2 decimal digits down to 2.4. fp16 made the opposite bargain, and that is what breaks it.
+                        Late in a run the gradients become genuinely tiny.</p>
+                    <table class="dt" id="underflowTable"></table>
+                    <p style="margin-top:12px" id="underflowNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">07</span>Sixteen bytes for every weight</h2>
+                    <p>Running a finished model requires only its weights. Training one requires far more, and this
+                        arithmetic is why Sessions 12 and 13 exist.</p>
+                    <div class="split">
+                        <div class="box">
+                            <table class="dt" id="bytesTable"></table>
+                        </div>
+                        <div>
+                            <div class="ctl-row" style="margin-bottom:10px">
+                                <div class="ctl">
+                                    <label for="sizeSlider">model size <span class="val" id="sizeVal"></span></label>
+                                    <input type="range" id="sizeSlider" min="0" max="60" step="1" value="18" />
+                                </div>
+                            </div>
+                            <div class="readout" id="memReadout"></div>
+                        </div>
+                    </div>
+                    <p class="muted-note" style="margin-top:14px" id="memNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">08</span>MFU, and the number that hides in plain sight</h2>
+                    <p>Four traces catch what the others cannot: the loss says whether the model is learning, the
+                        grad norm says there is trouble before the loss shows it, tokens/second says whether
+                        something quietly got slower, and <strong>MFU says whether the machine is being
+                            wasted.</strong></p>
+                    <p>The last is the one most often skipped, and the reason to watch it is uncomfortable: at 8% the
+                        loss curve looks exactly as it does at 45%. The model learns perfectly well &mdash; you
+                        simply pay four times as much and wait four times as long, and nothing in the loss will ever
+                        mention it.</p>
+                    <div class="readout" id="mfuReadout"></div>
+                    <p class="muted-note" style="margin-top:14px" id="mfuHonesty"></p>
+                    <h3>What is costing us the distance to 40%</h3>
+                    <table class="dt" id="mfuCostTable"></table>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">09</span>The wipe is not optional</h2>
+                    <p>Gradients <strong>add up rather than replace</strong>, so each call to
+                        <code class="mono">backward()</code> piles the new gradient onto whatever was already there.
+                        Forget <code class="mono">zero_grad()</code> and batch two trains on top of batch one. That
+                        looks like a defect until you remember it is exactly what gradient accumulation relies on
+                        &mdash; it was built this way on purpose.</p>
+                    <table class="dt" id="wipeTable"></table>
+                    <p style="margin-top:12px" id="wipeNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">10</span>Gates</h2>
+                    <p>The harness exits non-zero if any of these fail, so the exit code is the pass/fail signal
+                        rather than the printed summary.</p>
+                    <div class="gatelist" id="gates"></div>
+                    <p class="muted-note" style="margin-top:16px" id="provenance"></p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="tipbox" id="tip"></div>
+
+    <script>
+        /* BEGIN GENERATED s10data */
+const S10DATA = {
+  "meta": {
+    "python": "3.9.6",
+    "torch": "2.2.2",
+    "device": "cpu",
+    "platform": "macOS-26.6.2-arm64-arm-64bit"
+  },
+  "tokenizer": {
+    "repo": "sarvamai/sarvam-1",
+    "sha256": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+    "vocab_size": 68096
+  },
+  "task1_shapes": {
+    "B": 4,
+    "T": 128,
+    "D": 256,
+    "V": 68096,
+    "rows": [
+      {
+        "tensor": "batch (tokens)",
+        "shape": [
+          4,
+          128
+        ],
+        "meaning": "B=sequences in the step · T=positions in each"
+      },
+      {
+        "tensor": "logits",
+        "shape": [
+          4,
+          128,
+          68096
+        ],
+        "meaning": "B · T · V=one score per vocabulary token"
+      },
+      {
+        "tensor": "loss",
+        "shape": [],
+        "meaning": "scalar — the entire backward signal"
+      },
+      {
+        "tensor": "head.weight",
+        "shape": [
+          68096,
+          256
+        ],
+        "meaning": "V rows · D=width of the hidden state"
+      },
+      {
+        "tensor": "head.weight.grad",
+        "shape": [
+          68096,
+          256
+        ],
+        "meaning": "one gradient per weight — same shape, always"
+      },
+      {
+        "tensor": "embed.weight",
+        "shape": [
+          68096,
+          256
+        ],
+        "meaning": "V rows · D — one learned vector per token"
+      },
+      {
+        "tensor": "blocks.0.qkv.weight",
+        "shape": [
+          768,
+          256
+        ],
+        "meaning": "3D rows (q,k,v stacked) · D"
+      },
+      {
+        "tensor": "exp_avg (Adam m)",
+        "shape": [
+          68096,
+          256
+        ],
+        "meaning": "same shape as the weight — the running mean"
+      },
+      {
+        "tensor": "exp_avg_sq (v)",
+        "shape": [
+          68096,
+          256
+        ],
+        "meaning": "same shape again — the running square"
+      },
+      {
+        "tensor": "grad norm",
+        "shape": [],
+        "meaning": "scalar — every gradient combined into one length"
+      }
+    ],
+    "params": 38111488,
+    "grads": 38111488,
+    "optimizer_state": 76222976,
+    "gate_pass": true
+  },
+  "task2_gradient": {
+    "toy": {
+      "x": 2.0,
+      "w1": 3.0,
+      "w2": 4.0,
+      "target": 20.0,
+      "h": 6.0,
+      "y": 24.0,
+      "loss": 16.0,
+      "analytic": 64.0,
+      "forward_diff_h1e3": 64.06399999999124,
+      "central_diff_h1e5": 64.00000000041928,
+      "autograd": 64.0,
+      "gate_pass": true
+    },
+    "real": {
+      "checks": [
+        {
+          "weight": "head.weight[100, 7]",
+          "autograd": 3.8477417522954835e-06,
+          "best_h": 0.001,
+          "best_central_diff": 3.84774345718597e-06,
+          "best_digits": 6.4,
+          "digits_by_h": {
+            "1e-02": 4.5,
+            "1e-03": 6.4,
+            "1e-04": 6.3,
+            "1e-05": 4.8,
+            "1e-06": 4.4,
+            "1e-07": 2.7
+          }
+        },
+        {
+          "weight": "blocks.0.qkv.weight[3, 11]",
+          "autograd": 7.72909959962218e-05,
+          "best_h": 0.001,
+          "best_central_diff": 7.729099760211966e-05,
+          "best_digits": 7.7,
+          "digits_by_h": {
+            "1e-02": 6.2,
+            "1e-03": 7.7,
+            "1e-04": 7.3,
+            "1e-05": 6.5,
+            "1e-06": 5.0,
+            "1e-07": 4.0
+          }
+        },
+        {
+          "weight": "embed.weight[12856, 5]",
+          "autograd": -0.006933978498108813,
+          "best_h": 1e-05,
+          "best_central_diff": -0.006933978546896923,
+          "best_digits": 8.2,
+          "digits_by_h": {
+            "1e-02": 3.7,
+            "1e-03": 5.7,
+            "1e-04": 7.7,
+            "1e-05": 8.2,
+            "1e-06": 7.5,
+            "1e-07": 6.3
+          }
+        }
+      ],
+      "worst_digits": 6.4,
+      "dtype": "float64",
+      "gate_pass": true
+    }
+  },
+  "task3_accumulation": {
+    "notes_case": {
+      "micro": [
+        [
+          4,
+          2.0
+        ],
+        [
+          4,
+          2.0
+        ],
+        [
+          2,
+          5.0
+        ]
+      ],
+      "by_token": 2.6,
+      "by_batch": 3.0,
+      "error_pct": 15.38,
+      "gate_pass": true
+    },
+    "equal_case": {
+      "micro": [
+        [
+          4,
+          2.0
+        ],
+        [
+          4,
+          2.0
+        ],
+        [
+          4,
+          5.0
+        ]
+      ],
+      "by_token": 3.0,
+      "by_batch": 3.0,
+      "error_pct": 0.0
+    },
+    "real_micro": {
+      "stats": [
+        {
+          "tokens": 254,
+          "loss": 11.2278
+        },
+        {
+          "tokens": 190,
+          "loss": 11.2078
+        },
+        {
+          "tokens": 78,
+          "loss": 11.2408
+        },
+        {
+          "tokens": 46,
+          "loss": 11.2848
+        }
+      ],
+      "by_token": 11.2275,
+      "by_batch": 11.2403,
+      "error_pct": 0.114
+    }
+  },
+  "task3_gradients": {
+    "norm_correct": 8.782007379486897,
+    "norm_wrong": 9.23837058178629,
+    "norm_ratio": 1.0519657047163693,
+    "relative_l2": 0.24274234436193154,
+    "cosine": 0.9732769751772917,
+    "angle_degrees": 13.27554471125217,
+    "gate_pass": true
+  },
+  "task3_curves": {
+    "steps": 120,
+    "lr": 0.0003,
+    "eval_every": 5,
+    "micro_batch_lengths": [
+      128,
+      96,
+      40,
+      24
+    ],
+    "curves": {
+      "by_token": {
+        "reported": [
+          11.2428,
+          10.5742,
+          10.2756,
+          10.0597,
+          9.8972,
+          10.1199,
+          10.8957,
+          10.7426,
+          10.754,
+          10.6045,
+          10.576,
+          10.714,
+          10.6095,
+          10.5083,
+          10.495,
+          10.4645,
+          10.456,
+          10.8884,
+          10.7738,
+          10.7096,
+          10.6997,
+          10.6348,
+          10.0838,
+          10.0074,
+          10.0893,
+          9.9632,
+          9.8247,
+          9.6814,
+          9.5579,
+          9.612,
+          9.4995,
+          9.4115,
+          9.3737,
+          9.2398,
+          8.8924,
+          8.2114,
+          8.1148,
+          8.0625,
+          7.8634,
+          7.7536,
+          8.1574,
+          8.4736,
+          8.4461,
+          8.3748,
+          8.2434,
+          8.4767,
+          8.5637,
+          8.5919,
+          8.4697,
+          8.3148,
+          8.288,
+          8.9207,
+          8.9227,
+          9.1205,
+          8.7909,
+          8.9209,
+          8.8402,
+          7.8934,
+          7.5075,
+          7.4464,
+          7.3657,
+          7.2709,
+          7.1663,
+          7.1661,
+          7.481,
+          7.544,
+          7.5947,
+          7.5837,
+          7.3636,
+          6.9076,
+          6.5411,
+          6.5498,
+          6.5237,
+          6.2258,
+          6.2613,
+          7.0547,
+          7.1214,
+          7.2747,
+          7.4184,
+          7.0214,
+          7.4643,
+          7.7122,
+          7.6219,
+          7.7142,
+          7.6382,
+          7.5742,
+          8.1119,
+          8.3378,
+          8.131,
+          8.419,
+          8.4539,
+          7.9384,
+          6.9815,
+          6.4594,
+          6.394,
+          6.3481,
+          6.3047,
+          6.2911,
+          6.6337,
+          6.9522,
+          6.8788,
+          7.0377,
+          6.8804,
+          6.7362,
+          6.1012,
+          5.9769,
+          5.8203,
+          5.7997,
+          5.6329,
+          5.9052,
+          6.9586,
+          6.9923,
+          6.9898,
+          6.7694,
+          7.2324,
+          7.489,
+          7.5933,
+          7.5157,
+          7.5687,
+          7.5141
+        ],
+        "held_step": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          119
+        ],
+        "held": [
+          11.1037,
+          10.9742,
+          10.8027,
+          10.5084,
+          10.2596,
+          9.8346,
+          9.1587,
+          8.6937,
+          8.5021,
+          8.1438,
+          7.8066,
+          7.5878,
+          7.3055,
+          6.8083,
+          6.557,
+          9.6025,
+          10.7728,
+          9.4512,
+          7.7902,
+          6.3835,
+          6.0788,
+          5.9425,
+          6.0208,
+          6.1746,
+          6.3012
+        ]
+      },
+      "by_batch": {
+        "reported": [
+          11.2511,
+          10.4868,
+          10.1591,
+          9.9175,
+          9.7321,
+          10.4386,
+          10.8466,
+          10.6949,
+          10.6562,
+          10.5459,
+          10.6013,
+          10.6828,
+          10.5969,
+          10.5006,
+          10.4315,
+          10.4714,
+          10.5797,
+          10.8368,
+          10.719,
+          10.7354,
+          10.6957,
+          10.5266,
+          10.1013,
+          10.1514,
+          10.1406,
+          10.0026,
+          9.8562,
+          9.7058,
+          9.6195,
+          9.63,
+          9.481,
+          9.5638,
+          9.3634,
+          9.2652,
+          8.6674,
+          8.1912,
+          8.0481,
+          7.9644,
+          7.7986,
+          7.788,
+          8.2956,
+          8.5038,
+          8.4384,
+          8.298,
+          8.2614,
+          8.5276,
+          8.5197,
+          8.5083,
+          8.4616,
+          8.2528,
+          8.3892,
+          9.0044,
+          8.8394,
+          8.9143,
+          8.8122,
+          8.8695,
+          8.3441,
+          7.761,
+          7.5188,
+          7.4425,
+          7.3464,
+          7.2362,
+          7.1154,
+          7.2923,
+          7.4595,
+          7.4802,
+          7.6085,
+          7.5623,
+          7.2185,
+          6.571,
+          6.2673,
+          6.1593,
+          6.0716,
+          5.9561,
+          6.3762,
+          7.089,
+          6.9988,
+          7.2181,
+          7.1574,
+          6.8795,
+          7.457,
+          7.472,
+          7.4983,
+          7.612,
+          7.4567,
+          7.5549,
+          7.9592,
+          8.2038,
+          8.0831,
+          8.3326,
+          8.3393,
+          7.4064,
+          6.7141,
+          6.311,
+          6.1588,
+          5.9803,
+          6.0434,
+          6.1051,
+          6.7299,
+          6.9591,
+          6.8351,
+          6.8991,
+          6.7025,
+          6.3202,
+          5.5632,
+          5.3199,
+          5.1876,
+          5.1425,
+          4.97,
+          6.0608,
+          6.8739,
+          6.7721,
+          6.733,
+          6.6518,
+          7.2362,
+          7.3282,
+          7.4332,
+          7.3262,
+          7.3776,
+          7.427
+        ],
+        "held_step": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          119
+        ],
+        "held": [
+          11.1043,
+          10.9723,
+          10.8102,
+          10.5331,
+          10.292,
+          9.8667,
+          9.2212,
+          8.7509,
+          8.5935,
+          8.191,
+          7.8457,
+          7.611,
+          7.3064,
+          6.8135,
+          8.2967,
+          6.5713,
+          6.625,
+          6.6339,
+          6.5795,
+          6.3436,
+          5.9412,
+          5.9166,
+          5.9902,
+          6.1851,
+          6.2963
+        ]
+      }
+    },
+    "reported_gap": -0.1464,
+    "heldout_gap": -0.0083,
+    "gate_pass": true
+  },
+  "task4_grad_norm": {
+    "steps": 300,
+    "lr": 0.002,
+    "rule": {
+      "k_mads": 3.5,
+      "window": 20,
+      "max_lag": 5
+    },
+    "clipping": "off, deliberately",
+    "n_norm_spikes": 19,
+    "n_loss_spikes": 26,
+    "norm_spikes": [
+      27,
+      38,
+      49,
+      75,
+      93,
+      94,
+      113,
+      131,
+      150,
+      169,
+      180,
+      187,
+      206,
+      225,
+      237,
+      243,
+      252,
+      272,
+      293
+    ],
+    "loss_spikes": [
+      22,
+      35,
+      41,
+      44,
+      53,
+      62,
+      72,
+      78,
+      81,
+      91,
+      134,
+      137,
+      147,
+      153,
+      193,
+      196,
+      203,
+      209,
+      240,
+      249,
+      259,
+      265,
+      278,
+      284,
+      287,
+      296
+    ],
+    "leads": [
+      {
+        "norm_step": 38,
+        "loss_step": 41,
+        "lag": 3
+      },
+      {
+        "norm_step": 49,
+        "loss_step": 53,
+        "lag": 4
+      },
+      {
+        "norm_step": 75,
+        "loss_step": 78,
+        "lag": 3
+      },
+      {
+        "norm_step": 131,
+        "loss_step": 134,
+        "lag": 3
+      },
+      {
+        "norm_step": 150,
+        "loss_step": 153,
+        "lag": 3
+      },
+      {
+        "norm_step": 206,
+        "loss_step": 209,
+        "lag": 3
+      },
+      {
+        "norm_step": 237,
+        "loss_step": 240,
+        "lag": 3
+      },
+      {
+        "norm_step": 293,
+        "loss_step": 296,
+        "lag": 3
+      }
+    ],
+    "first_lead": {
+      "norm_step": 38,
+      "loss_step": 41,
+      "lag": 3
+    },
+    "losses": [
+      11.1632,
+      10.5485,
+      9.7047,
+      10.4751,
+      10.3752,
+      9.9167,
+      10.1232,
+      9.8055,
+      9.3464,
+      11.2194,
+      10.5363,
+      10.7054,
+      8.7169,
+      9.1895,
+      8.8395,
+      8.4353,
+      8.3625,
+      8.4363,
+      8.0651,
+      7.388,
+      7.3058,
+      6.9028,
+      8.4199,
+      8.5774,
+      9.0351,
+      9.1781,
+      9.0571,
+      9.3139,
+      9.0245,
+      9.029,
+      9.5371,
+      8.0651,
+      6.6246,
+      6.409,
+      6.1446,
+      7.9353,
+      8.0661,
+      7.7542,
+      6.898,
+      6.8767,
+      6.8935,
+      8.3334,
+      8.6376,
+      7.7403,
+      9.3864,
+      9.1151,
+      9.0522,
+      9.2902,
+      9.1606,
+      9.1231,
+      7.0586,
+      6.5337,
+      6.1549,
+      7.3823,
+      7.1151,
+      7.7498,
+      6.6947,
+      6.4329,
+      6.1431,
+      6.8463,
+      7.5546,
+      7.2691,
+      8.615,
+      8.4517,
+      8.5369,
+      8.8209,
+      8.9405,
+      8.7754,
+      7.9625,
+      6.3543,
+      6.2759,
+      6.1452,
+      7.0884,
+      7.2741,
+      7.0328,
+      6.6606,
+      6.742,
+      6.5445,
+      7.5676,
+      7.2831,
+      7.3823,
+      8.0786,
+      8.0361,
+      7.7191,
+      8.306,
+      8.096,
+      8.5535,
+      7.4466,
+      6.0388,
+      5.9861,
+      5.8942,
+      7.1092,
+      7.1661,
+      6.7347,
+      6.5781,
+      6.711,
+      6.5516,
+      7.3008,
+      7.6659,
+      7.2233,
+      7.939,
+      8.0345,
+      8.3849,
+      8.5235,
+      8.736,
+      8.6182,
+      5.9263,
+      5.9186,
+      5.8676,
+      6.5055,
+      6.7175,
+      7.1094,
+      6.7808,
+      6.5133,
+      6.323,
+      6.7558,
+      7.3861,
+      7.1268,
+      7.9796,
+      8.0105,
+      7.9985,
+      8.0348,
+      8.2865,
+      8.1905,
+      7.6803,
+      6.2512,
+      6.226,
+      6.0875,
+      6.8097,
+      6.8807,
+      6.979,
+      6.0694,
+      6.3379,
+      6.1902,
+      7.1962,
+      7.2118,
+      7.2324,
+      7.8741,
+      7.9411,
+      7.7532,
+      8.2684,
+      8.1678,
+      8.3834,
+      7.3864,
+      5.859,
+      5.8243,
+      5.7413,
+      7.0952,
+      7.0873,
+      6.6045,
+      6.0716,
+      6.2825,
+      5.9282,
+      7.0579,
+      7.5469,
+      7.1111,
+      7.7752,
+      7.7358,
+      7.7536,
+      8.0452,
+      8.2234,
+      8.3775,
+      6.0032,
+      5.5941,
+      5.5218,
+      5.9828,
+      6.6852,
+      6.9653,
+      6.6659,
+      6.1844,
+      5.8828,
+      6.1516,
+      7.2388,
+      6.9201,
+      7.5909,
+      7.7776,
+      7.9032,
+      8.0584,
+      8.4227,
+      8.2852,
+      7.9955,
+      5.5537,
+      5.469,
+      5.3469,
+      6.4814,
+      6.5978,
+      6.6082,
+      5.867,
+      6.0713,
+      6.0672,
+      6.8971,
+      6.9904,
+      6.8792,
+      7.8319,
+      7.7023,
+      7.5644,
+      8.1633,
+      7.9623,
+      8.1251,
+      6.9115,
+      5.3416,
+      5.3171,
+      5.2299,
+      6.7356,
+      6.8702,
+      6.4626,
+      6.0131,
+      6.0552,
+      5.6736,
+      6.9082,
+      7.618,
+      7.173,
+      7.7995,
+      7.9373,
+      7.781,
+      7.9627,
+      7.8915,
+      8.417,
+      6.3207,
+      5.2782,
+      5.2253,
+      5.419,
+      6.6648,
+      6.5887,
+      6.6139,
+      5.7947,
+      5.5374,
+      5.5934,
+      6.975,
+      6.8395,
+      7.1045,
+      7.7493,
+      7.671,
+      7.7028,
+      8.2445,
+      7.9692,
+      7.5569,
+      5.7612,
+      5.5151,
+      5.2378,
+      6.2149,
+      6.3072,
+      6.573,
+      5.6099,
+      5.7731,
+      5.626,
+      6.5212,
+      7.0904,
+      6.6742,
+      7.903,
+      7.7524,
+      7.6472,
+      8.2499,
+      7.7637,
+      8.0756,
+      6.8621,
+      5.1058,
+      5.0772,
+      4.9628,
+      6.5385,
+      6.4995,
+      6.3151,
+      5.2772,
+      5.3965,
+      5.0585,
+      6.7534,
+      6.9953,
+      7.1131,
+      7.6315,
+      7.8306,
+      7.6218,
+      7.89,
+      7.7869,
+      8.2813,
+      6.7192,
+      4.7326,
+      4.6805,
+      4.5754,
+      6.6789,
+      6.6682,
+      6.3862,
+      5.2425,
+      5.2111,
+      5.1399,
+      6.9243,
+      6.9327,
+      6.6393,
+      7.5658,
+      7.5107,
+      7.5911,
+      7.8867,
+      7.8596,
+      7.3852,
+      5.0419,
+      4.7741,
+      4.4137,
+      6.1019,
+      6.1343,
+      6.6504,
+      5.2046
+    ],
+    "norms": [
+      8.7463,
+      6.0184,
+      3.3293,
+      2.1501,
+      2.2483,
+      2.2844,
+      1.3398,
+      1.4661,
+      1.503,
+      1.5724,
+      1.8565,
+      1.6314,
+      1.748,
+      1.8201,
+      1.7649,
+      1.6826,
+      1.4927,
+      1.9839,
+      1.6514,
+      3.6286,
+      3.3038,
+      3.6437,
+      2.5788,
+      2.1684,
+      2.0984,
+      1.641,
+      1.4195,
+      3.8022,
+      1.5182,
+      1.5936,
+      1.6137,
+      1.5355,
+      2.057,
+      1.9451,
+      1.8791,
+      1.6355,
+      1.7839,
+      1.9797,
+      2.953,
+      3.0018,
+      3.0763,
+      1.8845,
+      2.3482,
+      2.0739,
+      1.703,
+      1.7291,
+      1.739,
+      1.9839,
+      2.4411,
+      4.551,
+      4.6119,
+      2.386,
+      1.7713,
+      1.9099,
+      1.909,
+      1.5378,
+      2.4297,
+      2.9193,
+      3.1979,
+      1.7082,
+      2.047,
+      2.1873,
+      1.9779,
+      2.1252,
+      2.1007,
+      2.1596,
+      2.1238,
+      2.0819,
+      1.5967,
+      1.8178,
+      1.7394,
+      1.6721,
+      1.6178,
+      1.6879,
+      1.5419,
+      3.2263,
+      2.8799,
+      3.1242,
+      2.0482,
+      1.8582,
+      1.5704,
+      1.1353,
+      1.1919,
+      1.412,
+      1.6422,
+      1.5547,
+      1.6263,
+      1.5706,
+      1.6546,
+      1.5824,
+      1.54,
+      1.4036,
+      1.4949,
+      2.0327,
+      2.9988,
+      2.9122,
+      3.0918,
+      1.9185,
+      1.8472,
+      1.614,
+      1.1418,
+      1.3318,
+      1.4488,
+      1.5342,
+      1.8089,
+      1.6378,
+      1.627,
+      1.598,
+      1.5602,
+      1.3635,
+      1.6981,
+      1.4369,
+      1.6738,
+      2.8095,
+      3.2444,
+      2.1418,
+      1.8452,
+      2.0475,
+      1.1695,
+      1.2221,
+      1.3081,
+      1.2247,
+      1.575,
+      1.742,
+      1.4443,
+      1.7145,
+      1.7232,
+      1.6547,
+      1.8124,
+      1.7258,
+      1.541,
+      3.0572,
+      2.6517,
+      2.7027,
+      2.158,
+      1.9093,
+      1.6363,
+      1.1208,
+      1.2341,
+      1.3,
+      1.6946,
+      1.5837,
+      1.6492,
+      1.5617,
+      1.6794,
+      1.621,
+      1.5817,
+      1.3811,
+      1.5926,
+      1.8659,
+      2.6007,
+      2.4998,
+      2.895,
+      1.9678,
+      1.922,
+      1.6673,
+      1.1367,
+      1.2388,
+      1.3823,
+      1.681,
+      1.5246,
+      1.786,
+      1.309,
+      1.5599,
+      1.5541,
+      1.2219,
+      1.5116,
+      1.2913,
+      1.3258,
+      2.5922,
+      2.8584,
+      2.4633,
+      1.8127,
+      1.9882,
+      1.4953,
+      1.3799,
+      1.426,
+      1.5607,
+      1.6099,
+      1.7534,
+      2.7357,
+      1.7602,
+      1.5987,
+      1.5461,
+      1.8342,
+      1.6244,
+      1.4255,
+      3.0226,
+      2.536,
+      2.7876,
+      2.0792,
+      1.5146,
+      1.4866,
+      1.1615,
+      1.29,
+      1.4934,
+      1.7002,
+      1.6414,
+      1.5532,
+      1.6897,
+      2.1376,
+      1.5577,
+      1.5144,
+      1.3737,
+      1.5146,
+      1.7514,
+      2.868,
+      2.6025,
+      2.8372,
+      1.8308,
+      1.5665,
+      1.5563,
+      1.1863,
+      1.2795,
+      1.3001,
+      1.4768,
+      1.3847,
+      1.5664,
+      1.317,
+      1.5695,
+      1.6056,
+      1.3382,
+      1.2317,
+      1.4053,
+      1.4844,
+      2.5544,
+      2.5148,
+      2.0404,
+      1.8364,
+      2.0206,
+      1.7298,
+      1.6474,
+      1.6355,
+      1.7037,
+      1.7551,
+      1.6815,
+      1.5716,
+      3.0493,
+      1.9058,
+      1.5661,
+      1.9263,
+      1.839,
+      1.3808,
+      3.0375,
+      2.5771,
+      2.4847,
+      2.0122,
+      2.1913,
+      1.7181,
+      1.2013,
+      1.3589,
+      1.3086,
+      2.8545,
+      1.6334,
+      1.666,
+      1.4081,
+      1.6823,
+      1.5775,
+      1.5126,
+      1.5606,
+      1.4722,
+      1.4038,
+      1.6895,
+      1.5533,
+      1.6891,
+      1.8815,
+      1.5884,
+      1.5727,
+      1.2012,
+      1.363,
+      1.4055,
+      1.4467,
+      2.6272,
+      1.4945,
+      1.2807,
+      1.5544,
+      1.3869,
+      1.3127,
+      1.4962,
+      1.4829,
+      1.6621,
+      1.7115,
+      1.6405,
+      1.5604,
+      1.7075,
+      2.0881,
+      1.6824,
+      1.4666,
+      1.2976,
+      1.3696,
+      1.4881,
+      1.713,
+      1.4701,
+      2.4638,
+      1.9523,
+      1.4839,
+      1.7937,
+      2.2132,
+      3.0363,
+      1.1851
+    ],
+    "gate_pass": true
+  },
+  "task5_mfu": {
+    "peak_flops_measured": 1506622667444.309,
+    "peak_tflops": 1.5066,
+    "N_all": 38111488,
+    "N_embedding": 17465344,
+    "N_non_embedding": 20646144,
+    "batch": 4,
+    "block": 128,
+    "steps_timed": 30,
+    "seconds": 3.847,
+    "tokens_per_second": 3992.4,
+    "achieved_flops": 494562726309.9484,
+    "achieved_tflops": 0.4946,
+    "attention_tflops": 0.0063,
+    "mfu": 0.32826,
+    "mfu_pct": 32.83,
+    "mfu_pct_counting_embeddings": 60.59,
+    "head_share_of_non_embedding_params": 0.8444,
+    "head_share_of_flops": 0.8444,
+    "notes_example_mfu_pct": 8.19,
+    "denominator": "measured best large-matmul throughput on this device, not a datasheet figure",
+    "N_convention": "non-embedding parameters; an embedding lookup is a gather, not a matmul"
+  },
+  "task6_formats": {
+    "target": 0.1,
+    "formats": [
+      {
+        "format": "fp32",
+        "e_bits": 8,
+        "m_bits": 23,
+        "bias": 127,
+        "sign": 0,
+        "exp_unbiased": -4,
+        "exp_field": 123,
+        "mantissa": 5033165,
+        "stored": 0.10000000149011612,
+        "bits": "0 01111011 10011001100110011001101",
+        "rel_error": 1.4901161138336505e-08
+      },
+      {
+        "format": "bf16",
+        "e_bits": 8,
+        "m_bits": 7,
+        "bias": 127,
+        "sign": 0,
+        "exp_unbiased": -4,
+        "exp_field": 123,
+        "mantissa": 77,
+        "stored": 0.10009765625,
+        "bits": "0 01111011 1001101",
+        "rel_error": 0.0009765624999999445
+      },
+      {
+        "format": "fp16",
+        "e_bits": 5,
+        "m_bits": 10,
+        "bias": 15,
+        "sign": 0,
+        "exp_unbiased": -4,
+        "exp_field": 11,
+        "mantissa": 614,
+        "stored": 0.0999755859375,
+        "bits": "0 01011 1001100110",
+        "rel_error": 0.0002441406250000555
+      },
+      {
+        "format": "fp8 E4M3",
+        "e_bits": 4,
+        "m_bits": 3,
+        "bias": 7,
+        "sign": 0,
+        "exp_unbiased": -4,
+        "exp_field": 3,
+        "mantissa": 5,
+        "stored": 0.1015625,
+        "bits": "0 0011 101",
+        "rel_error": 0.015624999999999944
+      }
+    ],
+    "fp32_hex_by_hand": "0x3dcccccd",
+    "fp32_hex_struct": "0x3dcccccd",
+    "bf16_torch": 0.10009765625,
+    "fp16_torch": 0.0999755859375,
+    "fp8_torch": 0.1015625,
+    "gates": {
+      "fp32": true,
+      "bf16": true,
+      "fp8": true
+    }
+  },
+  "extra7_underflow": {
+    "rows": [
+      {
+        "grad": 0.0001,
+        "fp16": 0.00010001659393310547,
+        "bf16": 0.00010013580322265625,
+        "verdict": "fine"
+      },
+      {
+        "grad": 1e-06,
+        "fp16": 1.0132789611816406e-06,
+        "bf16": 9.98377799987793e-07,
+        "verdict": "losing digits"
+      },
+      {
+        "grad": 1e-08,
+        "fp16": 0.0,
+        "bf16": 1.0011717677116394e-08,
+        "verdict": "becomes exactly zero"
+      },
+      {
+        "grad": 1e-10,
+        "fp16": 0.0,
+        "bf16": 1.000444171950221e-10,
+        "verdict": "becomes exactly zero"
+      }
+    ],
+    "loss_scale": 1024,
+    "scaled_survives": 1.0251998901367188e-05,
+    "recovered": 1.0011717677116394e-08,
+    "gate_pass": true
+  },
+  "extra8_clipping": {
+    "norm_before": 3.6620900630950928,
+    "cap": 1.0,
+    "scale": 0.27306810667426046,
+    "norm_after": 0.9996826648712158,
+    "relative_error": 0.0003173351287841797,
+    "elements": 38111488,
+    "cosine": 0.9999999999998868,
+    "gate_pass": true
+  },
+  "extra9_memory": {
+    "per_weight": [
+      {
+        "item": "the weight itself, in bf16",
+        "bytes": 2
+      },
+      {
+        "item": "its gradient, in bf16",
+        "bytes": 2
+      },
+      {
+        "item": "a full-precision copy, in fp32",
+        "bytes": 4
+      },
+      {
+        "item": "the optimiser's two running numbers",
+        "bytes": 8
+      }
+    ],
+    "total_bytes": 16,
+    "state_tensors": 64,
+    "state_elements": 76222976,
+    "params": 38111488,
+    "sizes": [
+      {
+        "model": "2B",
+        "weights": 2000000000.0,
+        "gib": 29.8,
+        "fits_80gb": true
+      },
+      {
+        "model": "9B",
+        "weights": 9000000000.0,
+        "gib": 134.1,
+        "fits_80gb": false
+      },
+      {
+        "model": "20B",
+        "weights": 20000000000.0,
+        "gib": 298.0,
+        "fits_80gb": false
+      },
+      {
+        "model": "120B",
+        "weights": 120000000000.0,
+        "gib": 1788.1,
+        "fits_80gb": false
+      }
+    ],
+    "crossover_80gb_billions": 5.37,
+    "gate_pass": true
+  },
+  "extra10_zero_grad": {
+    "wiped": {
+      "curve": [
+        11.1901,
+        10.5611,
+        10.3503,
+        10.1262,
+        10.0653,
+        9.9015,
+        9.6391,
+        9.6849,
+        9.4209,
+        9.5484,
+        11.0444,
+        10.8156,
+        10.7886,
+        10.5209,
+        10.579,
+        10.5191,
+        10.3382,
+        10.285,
+        10.2348,
+        10.4713,
+        10.3806,
+        10.3568,
+        10.2817,
+        10.1871,
+        10.1529,
+        10.0664,
+        9.9876,
+        9.9055,
+        9.8717,
+        10.6404,
+        10.779,
+        10.6078,
+        10.5852,
+        10.5309,
+        10.5181,
+        10.437,
+        10.333,
+        10.4651,
+        9.9891,
+        9.2097,
+        9.2563,
+        9.3637,
+        9.2318,
+        9.0842,
+        8.9313,
+        8.7782,
+        8.6273,
+        8.4794,
+        8.3347,
+        8.1929,
+        8.2177,
+        8.5209,
+        8.4998,
+        8.463,
+        8.1898,
+        8.4205,
+        8.4052,
+        8.0496,
+        8.1027,
+        7.7896
+      ],
+      "final_norm": 2.130028617666999
+    },
+    "stale": {
+      "curve": [
+        11.1901,
+        10.5611,
+        10.412,
+        10.1981,
+        10.1568,
+        10.013,
+        9.7786,
+        9.8429,
+        9.6058,
+        9.7416,
+        11.0603,
+        10.8773,
+        10.8692,
+        10.6552,
+        10.6619,
+        10.6336,
+        10.4187,
+        10.3003,
+        10.2216,
+        10.3743,
+        10.2506,
+        10.2157,
+        10.1542,
+        10.0011,
+        9.9979,
+        9.9114,
+        9.8245,
+        9.7473,
+        9.7001,
+        10.6758,
+        10.8762,
+        10.6972,
+        10.7164,
+        10.7412,
+        10.7851,
+        10.7617,
+        10.6033,
+        10.857,
+        10.2717,
+        8.9749,
+        8.8898,
+        9.027,
+        8.9596,
+        8.8852,
+        8.8053,
+        8.7203,
+        8.6303,
+        8.5356,
+        8.4368,
+        8.3346,
+        8.3061,
+        8.2899,
+        8.3352,
+        8.2155,
+        8.0423,
+        8.3055,
+        8.3074,
+        7.9227,
+        8.1428,
+        7.8105
+      ],
+      "final_norm": 57.76898617488566
+    },
+    "norm_ratio": 27.121225365581942,
+    "gate_pass": true
+  },
+  "gates": {
+    "tokenizer_hash_verified": true,
+    "one_grad_per_weight_two_states": true,
+    "toy_gradient_agrees": true,
+    "real_gradient_agrees_to_6_digits": true,
+    "notes_case_reproduces_15_4pct": true,
+    "reported_loss_is_misleading": true,
+    "accumulation_schemes_differ": true,
+    "grad_norm_led_the_loss": true,
+    "fp32_bits_match_struct": true,
+    "bf16_matches_torch": true,
+    "fp8_matches_torch": true,
+    "fp16_underflows_where_bf16_survives": true,
+    "clipping_preserves_direction": true,
+    "sixteen_bytes_per_weight": true,
+    "stale_grads_still_look_like_training": true
+  },
+  "summary": {
+    "gates_passed": 15,
+    "gates_total": 15,
+    "six_answers": {
+      "1_tensors_in_the_step": 152445952,
+      "2_worst_agreeing_digits": 6.4,
+      "3_wrong_average_error_pct": 15.38,
+      "4_grad_norm_lead_steps": 3,
+      "5_mfu_pct": 32.83,
+      "6_fp8_relative_error_on_0p1": 0.015624999999999944
+    }
+  }
+};
+/* END GENERATED s10data */
+    </script>
+
+    <script>
+        (function () {
+            'use strict';
+            const D = S10DATA;
+            if (!D) {
+                document.querySelector('.wrapper').insertAdjacentHTML('afterbegin',
+                    '<div class="panel report-section"><p style="color:#d03b3b">No baked data. Run ' +
+                    '<code class="mono">python build_notebook.py</code> to generate it.</p></div>');
+                return;
+            }
+            const $ = id => document.getElementById(id);
+            const fmt = (x, n = 4) => Number(x).toFixed(n);
+            const num = x => Number(x).toLocaleString();
+            const OK = '#3987e5', BAD = '#d95926', THIRD = '#199e70';
+            const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+            const tip = $('tip');
+            function showTip(evt, html) {
+                tip.innerHTML = html; tip.classList.add('on');
+                const r = tip.getBoundingClientRect();
+                let x = evt.clientX + 14, y = evt.clientY - r.height - 10;
+                if (x + r.width > innerWidth - 8) x = evt.clientX - r.width - 14;
+                if (y < 8) y = evt.clientY + 16;
+                tip.style.left = x + 'px'; tip.style.top = y + 'px';
+            }
+            const hideTip = () => tip.classList.remove('on');
+
+            /* ---- 00 hero ------------------------------------------------------ */
+            const S = D.summary.six_answers, T5 = D.task5_mfu;
+            $('heroTiles').innerHTML = [
+                ['gradient agreement', S['2_worst_agreeing_digits'].toFixed(1) + ' digits',
+                    'autograd vs a finite difference, worst of three weights'],
+                ['the 2024 bug', S['3_wrong_average_error_pct'].toFixed(1) + '%',
+                    'average-of-averages vs by-token, on the notes’ own case'],
+                ['grad norm lead', S['4_grad_norm_lead_steps'] + ' steps',
+                    'warning before the loss moved — found, not injected'],
+                ['MFU', S['5_mfu_pct'].toFixed(1) + '%',
+                    'measured, non-embedding N, against this machine’s real peak'],
+                ['0.1 in fp8 E4M3', (S['6_fp8_relative_error_on_0p1'] * 100).toFixed(1) + '% off',
+                    'stores 0.1015625 — fine for a matmul input, not for a weight'],
+            ].map(([k, v, sub]) =>
+                `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="sub">${sub}</div></div>`).join('');
+
+            /* ---- 01 the nudge -------------------------------------------------- */
+            (function nudge() {
+                const T2 = D.task2_gradient.toy, x = T2.x, w2 = T2.w2, t = T2.target;
+                const HS = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6];
+                const L = w1 => Math.pow(w2 * (w1 * x) - t, 2);
+                function render() {
+                    const w1 = +$('wSlider').value / 100;
+                    const h = HS[+$('hSlider').value];
+                    const analytic = 2 * (w2 * w1 * x - t) * w2 * x;
+                    const fwd = (L(w1 + h) - L(w1)) / h;
+                    const ctr = (L(w1 + h) - L(w1 - h)) / (2 * h);
+                    $('wVal').textContent = w1.toFixed(2);
+                    $('hVal').textContent = h.toExponential(0);
+                    $('nudgeReadout').innerHTML = `
+                      <div><div class="k">loss at w&#8321;</div><div class="v">${L(w1).toFixed(3)}</div>
+                           <div class="delta">y = ${(w2 * w1 * x).toFixed(2)}, target ${t}</div></div>
+                      <div><div class="k">forward difference</div><div class="v" style="color:var(--bad-c)">${fwd.toFixed(3)}</div>
+                           <div class="delta">(L(w+h) − L(w)) / h</div></div>
+                      <div><div class="k">central difference</div><div class="v" style="color:var(--ok-c)">${ctr.toFixed(3)}</div>
+                           <div class="delta">(L(w+h) − L(w−h)) / 2h</div></div>
+                      <div><div class="k">analytic 2(y−t)·w&#8322;·x</div><div class="v">${analytic.toFixed(3)}</div>
+                           <div class="delta">what backward() returns</div></div>`;
+                    const err = Math.abs(fwd - analytic), cerr = Math.abs(ctr - analytic);
+                    $('nudgeNote').innerHTML =
+                        `At w&#8321;=${w1.toFixed(2)} the loss climbs about <strong>${analytic.toFixed(1)}</strong> units for every unit ` +
+                        `you raise this weight — so to bring it down, move the other way. The forward difference is ` +
+                        `off by ${err.toFixed(4)} and the central difference by ${cerr.toExponential(1)}: the forward ` +
+                        `version measures the slope of a <em>chord</em>, which is O(h), while the central one is O(h²) ` +
+                        `and settles on the same answer from either side. That gap is a property of the estimator, ` +
+                        `not a disagreement with autograd — and it is why the next section sweeps h.`;
+                }
+                $('wSlider').addEventListener('input', render);
+                $('hSlider').addEventListener('input', render);
+                render();
+            })();
+
+            /* ---- 02 shapes ----------------------------------------------------- */
+            const T1 = D.task1_shapes;
+            $('shapeTable').innerHTML = '<thead><tr><th>tensor</th><th>shape</th>' +
+                '<th>what each dimension is</th></tr></thead><tbody>' +
+                T1.rows.map(r => `<tr><td class="mono" style="font-family:var(--font-mono)">${esc(r.tensor)}</td>` +
+                    `<td class="n">${r.shape.length ? '[' + r.shape.join(', ') + ']' : 'scalar'}</td>` +
+                    `<td style="color:var(--muted)">${esc(r.meaning)}</td></tr>`).join('') + '</tbody>';
+            $('shapeReadout').innerHTML = `
+              <div><div class="k">parameters</div><div class="v">${num(T1.params)}</div>
+                   <div class="delta">the weights themselves</div></div>
+              <div><div class="k">gradients</div><div class="v">${num(T1.grads)}</div>
+                   <div class="delta">one per parameter, exactly</div></div>
+              <div><div class="k">optimiser state</div><div class="v">${num(T1.optimizer_state)}</div>
+                   <div class="delta">two per parameter — Adam’s m and v</div></div>
+              <div><div class="k">numbers held per weight</div><div class="v">${((T1.params + T1.grads + T1.optimizer_state) / T1.params).toFixed(0)}×</div>
+                   <div class="delta">before a single activation</div></div>`;
+
+            /* ---- 03 the h sweep ------------------------------------------------- */
+            (function hSweep() {
+                const checks = D.task2_gradient.real.checks;
+                const hs = Object.keys(checks[0].digits_by_h);
+                const COLS = [OK, BAD, THIRD];
+                $('hLegend').innerHTML = checks.map((c, i) =>
+                    `<span><i style="background:${COLS[i]}"></i> ${esc(c.weight)}</span>`).join('') +
+                    '<span class="muted-note">agreeing significant digits at each step size</span>';
+                const W = 900, H = 300, mL = 46, mR = 210, mT = 16, mB = 40;
+                const all = checks.flatMap(c => Object.values(c.digits_by_h));
+                const lo = 0, hi = Math.max(...all) + 1;
+                const X = i => mL + (i / (hs.length - 1)) * (W - mL - mR);
+                const Y = v => mT + (1 - (v - lo) / (hi - lo)) * (H - mT - mB);
+                let out = '';
+                for (let g = 0; g <= hi; g += 2) {
+                    out += `<line class="grid" x1="${mL}" y1="${Y(g)}" x2="${W - mR}" y2="${Y(g)}"/>` +
+                        `<text x="${mL - 8}" y="${Y(g) + 3.5}" text-anchor="end">${g}</text>`;
+                }
+                out += `<line class="axis" x1="${mL}" y1="${H - mB}" x2="${W - mR}" y2="${H - mB}"/>`;
+                hs.forEach((h, i) => {
+                    out += `<text x="${X(i)}" y="${H - mB + 16}" text-anchor="middle">${h}</text>`;
+                });
+                out += `<text x="${(mL + W - mR) / 2}" y="${H - 6}" text-anchor="middle">step size h  —  truncation on the left, cancellation on the right</text>`;
+                out += `<text x="12" y="${mT + 8}">digits</text>`;
+                const placed = [];
+                checks.forEach((c, ci) => {
+                    const ys = hs.map(h => c.digits_by_h[h]);
+                    const d = ys.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
+                    out += `<path d="${d}" fill="none" stroke="${COLS[ci]}" stroke-width="2" stroke-linejoin="round"/>`;
+                    ys.forEach((v, i) => {
+                        const best = c.digits_by_h[`${c.best_h.toExponential(0).replace('e-', 'e-0').replace('e-0', 'e-0')}`];
+                        out += `<circle cx="${X(i)}" cy="${Y(v)}" r="${v === Math.max(...ys) ? 5.5 : 3.5}" fill="${COLS[ci]}"` +
+                            ` stroke="#0a0a0c" stroke-width="2" data-w="${esc(c.weight)}" data-h="${hs[i]}" data-v="${v}"/>`;
+                    });
+                    let ly = Y(ys[ys.length - 1]) + 3.5;
+                    while (placed.some(p => Math.abs(p - ly) < 12)) ly += 12;
+                    placed.push(ly);
+                    out += `<text x="${W - mR + 8}" y="${ly}" fill="${COLS[ci]}">${esc(c.weight)}</text>`;
+                });
+                const svg = $('hChart'); svg.innerHTML = out;
+                svg.querySelectorAll('circle').forEach(c => {
+                    c.addEventListener('mousemove', e => showTip(e,
+                        `<b>${c.dataset.w}</b><br>h = ${c.dataset.h}<br>${c.dataset.v} agreeing digits`));
+                    c.addEventListener('mouseleave', hideTip);
+                });
+                $('hTable').innerHTML = '<thead><tr><th>weight</th><th class="n">autograd</th>' +
+                    '<th class="n">central diff, best h</th><th class="n">h</th><th class="n">digits</th>' +
+                    '</tr></thead><tbody>' +
+                    checks.map(c => `<tr><td class="mono" style="font-family:var(--font-mono)">${esc(c.weight)}</td>` +
+                        `<td class="n">${c.autograd.toFixed(10)}</td>` +
+                        `<td class="n">${c.best_central_diff.toFixed(10)}</td>` +
+                        `<td class="n">${c.best_h.toExponential(0)}</td>` +
+                        `<td class="n" style="color:var(--ok-c)">${c.best_digits.toFixed(1)}</td></tr>`).join('') +
+                    '</tbody>';
+                const worst = D.task2_gradient.real.worst_digits;
+                $('hNote').innerHTML = `Worst agreement across the three, each at its own best h: ` +
+                    `<strong>${worst.toFixed(1)} significant digits</strong>. Note that the best h is not the same ` +
+                    `for every weight — the embedding row has a gradient three orders of magnitude larger than the ` +
+                    `head weight's, so it tolerates a smaller h before cancellation bites. The model is run in ` +
+                    `float64 throughout this check: in float32 the subtraction of two nearly equal losses would ` +
+                    `destroy most of the digits being compared, and the check would "fail" for reasons that have ` +
+                    `nothing to do with the gradient.`;
+            })();
+
+            /* ---- 04 the wrong average ------------------------------------------- */
+            (function wrongAverage() {
+                let micro = D.task3_accumulation.notes_case.micro.map(([n, l]) => ({ n, l }));
+                function render() {
+                    $('microRows').innerHTML =
+                        '<table class="dt"><thead><tr><th>micro-batch</th><th class="n">valid tokens</th>' +
+                        '<th class="n">average loss</th><th style="width:46%">tokens</th></tr></thead><tbody>' +
+                        micro.map((m, i) =>
+                            `<tr><td>${i + 1}</td><td class="n">${m.n}</td><td class="n">${m.l.toFixed(1)}</td>` +
+                            `<td><input type="range" data-i="${i}" min="1" max="12" step="1" value="${m.n}" ` +
+                            `style="width:100%;accent-color:var(--accent)"/></td></tr>`).join('') +
+                        '</tbody></table>';
+                    const totTok = micro.reduce((a, m) => a + m.n, 0);
+                    const byToken = micro.reduce((a, m) => a + m.n * m.l, 0) / totTok;
+                    const byBatch = micro.reduce((a, m) => a + m.l, 0) / micro.length;
+                    const err = 100 * (byBatch - byToken) / byToken;
+                    const equal = micro.every(m => m.n === micro[0].n);
+                    $('avgReadout').innerHTML = `
+                      <div><div class="k">correct — by token</div><div class="v" style="color:var(--ok-c)">${byToken.toFixed(4)}</div>
+                           <div class="delta">Σ loss / Σ tokens = ${micro.reduce((a, m) => a + m.n * m.l, 0).toFixed(1)} / ${totTok}</div></div>
+                      <div><div class="k">wrong — by micro-batch</div><div class="v" style="color:var(--bad-c)">${byBatch.toFixed(4)}</div>
+                           <div class="delta">mean of the ${micro.length} averages</div></div>
+                      <div><div class="k">error</div><div class="v" style="color:${Math.abs(err) < 1e-9 ? 'var(--good)' : 'var(--bad-c)'}">${err.toFixed(1)}%</div>
+                           <div class="delta">${Math.abs(err) < 1e-9 ? '✓ vanishes when counts are equal' : 'the short batch gets an equal vote'}</div></div>
+                      <div><div class="k">token counts</div><div class="v" style="font-size:19px">${micro.map(m => m.n).join(' · ')}</div>
+                           <div class="delta">${equal ? 'equal — the error is exactly zero' : 'unequal — the error is live'}</div></div>`;
+                    $('avgNote').innerHTML = equal
+                        ? `<span class="verdict true">✓</span> With equal token counts the two formulas are ` +
+                        `<strong>algebraically identical</strong>, so the error is exactly zero. That is how a bug ` +
+                        `sat inside every major training framework until 2024: in casual testing micro-batches ` +
+                        `usually do hold equal counts, so the loss curves looked reasonable while being wrong.`
+                        : `<span class="verdict lie">✗</span> The short micro-batch, holding fewer tokens, is given ` +
+                        `exactly the same vote as the long ones. Drag any slider until all three match and the ` +
+                        `error drops to zero — that is precisely the condition under which this stayed hidden.`;
+                    document.querySelectorAll('#microRows input').forEach(inp =>
+                        inp.addEventListener('input', e => {
+                            micro[+e.target.dataset.i].n = +e.target.value; render();
+                        }));
+                }
+                $('btnNotes').addEventListener('click', () => {
+                    micro = D.task3_accumulation.notes_case.micro.map(([n, l]) => ({ n, l })); render();
+                });
+                $('btnEqual').addEventListener('click', () => {
+                    micro = micro.map(m => ({ ...m, n: 4 })); render();
+                });
+                render();
+
+                const G = D.task3_gradients;
+                $('gradDiffReadout').innerHTML = `
+                  <div><div class="k">relative L2 difference</div><div class="v" style="color:var(--bad-c)">${(G.relative_l2 * 100).toFixed(1)}%</div>
+                       <div class="delta">‖g_wrong − g_correct‖ / ‖g_correct‖</div></div>
+                  <div><div class="k">cosine similarity</div><div class="v">${G.cosine.toFixed(4)}</div>
+                       <div class="delta">1.0 would mean same direction</div></div>
+                  <div><div class="k">angle between them</div><div class="v">${G.angle_degrees.toFixed(1)}°</div>
+                       <div class="delta">from identical weights</div></div>
+                  <div><div class="k">norm ratio</div><div class="v">${G.norm_ratio.toFixed(3)}×</div>
+                       <div class="delta">‖g_wrong‖ / ‖g_correct‖</div></div>`;
+
+                const C = D.task3_curves;
+                const W = 900, H = 260, mL = 46, mR = 120, mT = 16, mB = 40;
+                const xs = C.curves.by_token.held_step;
+                const all = [...C.curves.by_token.held, ...C.curves.by_batch.held];
+                const lo = Math.min(...all) - 0.3, hi = Math.max(...all) + 0.3;
+                const X = v => mL + (v / xs[xs.length - 1]) * (W - mL - mR);
+                const Y = v => mT + (1 - (v - lo) / (hi - lo)) * (H - mT - mB);
+                let out = '';
+                for (let g = Math.ceil(lo); g <= hi; g++) {
+                    out += `<line class="grid" x1="${mL}" y1="${Y(g)}" x2="${W - mR}" y2="${Y(g)}"/>` +
+                        `<text x="${mL - 8}" y="${Y(g) + 3.5}" text-anchor="end">${g}</text>`;
+                }
+                out += `<line class="axis" x1="${mL}" y1="${H - mB}" x2="${W - mR}" y2="${H - mB}"/>`;
+                for (let i = 0; i < xs.length; i += 4)
+                    out += `<text x="${X(xs[i])}" y="${H - mB + 16}" text-anchor="middle">${xs[i]}</text>`;
+                out += `<text x="${(mL + W - mR) / 2}" y="${H - 6}" text-anchor="middle">training step  —  held-out loss, token-weighted for both</text>`;
+                const ends = [['by_token', OK, 'correct'], ['by_batch', BAD, 'wrong']].map(([k, col, lbl]) => {
+                    const ys = C.curves[k].held;
+                    const d = ys.map((v, i) => (i ? 'L' : 'M') + X(xs[i]).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
+                    out += `<path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>`;
+                    return { col, lbl, ye: Y(ys[ys.length - 1]) };
+                });
+                // The two curves finish 0.005 apart — which is the finding — so their end labels
+                // land on the same pixel. Spread them to a legible gap, straddling the lines
+                // rather than pushing one down, and draw a leader so which-is-which survives.
+                const GAP = 13, ord = [...ends].sort((a, b) => a.ye - b.ye);
+                let prev = -Infinity;
+                ord.forEach(e => { e.ly = Math.max(e.ye, prev + GAP); prev = e.ly; });
+                const drift = (ord[ord.length - 1].ly - ord[ord.length - 1].ye) / 2;
+                ord.forEach(e => e.ly = Math.min(H - mB, Math.max(mT + 8, e.ly - drift)));
+                ends.forEach(e => {
+                    out += `<line x1="${W - mR + 2}" y1="${e.ye.toFixed(1)}" x2="${W - mR + 7}" y2="${e.ly.toFixed(1)}" ` +
+                        `stroke="${e.col}" stroke-width="1" opacity="0.8"/>` +
+                        `<text x="${W - mR + 10}" y="${(e.ly + 3.5).toFixed(1)}" fill="${e.col}">${e.lbl}</text>`;
+                });
+                $('accChart').innerHTML = out;
+                $('accNote').innerHTML =
+                    `<strong>What this does and does not show.</strong> The <em>reported</em> gap is real and ` +
+                    `misleading: the wrong run prints a ${Math.abs(C.reported_gap).toFixed(3)}-lower number, and ` +
+                    `anyone watching that curve would conclude the run was going better. On the held-out batch ` +
+                    `above, scored the same way for both, the difference is ${C.heldout_gap.toFixed(4)} — which at ` +
+                    `${C.steps} steps of a proxy model is inside the noise. So the honest claim is not that the ` +
+                    `wrong average visibly degrades a short run; it did not. The defect is upstream of the curve, ` +
+                    `and it was measured above: <strong>the gradients are ${(G.relative_l2 * 100).toFixed(1)}% ` +
+                    `apart</strong>. A wrong objective that produces a plausible curve for ${C.steps} steps is ` +
+                    `exactly why this survived in every major framework until 2024.`;
+            })();
+
+            /* ---- 05 grad norm --------------------------------------------------- */
+            (function normChart() {
+                const T4 = D.task4_grad_norm;
+                const lead = T4.first_lead;
+                const W = 900, H = 420, mL = 52, mR = 24, mT = 18, gap = 34;
+                const panelH = (H - mT - gap - 44) / 2;
+                const n = T4.norms.length;
+                const X = i => mL + (i / (n - 1)) * (W - mL - mR);
+                function panel(series, top, col, label, spikeSteps, markStep) {
+                    const lo = Math.min(...series), hi = Math.max(...series);
+                    const Y = v => top + (1 - (v - lo) / (hi - lo || 1)) * panelH;
+                    let s = `<line class="axis" x1="${mL}" y1="${top + panelH}" x2="${W - mR}" y2="${top + panelH}"/>`;
+                    for (let g = 0; g <= 3; g++) {
+                        const v = lo + (hi - lo) * g / 3;
+                        s += `<line class="grid" x1="${mL}" y1="${Y(v)}" x2="${W - mR}" y2="${Y(v)}"/>` +
+                            `<text x="${mL - 8}" y="${Y(v) + 3.5}" text-anchor="end">${v.toFixed(1)}</text>`;
+                    }
+                    const d = series.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
+                    s += `<path d="${d}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round"/>`;
+                    spikeSteps.forEach(i => {
+                        s += `<circle cx="${X(i)}" cy="${Y(series[i])}" r="3" fill="${col}" opacity="0.55"/>`;
+                    });
+                    if (markStep != null) {
+                        s += `<line x1="${X(markStep)}" y1="${top}" x2="${X(markStep)}" y2="${top + panelH}" ` +
+                            `stroke="${col}" stroke-width="1.5" stroke-dasharray="3 3"/>` +
+                            `<circle cx="${X(markStep)}" cy="${Y(series[markStep])}" r="5.5" fill="${col}" stroke="#0a0a0c" stroke-width="2"/>` +
+                            `<text x="${X(markStep) + 9}" y="${top + 12}" fill="${col}">step ${markStep}</text>`;
+                    }
+                    s += `<text x="12" y="${top + 10}">${label}</text>`;
+                    return s;
+                }
+                let out = panel(T4.norms, mT, OK, 'grad norm', T4.norm_spikes, lead ? lead.norm_step : null);
+                out += panel(T4.losses, mT + panelH + gap, BAD, 'loss', T4.loss_spikes, lead ? lead.loss_step : null);
+                out += `<text x="${(mL + W - mR) / 2}" y="${H - 8}" text-anchor="middle">training step  —  same x-axis, two panels, never two scales on one</text>`;
+                $('normChart').innerHTML = out;
+
+                $('normTiles').innerHTML = [
+                    ['the lead', lead ? lead.lag + ' steps' : 'none found',
+                        lead ? `norm spiked at ${lead.norm_step}, loss followed at ${lead.loss_step}` : ''],
+                    ['norm-led events', T4.leads.length + ' of ' + T4.n_norm_spikes,
+                        'grad-norm spikes with a loss spike within ' + T4.rule.max_lag + ' steps'],
+                    ['detection rule', '> ' + T4.rule.k_mads + ' MADs',
+                        'above the median jump of the previous ' + T4.rule.window + ' steps'],
+                    ['clipping', 'off',
+                        'deliberately — a clipped norm is flat by construction'],
+                ].map(([k, v, sub]) =>
+                    `<div class="tile"><div class="k">${k}</div><div class="v" style="font-size:20px">${v}</div><div class="sub">${sub}</div></div>`).join('');
+
+                $('normNote').innerHTML = lead
+                    ? `The rule was fixed before looking: a <strong>spike</strong> is a jump larger than ` +
+                    `${T4.rule.k_mads} MADs of the recent jump distribution, and a <strong>lead</strong> is a ` +
+                    `norm spike whose nearest loss spike lands within ${T4.rule.max_lag} steps. It has to be the ` +
+                    `jump and not the level: the loss is falling, so it can never exceed its own trailing median, ` +
+                    `and a level-based rule reports zero loss spikes no matter what the run does. This run was ` +
+                    `trained at lr ${T4.lr} — deliberately near the edge of stability, because the claim under ` +
+                    `test is about a run in trouble. The event at step ${lead.norm_step} was <strong>found, not ` +
+                    `injected</strong>.`
+                    : `No norm-led event under this rule on this run.`;
+
+                const C8 = D.extra8_clipping;
+                $('clipTable').innerHTML = '<thead><tr><th>quantity</th><th class="n">value</th>' +
+                    '<th>what it means</th></tr></thead><tbody>' +
+                    [['grad norm before', C8.norm_before.toFixed(6), 'the combined length of every gradient'],
+                    ['cap', C8.cap.toFixed(1), 'the threshold'],
+                    ['scale factor', C8.scale.toFixed(6), 'cap / norm — applied to every gradient equally'],
+                    ['grad norm after', C8.norm_after.toFixed(6), `off the cap by ${(C8.relative_error).toExponential(1)} relative — float32 accumulation over ${num(C8.elements)} elements, not a failure to clip`],
+                    ['cosine similarity', C8.cosine.toFixed(12), '<strong>the direction is untouched</strong> — only the length changed']]
+                        .map(([k, v, m], i) => `<tr class="${i === 4 ? 'hl' : ''}"><td>${k}</td><td class="n">${v}</td>` +
+                            `<td style="color:var(--muted)">${m}</td></tr>`).join('') + '</tbody>';
+            })();
+
+            /* ---- 06 formats ----------------------------------------------------- */
+            (function formats() {
+                const F = D.task6_formats;
+                $('bitRows').innerHTML = F.formats.map(f => {
+                    const [s, e, m] = f.bits.split(' ');
+                    const g = (str, cls) => `<span class="grp ${cls}">` +
+                        str.split('').map(b => `<b>${b}</b>`).join('') + '</span>';
+                    return `<div style="margin:14px 0">
+                        <div style="display:flex;gap:12px;align-items:baseline;margin-bottom:6px">
+                          <strong style="font-family:var(--font-mono);font-size:13px">${esc(f.format)}</strong>
+                          <span class="muted-note">${f.e_bits} exponent + ${f.m_bits} mantissa bits,
+                          bias ${f.bias} &nbsp;→&nbsp; stores <code class="mono">${f.stored.toPrecision(9)}</code></span>
+                        </div>
+                        <div class="bits">${g(s, 's')}${g(e, 'e')}${g(m, 'm')}</div>
+                      </div>`;
+                }).join('');
+
+                $('fmtTable').innerHTML = '<thead><tr><th>format</th><th class="n">exponent field</th>' +
+                    '<th class="n">mantissa</th><th class="n">stores</th><th class="n">relative error</th>' +
+                    '</tr></thead><tbody>' +
+                    F.formats.map(f => {
+                        const bad = f.rel_error > 1e-3;
+                        return `<tr class="${bad ? 'warn' : ''}"><td class="mono" style="font-family:var(--font-mono)">${esc(f.format)}</td>` +
+                            `<td class="n">${f.exp_field} <span style="color:var(--muted)">(2^${f.exp_unbiased})</span></td>` +
+                            `<td class="n">${f.mantissa}/${1 << f.m_bits}</td>` +
+                            `<td class="n">${f.stored.toPrecision(9)}</td>` +
+                            `<td class="n" style="color:${bad ? 'var(--bad-c)' : 'var(--muted)'}">${(f.rel_error * 100).toExponential(2)}%</td></tr>`;
+                    }).join('') + '</tbody>';
+
+                const U = D.extra7_underflow;
+                $('underflowTable').innerHTML = '<thead><tr><th class="n">gradient</th><th class="n">in fp16</th>' +
+                    '<th class="n">in bf16</th><th>fp16 verdict</th></tr></thead><tbody>' +
+                    U.rows.map(r => {
+                        const dead = r.fp16 === 0;
+                        return `<tr class="${dead ? 'warn' : ''}"><td class="n">${r.grad.toExponential(0)}</td>` +
+                            `<td class="n" style="color:${dead ? 'var(--crit)' : 'var(--text)'}">${r.fp16.toExponential(3)}</td>` +
+                            `<td class="n" style="color:var(--ok-c)">${r.bf16.toExponential(3)}</td>` +
+                            `<td>${dead ? '<span class="verdict lie">✗ ' + r.verdict + '</span>' : r.verdict}</td></tr>`;
+                    }).join('') + '</tbody>';
+                $('underflowNote').innerHTML =
+                    `<strong>A gradient of zero means that weight does not move.</strong> The model quietly stops ` +
+                    `learning exactly where the signal was faintest, which is usually where something was left to ` +
+                    `learn. The rescue is loss scaling, as blunt as it sounds: multiply by ${U.loss_scale} before ` +
+                    `the backward pass so the gradients clear the floor — ${U.rows[2].grad.toExponential(0)} × ` +
+                    `${U.loss_scale} survives fp16 as ${U.scaled_survives.toExponential(3)} — then divide back to ` +
+                    `${U.recovered.toExponential(3)}. It works, and it is one more setting to tune and eventually ` +
+                    `get wrong. bf16's floor sits at 9.18e-41, which nothing in training will ever reach, so the ` +
+                    `whole apparatus becomes unnecessary. <strong>bf16 is less accurate than fp16 and won anyway, ` +
+                    `because range mattered more than digits.</strong>`;
+            })();
+
+            /* ---- 07 memory ------------------------------------------------------ */
+            (function memory() {
+                const M = D.extra9_memory;
+                $('bytesTable').innerHTML = '<thead><tr><th>what must be held</th>' +
+                    '<th class="n">bytes per weight</th></tr></thead><tbody>' +
+                    M.per_weight.map(p => `<tr><td>${esc(p.item)}</td><td class="n">${p.bytes}</td></tr>`).join('') +
+                    `<tr class="hl"><td><strong>total</strong></td><td class="n"><strong>${M.total_bytes}</strong></td></tr>` +
+                    '</tbody>';
+                const sl = $('sizeSlider');
+                function render() {
+                    const b = Math.pow(10, 8.3 + (+sl.value) / 60 * 3.0) / 1e9;   // ~0.2B .. ~200B
+                    const gib = b * 1e9 * M.total_bytes / Math.pow(2, 30);
+                    const fits = gib < 80;
+                    $('sizeVal').textContent = b < 1 ? (b * 1000).toFixed(0) + 'M params' : b.toFixed(1) + 'B params';
+                    $('memReadout').innerHTML = `
+                      <div><div class="k">training state alone</div>
+                           <div class="v" style="color:${fits ? 'var(--text)' : 'var(--crit)'}">${gib < 1024 ? gib.toFixed(1) + ' GiB' : (gib / 1024).toFixed(2) + ' TiB'}</div>
+                           <div class="delta">${M.total_bytes} bytes × ${num(Math.round(b * 1e9))} weights</div></div>
+                      <div><div class="k">one 80 GB accelerator</div>
+                           <div class="v" style="color:${fits ? 'var(--good)' : 'var(--crit)'};font-size:20px">${fits ? '✓ fits' : '✗ does not fit'}</div>
+                           <div class="delta">${fits ? 'and still needs room for activations' : 'before a single activation'}</div></div>`;
+                }
+                sl.addEventListener('input', render); render();
+                $('memNote').innerHTML = `Measured on the real optimiser, not quoted: ${M.state_tensors} state ` +
+                    `tensors holding ${num(M.state_elements)} elements for ${num(M.params)} weights — exactly ` +
+                    `${(M.state_elements / M.params).toFixed(0)}×, which is Adam's m and v. An 80 GB accelerator ` +
+                    `holds about a <strong>${M.crossover_80gb_billions.toFixed(1)}B</strong> model in training ` +
+                    `state and has nothing left over for the activations it also needs. Activation checkpointing ` +
+                    `buys some back by discarding intermediates in the forward pass and recomputing them in the ` +
+                    `backward, at about 30% more compute. That is why one card is not enough, and why Sessions 12 ` +
+                    `and 13 exist.`;
+            })();
+
+            /* ---- 08 MFU --------------------------------------------------------- */
+            (function mfu() {
+                const M = D.task5_mfu;
+                const healthy = M.mfu_pct >= 35;
+                $('mfuReadout').innerHTML = `
+                  <div><div class="k">tokens per second</div><div class="v">${num(Math.round(M.tokens_per_second))}</div>
+                       <div class="delta">measured over ${M.steps_timed} steps</div></div>
+                  <div><div class="k">achieved 6·N·tok/s</div><div class="v">${M.achieved_tflops.toFixed(3)}</div>
+                       <div class="delta">TFLOP/s, non-embedding N</div></div>
+                  <div><div class="k">this machine's peak</div><div class="v">${M.peak_tflops.toFixed(3)}</div>
+                       <div class="delta">TFLOP/s, measured — not a datasheet</div></div>
+                  <div><div class="k">MFU</div><div class="v" style="color:${healthy ? 'var(--good)' : 'var(--bad-c)'}">${M.mfu_pct.toFixed(1)}%</div>
+                       <div class="delta">healthy is 35–50%</div></div>`;
+                $('mfuHonesty').innerHTML =
+                    `<strong>Two things worth stating rather than hiding.</strong> First, the denominator: there is ` +
+                    `no meaningful datasheet FLOP/s for "a CPU running PyTorch", and quoting an H100 number on ` +
+                    `hardware I am not using would be a fabricated result — so the peak is the best sustained ` +
+                    `throughput this machine actually reaches on large dense matmuls, the most generous ` +
+                    `denominator that is still true. Second, the numerator: <code class="mono">6N</code> counts the ` +
+                    `arithmetic of <em>matmuls</em>, and an embedding lookup is a gather that does no multiplying ` +
+                    `at all. Counting the ${num(M.N_embedding)}-element embedding table in N would report ` +
+                    `<strong>${M.mfu_pct_counting_embeddings.toFixed(1)}%</strong> instead of ` +
+                    `${M.mfu_pct.toFixed(1)}% — ${(M.mfu_pct_counting_embeddings - M.mfu_pct).toFixed(1)} points ` +
+                    `of pure fiction. The same formula on the notes' own example (9B, 12,000 tok/s, 8×H100) ` +
+                    `returns ${M.notes_example_mfu_pct.toFixed(1)}%, which is what they report.`;
+                $('mfuCostTable').innerHTML = '<thead><tr><th class="n">#</th><th>cost</th>' +
+                    '<th class="n">size</th></tr></thead><tbody>' +
+                    [['the vocabulary head is the least efficient shape in the model — one [T,256]×[256,68,096] matmul with a tiny inner dimension',
+                        (M.head_share_of_flops * 100).toFixed(0) + '% of counted FLOPs'],
+                    ['only ' + (M.batch * M.block) + ' tokens per step, so kernel launch and Python overhead are a real fraction of it',
+                        'not counted by 6N'],
+                    ['no fused kernels, no flash-attention path on CPU, fp32 throughout — the measured peak comes from one huge matmul that keeps caches full; a transformer step does not',
+                        'structural'],
+                    ['the optimiser step touches every weight three times and does no matmul at all',
+                        'pure denominator']]
+                        .map(([c, s], i) => `<tr><td class="n">${i + 1}</td><td>${c}</td>` +
+                            `<td class="n" style="color:var(--muted)">${s}</td></tr>`).join('') + '</tbody>';
+            })();
+
+            /* ---- 09 the wipe ---------------------------------------------------- */
+            (function wipe() {
+                const Z = D.extra10_zero_grad;
+                $('wipeTable').innerHTML = '<thead><tr><th>run</th><th class="n">first loss</th>' +
+                    '<th class="n">final loss</th><th class="n">final grad norm</th></tr></thead><tbody>' +
+                    `<tr class="hl"><td>zero_grad() every step</td><td class="n">${fmt(Z.wiped.curve[0])}</td>` +
+                    `<td class="n">${fmt(Z.wiped.curve[Z.wiped.curve.length - 1])}</td>` +
+                    `<td class="n">${fmt(Z.wiped.final_norm)}</td></tr>` +
+                    `<tr class="warn"><td>never wiped</td><td class="n">${fmt(Z.stale.curve[0])}</td>` +
+                    `<td class="n">${fmt(Z.stale.curve[Z.stale.curve.length - 1])}</td>` +
+                    `<td class="n" style="color:var(--bad-c)">${fmt(Z.stale.final_norm)}</td></tr></tbody>`;
+                $('wipeNote').innerHTML =
+                    `The un-wiped run's loss fell from ${fmt(Z.stale.curve[0], 2)} to ` +
+                    `${fmt(Z.stale.curve[Z.stale.curve.length - 1], 2)}. <strong>It looks like training.</strong> ` +
+                    `Its grad norm is ${Z.norm_ratio.toFixed(1)}× the correct run's, because the last step is ` +
+                    `carrying the accumulated sum of every batch before it — and nothing anywhere raised. The loss ` +
+                    `still falls; the model is simply learning from a stale blend of everything it has seen.`;
+            })();
+
+            /* ---- 10 gates ------------------------------------------------------- */
+            const G = D.gates;
+            $('gates').innerHTML = Object.entries(G).map(([k, v]) =>
+                `<div class="gate ${v ? 'pass' : 'fail'}">${v ? '✓' : '✗'} <span>${k}</span></div>`).join('');
+            const nPass = Object.values(G).filter(Boolean).length;
+            $('provenance').innerHTML = `<strong>${nPass}/${Object.keys(G).length} gates pass.</strong> ` +
+                `Run on ${D.meta.platform.split('-').slice(0, 2).join(' ')}, python ${D.meta.python}, torch ` +
+                `${D.meta.torch}, device <code class="mono">${D.meta.device}</code>. Tokenizer ` +
+                `<code class="mono">${D.tokenizer.repo}</code> sha256 ` +
+                `<code class="mono">${D.tokenizer.sha256.slice(0, 16)}…</code>, vocabulary ` +
+                `${num(D.tokenizer.vocab_size)} — the same frozen tokenizer S6 pins and S9 measured against. ` +
+                `Everything on this page was baked from <code class="mono">out/evidence.json</code> by ` +
+                `<code class="mono">build_notebook.py</code>; regenerate with ` +
+                `<code class="mono">python build_notebook.py</code>.`;
+        })();
+    </script>
+
+    <script>window.PAGE_ID = 'training-step'; window.ROOT_PATH = '../';</script>
+    <script src="../shared.js"></script>
+</body>
+
+</html>
