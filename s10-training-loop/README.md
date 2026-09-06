@@ -286,7 +286,8 @@ a real number.
 
 ## 6 · What went wrong first
 
-Recorded because in each case the harness produced a confident number that meant nothing.
+Recorded because in each case the harness — or the page — produced a confident result that meant
+nothing.
 
 **The MFU was 61% — above the healthy band, which should never have looked plausible.** I had
 put all 38.1M parameters into `6N`, including the 17.5M embedding table. An embedding lookup is
@@ -311,6 +312,21 @@ section was shadowed by a function `central_diff` defined later, so `evidence.js
 serialise a function object. Every gate passed; only the write failed. A reminder that a green
 suite is not the same as a correct program.
 
+**The last one was found by re-reading the page, not by any check.** In the page's held-out chart
+for Task 3 the two curves finish 0.0049 apart — which *is* the finding, and the −0.0083 quoted
+above is the same thing averaged over the last three evaluations — so their end labels were placed
+at y=199.4 and y=199.5, **0.17px apart**: one drawn directly over the other, neither readable.
+`check_page.py` reported a clean build throughout, because what it asserts is that the labels are
+in the DOM, not that a reader can tell them apart. The fix spreads them to a 13px gap straddling
+the two line ends — rather than shoving one down, so neither drifts further from its own curve
+than the other — with a leader stub from each curve to its label so the association survives the
+displacement. The `h`-sweep chart in Task 2 was written with label collision handling from the
+start; this one inherited none.
+
+One of these five was caught by a gate, one by the JSON encoder, and three by reading the output
+and disbelieving it. That distribution is the lesson: **a check is only as good as the property it
+asserts**, and "the element is in the DOM" is a much weaker property than "the chart is readable."
+
 ---
 
 ## 7 · Files
@@ -328,6 +344,13 @@ suite is not the same as a correct program.
 
 Following the repo's generate-then-bake pattern (S4, S6, S7, S9): the `.py` is the source of
 truth, and **the notebook and the page must both be rebuilt when it changes**.
+
+One detail worth knowing before editing the page. `build_notebook.py` rewrites *only* the
+`S10DATA` blob between the `/* BEGIN GENERATED s10data */` and `/* END GENERATED s10data */`
+markers. Everything around it — the markup, the styles and every render function — is
+hand-maintained, so a chart or layout fix survives a re-bake and does not need one; conversely no
+number belongs anywhere but inside those markers, or it will drift from the run that produced it.
+`python check_page.py` is the check for that half of the page, and it needs Chrome.
 
 The notebook runs top to bottom on Colab (first cell installs `tokenizers` and
 `huggingface_hub`; the second clones this repo for S6's corpus). Locally it needs torch, numpy,
