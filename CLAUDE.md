@@ -63,7 +63,7 @@ python s6-dataset-creation/prepare_corpus.py
 python s7-model-internals/run_demo.py
 python s7-model-internals/dynkron.py     # codec self-check only
 
-# S9 — the loss harness (7 experiments + MTP, 11 gates, ~6 min, CPU)
+# S9 — the loss harness (11 experiments + MTP, 16 gates, ~9 min, CPU)
 python s9-loss-functions/build_notebook.py   # .py -> executed .ipynb -> baked loss-harness.html
 python s9-loss-functions/s9_loss_harness.py  # or the harness alone, without rebuilding the notebook
 python s9-loss-functions/check_page.py       # renders the page in headless Chrome; needs Chrome

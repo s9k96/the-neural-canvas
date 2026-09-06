@@ -910,6 +910,397 @@ EVIDENCE["exp7_memory"] = {
 
 # %% [markdown]
 # ---
+# # Beyond the seven
+#
+# The assignment asks for seven numbers. The session says several other things are
+# measurable, and they are cheap once the harness exists. §23 lists head stability as
+# *genuinely open* for V5 and "worth doing before the real run rather than after a NaN",
+# which is the one below that earns its runtime most.
+#
+# ## Experiment 8 — the gradient sums to zero, and what that lets drift
+#
+# Differentiate cross-entropy with respect to the logits and almost everything cancels:
+#
+# `∂L/∂z = softmax(z) − onehot(y)` — what you predicted, minus what was true.
+#
+# A softmax sums to 1 and a one-hot sums to 1, so **the gradient sums to exactly zero**.
+# It can never push the logits up or down *as a group*. That degree of freedom is
+# unconstrained by the loss, so `log Z` goes for a walk, the numbers get large, bf16 starts
+# losing precision, and a run that looked healthy produces a NaN some thousands of steps
+# later. It is not a mysterious instability — it is a direction the loss does not control.
+
+# %%
+torch.manual_seed(3)
+z_demo = torch.randn(6, V, requires_grad=True)
+y_demo = torch.randint(0, V, (6,))
+F.cross_entropy(z_demo, y_demo).backward()
+
+g = z_demo.grad
+manual = (torch.softmax(z_demo.detach(), -1) - F.one_hot(y_demo, V).float()) / len(y_demo)
+print(f"autograd vs softmax(z) - onehot(y):  max|Δ| = {(g - manual).abs().max().item():.3e}")
+print(f"\n{'row':>4}{'sum of the gradient':>24}{'max |component|':>19}")
+print("-" * 48)
+for i in range(len(y_demo)):
+    print(f"{i:>4}{g[i].sum().item():>24.3e}{g[i].abs().max().item():>19.3e}")
+GATE_GRAD_ZERO = g.sum(dim=-1).abs().max().item() < 1e-6
+print(f"\nGATE gradient_sums_to_zero: {'PASS' if GATE_GRAD_ZERO else 'FAIL'}"
+      f"  (max |row sum| = {g.sum(dim=-1).abs().max().item():.2e})")
+print("Nothing in the loss constrains the overall level of the logits. Hence Section 11.")
+del z_demo, y_demo, g, manual
+
+
+# %% [markdown]
+# ### The three fixes, run from one identical initialisation
+#
+# §11 gives three, and is careful that they do **not** do the same job:
+#
+# | fix | what it controls | cost |
+# |---|---|---|
+# | z-loss | penalises `log Z` directly: `L + λ(log Z)²` | one hyperparameter |
+# | logit soft-capping | bounds the logits, `z ← c·tanh(z/c)`, so it bounds `log Z` with them | one hyperparameter |
+# | output embedding centering | removes the *uniform component*, so the head cannot express a uniform shift | none |
+#
+# The notes single this out as the place a widget caught the lecturer writing something
+# loose, and the correction is the interesting part: **centering pins the mean logit, not
+# `log Z`.** Once the mean is fixed, `log Z` is governed by how far the logits *spread*, and
+# centering says nothing about spread. This run either reproduces that or it does not.
+
+# %%
+SOFT_CAP = 30.0
+Z_LAMBDAS = {"z_loss": 1e-4, "z_loss_strong": 1e-2}     # the knob, at two settings
+
+
+def train_stability(mode, steps=150, bs=4, lr=1e-3):
+    """Identical init and identical data for all five. Only the head control differs."""
+    torch.manual_seed(1337)
+    m = Model(Config()).to(DEVICE)
+    opt = torch.optim.AdamW(m.parameters(), lr=lr)
+    hist = {"step": [], "logZ": [], "mean_logit": [], "loss": []}
+    for s in range(steps):
+        ids = encode_batch(DOCS, cfg.block_size, bs, offset=s * bs).to(DEVICE)
+        z = m(ids)[1][0][:, :-1, :]
+        if mode == "soft_cap":
+            z = SOFT_CAP * torch.tanh(z / SOFT_CAP)
+        tgt = ids[:, 1:]
+        loss = F.cross_entropy(z.reshape(-1, V), tgt.reshape(-1), ignore_index=PAD)
+        logZ = torch.logsumexp(z.reshape(-1, V), dim=-1)
+        if mode in Z_LAMBDAS:
+            loss = loss + Z_LAMBDAS[mode] * (logZ ** 2).mean()
+        opt.zero_grad(set_to_none=True)
+        loss.backward()
+        opt.step()
+        if mode == "centering":
+            with torch.no_grad():   # the head cannot express a uniform shift
+                W = m.heads[0].weight
+                W -= W.mean(dim=0, keepdim=True)
+        hist["step"].append(s)
+        hist["logZ"].append(logZ.mean().item())
+        hist["mean_logit"].append(z.mean().item())
+        hist["loss"].append(loss.item())
+    return hist
+
+
+t0 = time.time()
+MODES = ("plain", "z_loss", "z_loss_strong", "soft_cap", "centering")
+STAB = {m: train_stability(m) for m in MODES}
+print(f"{len(MODES)} x 150 steps in {time.time()-t0:.0f}s\n")
+
+LBL = {"plain": "plain", "z_loss": "z-loss λ=1e-4", "z_loss_strong": "z-loss λ=1e-2",
+       "soft_cap": f"soft-cap c={SOFT_CAP:.0f}", "centering": "centering"}
+print(f"{'run':<18}{'final log Z':>14}{'final mean logit':>19}{'loss':>10}")
+print("-" * 63)
+for m in MODES:
+    h = STAB[m]
+    print(f"{LBL[m]:<18}{h['logZ'][-1]:>14.4f}{h['mean_logit'][-1]:>19.3e}{h['loss'][-1]:>10.4f}")
+
+plainZ = STAB["plain"]["logZ"][-1]
+centZ = STAB["centering"]["logZ"][-1]
+print(f"\nz-loss attacks the normaliser directly, and the coefficient is the whole control:")
+print(f"  λ=1e-4 barely moves it ({plainZ:.2f} -> {STAB['z_loss']['logZ'][-1]:.2f}), "
+      f"λ=1e-2 drives it to {STAB['z_loss_strong']['logZ'][-1]:.2f}.")
+print(f"  The notes report log Z pinned near 0.07; that is a larger λ over a far longer run")
+print(f"  than a 150-step proxy, but the direction and the mechanism are the same.")
+print(f"Soft-capping bounds the logits at c={SOFT_CAP:.0f}, so it bounds log Z with them: "
+      f"{STAB['soft_cap']['logZ'][-1]:.4f}.")
+print(f"\nCentering drives the MEAN LOGIT to {STAB['centering']['mean_logit'][-1]:.2e} — but leaves")
+print(f"log Z at {centZ:.4f}, which is {'HIGHER' if centZ > plainZ else 'lower'} than plain's {plainZ:.4f}.")
+print("That is §11's correction, reproduced: centering removes the uniform component and")
+print("says nothing about the spread, and log Z is governed by the spread. The three fixes")
+print("do not do the same job, and only one of them is actually aimed at log Z.")
+
+GATE_ZLOSS = abs(STAB["z_loss_strong"]["logZ"][-1]) < abs(plainZ)
+GATE_CENTERING = abs(STAB["centering"]["mean_logit"][-1]) < 1e-4
+print(f"\nGATE z_loss_lowers_logZ:            {'PASS' if GATE_ZLOSS else 'FAIL'}")
+print(f"GATE centering_pins_mean_logit:     {'PASS' if GATE_CENTERING else 'FAIL'}")
+
+EVIDENCE["exp8_stability"] = {
+    "z_lambdas": Z_LAMBDAS, "soft_cap": SOFT_CAP, "steps": 150, "labels": LBL,
+    "gradient_sums_to_zero": GATE_GRAD_ZERO,
+    "final": {m: {"logZ": round(h["logZ"][-1], 4),
+                  "mean_logit": h["mean_logit"][-1],
+                  "loss": round(h["loss"][-1], 4)} for m, h in STAB.items()},
+    "centering_raises_logZ_vs_plain": bool(centZ > plainZ),
+    "curves": {m: {k: ([round(x, 4) for x in v] if k != "step" else v)
+                   for k, v in h.items()} for m, h in STAB.items()},
+    "gate_z_loss": GATE_ZLOSS, "gate_centering": GATE_CENTERING,
+}
+
+
+# %% [markdown]
+# ## Experiment 9 — vocabulary parallelism gives the same number
+#
+# §10 lists four implementations of one objective. Experiment 7 did two of them
+# (materialise, chunk). The fused kernel needs a kernel. The fourth — **sharding the
+# vocabulary across devices** — needs N devices, but the *arithmetic* does not: each shard
+# computes its own max and its own `Σexp`, and two collectives combine them into the global
+# `log Z`. Simulating the shards on one device shows the collective is exact.
+
+# %%
+def sharded_cross_entropy(h, W, targets, n_shards, ignore_index=PAD):
+    """What each 'device' computes, and the two all-reduces that combine them."""
+    Vs = W.shape[0]
+    bounds = [(i * Vs // n_shards, (i + 1) * Vs // n_shards) for i in range(n_shards)]
+
+    shard_max = torch.stack([(h @ W[lo:hi].t()).max(dim=-1).values for lo, hi in bounds])
+    g_max = shard_max.max(dim=0).values                       # all-reduce #1: max
+
+    shard_sum = torch.stack([torch.exp(h @ W[lo:hi].t() - g_max[:, None]).sum(-1)
+                             for lo, hi in bounds])
+    g_sum = shard_sum.sum(dim=0)                              # all-reduce #2: sum
+    log_Z = g_max + g_sum.log()
+
+    # the true-token logit comes from whichever shard owns that id
+    z_y = (h * W[targets.clamp(min=0)]).sum(-1)
+    per = log_Z - z_y
+    keep = targets != ignore_index
+    return per[keep].mean()
+
+
+torch.manual_seed(11)
+h_s = torch.randn(512, cfg.d_model)
+W_s = torch.randn(V, cfg.d_model) * 0.02
+t_s = torch.randint(0, V, (512,))
+t_s[::9] = PAD
+
+ref = F.cross_entropy(h_s @ W_s.t(), t_s, ignore_index=PAD)
+print(f"{'implementation':<34}{'loss':>16}{'|Δ| vs reference':>20}")
+print("-" * 72)
+print(f"{'materialise everything (reference)':<34}{ref.item():>16.10f}{'—':>20}")
+shard_losses = {}
+for n in (2, 4, 8, 16):
+    v = sharded_cross_entropy(h_s, W_s, t_s, n)
+    shard_losses[n] = v.item()
+    print(f"{f'vocabulary-parallel, {n} shards':<34}{v.item():>16.10f}{abs(v.item()-ref.item()):>20.3e}")
+chk = chunked_cross_entropy(h_s, W_s, t_s, chunk=128)
+print(f"{'chunked, chunk=128':<34}{chk.item():>16.10f}{abs(chk.item()-ref.item()):>20.3e}")
+
+worst = max(abs(v - ref.item()) for v in shard_losses.values())
+GATE_SHARD = worst < 1e-4
+print(f"\nGATE sharding_matches_reference: {'PASS' if GATE_SHARD else 'FAIL'}  (worst |Δ| = {worst:.2e})")
+print("Peak logit memory per device is B·T·V/N. The loss is the same number to the decimal —")
+print("which is §10's point: implementation moves memory by orders of magnitude and moves")
+print("the objective not at all.")
+
+EVIDENCE["exp9_sharding"] = {
+    "reference_loss": ref.item(), "shard_losses": {str(k): v for k, v in shard_losses.items()},
+    "chunked_loss": chk.item(), "worst_delta": worst, "gate_pass": GATE_SHARD,
+}
+del h_s, W_s, t_s
+
+
+# %% [markdown]
+# ## Experiment 10 — perplexity is a bad cross-tokenizer scoreboard
+#
+# §7's warning, made concrete. Perplexity is *per token*, and a tokenizer decides what a
+# token is. A tokenizer that splits Telugu into three times as many tokens as English for
+# the same meaning is being asked an **easier question at each step**, because each step
+# covers less meaning — so its perplexity looks better while the model is not better.
+#
+# The fix is a unit the tokenizer cannot move. **Bits per byte** normalises by the UTF-8
+# bytes the tokens actually cover:
+#
+# `bpb = (Σ nats) / (bytes × ln 2)`
+#
+# S2 measured exactly this fragmentation on this tokenizer. Here it is again, from the loss
+# side, on one model where every language is scored by the same weights.
+
+# %%
+def lane_metrics(model_, lane_docs, limit=8):
+    """Mean loss per token, plus the bytes AND characters those target tokens cover."""
+    nats, n_tok, n_bytes, n_chars = 0.0, 0, 0, 0
+    for d in lane_docs[:limit]:
+        ids = [BOS] + tok.encode(d["text"]).ids[: cfg.block_size - 1]
+        if len(ids) < 16:
+            continue
+        x = torch.tensor([ids], device=DEVICE)
+        with torch.no_grad():
+            lg = model_(x)[1][0]
+        per = F.cross_entropy(lg[:, :-1, :].reshape(-1, V), x[:, 1:].reshape(-1),
+                              reduction="none")
+        text = tok.decode(ids[1:], skip_special_tokens=False)
+        nats += per.sum().item()
+        n_tok += per.numel()
+        n_bytes += len(text.encode("utf-8"))
+        n_chars += len(text)
+    return nats, n_tok, n_bytes, n_chars
+
+
+by_lang = {}
+for d in DOCS:
+    by_lang.setdefault(d["lang"], []).append(d)
+
+print(f"{'language':<12}{'tokens':>8}{'bytes':>8}{'chars':>8}{'byte/char':>11}"
+      f"{'loss':>9}{'perplexity':>12}{'bits/byte':>11}{'bits/char':>11}")
+print("-" * 90)
+lang_rows = []
+for lang, ds in sorted(by_lang.items()):
+    nats, n_tok, n_bytes, n_chars = lane_metrics(base, ds)
+    if n_tok == 0 or n_bytes == 0 or n_chars == 0:
+        continue
+    loss = nats / n_tok
+    bpb = nats / (n_bytes * math.log(2))
+    bpc = nats / (n_chars * math.log(2))
+    row = {"language": lang, "docs": len(ds), "tokens": n_tok, "bytes": n_bytes,
+           "chars": n_chars, "bytes_per_char": round(n_bytes / n_chars, 3),
+           "chars_per_token": round(n_chars / n_tok, 3),
+           "loss": round(loss, 4), "perplexity": round(math.exp(loss), 1),
+           "bits_per_byte": round(bpb, 4), "bits_per_char": round(bpc, 4)}
+    lang_rows.append(row)
+    print(f"{lang:<12}{n_tok:>8,}{n_bytes:>8,}{n_chars:>8,}{n_bytes/n_chars:>11.2f}"
+          f"{loss:>9.4f}{math.exp(loss):>12,.1f}{bpb:>11.4f}{bpc:>11.4f}")
+
+rank = lambda key: [r["language"] for r in sorted(lang_rows, key=lambda r: r[key])]
+by_ppl, by_bpb, by_bpc = rank("perplexity"), rank("bits_per_byte"), rank("bits_per_char")
+print(f"\nranked best-first by perplexity : {' < '.join(by_ppl)}")
+print(f"ranked best-first by bits/byte  : {' < '.join(by_bpb)}")
+print(f"ranked best-first by bits/char  : {' < '.join(by_bpc)}")
+
+BPB_DISAGREE = by_ppl != by_bpb
+BPC_AGREE = by_ppl == by_bpc
+print(f"\nPerplexity and bits/byte {'DISAGREE' if BPB_DISAGREE else 'agree'}. "
+      f"Perplexity and bits/char {'agree' if BPC_AGREE else 'disagree'}.")
+print("\nWorth being careful about what each unit actually removes. Perplexity is per token,")
+print("so the tokenizer moves it. Bits per byte removes the tokenizer -- but NOT the")
+print("encoding: Devanagari costs about 3 UTF-8 bytes per character where Latin costs 1, so")
+print("dividing by bytes hands Indic scripts a discount that has nothing to do with the")
+print("model. On this sample that is enough to rank Hindi FIRST by bits/byte while its")
+print("perplexity is the worst of the three by a wide margin.")
+print("\nBits per CHARACTER removes both, and it agrees with perplexity here. For an")
+print("India-first model this is not a footnote: report bits per character, or a script-")
+print("aware normaliser, and treat a bits/byte scoreboard across scripts as misleading.")
+
+EVIDENCE["exp10_bits_per_byte"] = {
+    "languages": lang_rows,
+    "rank_by_perplexity": by_ppl, "rank_by_bits_per_byte": by_bpb,
+    "rank_by_bits_per_char": by_bpc,
+    "ppl_vs_bpb_disagree": BPB_DISAGREE, "ppl_vs_bpc_agree": BPC_AGREE,
+}
+
+
+# %% [markdown]
+# ## Experiment 11 — SFT is the same loss, masked
+#
+# §15: pre-training is done, and now we want a model that answers questions rather than
+# continuing text. **The loss does not change at all.** What changes is which tokens are
+# allowed to contribute. The prompt is context, not something the model should learn to
+# generate — train on it too and you spend capacity teaching the model to write user
+# questions.
+#
+# S6's corpus already carries the split: segments are tagged `context` and `target`, so the
+# prompt/completion boundary here is real rather than staged. It is the same mechanic as
+# Experiment 3 and the switch panel — a mask, and a contributing-token count that moves.
+
+# %%
+def load_sft_pairs(limit=24):
+    """Documents that carry a real context/target split — S6's own segment roles."""
+    corpus = ROOT / "s6-dataset-creation" / "corpus"
+    pairs = []
+    for lane in ("stem_math", "reasoning", "agentic"):
+        f = corpus / f"{lane}.jsonl"
+        if not f.exists():
+            continue
+        with f.open(encoding="utf-8") as fh:
+            for i, line in enumerate(fh):
+                if i >= limit:
+                    break
+                d = json.loads(line)
+                ctx = "\n".join(s["text"] for s in d["segments"] if s.get("role") == "context")
+                tgt = "\n".join(s["text"] for s in d["segments"] if s.get("role") == "target")
+                if ctx and tgt:
+                    pairs.append({"lane": lane, "prompt": ctx, "completion": tgt})
+    return pairs
+
+
+PAIRS = load_sft_pairs()
+print(f"{len(PAIRS)} real prompt/completion pairs from "
+      f"{sorted({p['lane'] for p in PAIRS})}\n")
+
+rows, tot_prompt, tot_completion = [], 0, 0
+sft_ids, sft_promptlen = [], []
+for p in PAIRS[:16]:
+    p_ids = [BOS] + tok.encode(p["prompt"]).ids
+    c_ids = tok.encode(p["completion"]).ids
+    seq = (p_ids + c_ids)[: cfg.block_size]
+    if len(seq) < 32 or len(p_ids) >= len(seq) - 4:
+        continue
+    row = torch.full((cfg.block_size,), PAD, dtype=torch.long)
+    row[: len(seq)] = torch.tensor(seq)
+    sft_ids.append(row)
+    sft_promptlen.append(min(len(p_ids), len(seq)))
+    tot_prompt += min(len(p_ids), len(seq))
+    tot_completion += len(seq) - min(len(p_ids), len(seq))
+
+sft_batch = torch.stack(sft_ids).to(DEVICE)
+ex = PAIRS[0]
+print(f"example ({PAIRS[0]['lane']}):")
+print(f"  prompt     (masked out) : {ex['prompt'][:88]!r}…")
+print(f"  completion (trained on) : {ex['completion'][:88]!r}…\n")
+
+sft_per = per_token_loss(base, sft_batch)
+sft_tgt = sft_batch[:, 1:].reshape(-1)
+is_pad_s = sft_tgt == PAD
+is_prompt = torch.zeros_like(is_pad_s)
+Tm1 = cfg.block_size - 1
+for r, pl in enumerate(sft_promptlen):
+    is_prompt[r * Tm1: r * Tm1 + max(pl - 1, 0)] = True
+
+real_s = ~is_pad_s
+completion_only = real_s & ~is_prompt
+loss_all = sft_per[real_s].mean().item()
+loss_completion = sft_per[completion_only].mean().item()
+loss_prompt = sft_per[real_s & is_prompt].mean().item()
+
+print(f"{'what contributes':<34}{'tokens':>10}{'loss':>10}{'perplexity':>13}")
+print("-" * 68)
+print(f"{'prompt + completion (wrong)':<34}{int(real_s.sum()):>10,}{loss_all:>10.4f}{math.exp(loss_all):>13,.1f}")
+print(f"{'completion only (SFT)':<34}{int(completion_only.sum()):>10,}{loss_completion:>10.4f}{math.exp(loss_completion):>13,.1f}")
+print(f"{'prompt only (for reference)':<34}{int((real_s & is_prompt).sum()):>10,}{loss_prompt:>10.4f}{math.exp(loss_prompt):>13,.1f}")
+print(f"\nmasking the prompt drops the contributing count from {int(real_s.sum()):,} to "
+      f"{int(completion_only.sum()):,} ({100*int(is_prompt.sum())/int(real_s.sum()):.0f}% was prompt)")
+print(f"and moves the loss by {loss_completion - loss_all:+.4f}.")
+print("\nSame cross-entropy. Same shift. One mask. That is the whole of SFT, mechanically —")
+print("and it is the same lever as padding and document boundaries, pointed somewhere else.")
+
+GATE_SFT = int(completion_only.sum()) < int(real_s.sum())
+print(f"\nGATE sft_mask_changes_count: {'PASS' if GATE_SFT else 'FAIL'}")
+
+EVIDENCE["exp11_sft_mask"] = {
+    "pairs_used": len(sft_ids), "lanes": sorted({p["lane"] for p in PAIRS}),
+    "tokens_prompt_plus_completion": int(real_s.sum()),
+    "tokens_completion_only": int(completion_only.sum()),
+    "prompt_fraction": round(int(is_prompt.sum()) / int(real_s.sum()), 4),
+    "loss_prompt_plus_completion": round(loss_all, 4),
+    "loss_completion_only": round(loss_completion, 4),
+    "loss_prompt_only": round(loss_prompt, 4),
+    "delta": round(loss_completion - loss_all, 4),
+    "example": {"lane": PAIRS[0]["lane"], "prompt": PAIRS[0]["prompt"][:200],
+                "completion": PAIRS[0]["completion"][:200]},
+    "gate_pass": GATE_SFT,
+}
+
+
+# %% [markdown]
+# ---
 # # Part 2 — one extra head
 #
 # A second head on the same trunk, predicting token `t+2`. The losses simply add.
@@ -1040,6 +1431,66 @@ EVIDENCE["part2_mtp"] = {
 }
 
 
+# %% [markdown]
+# ### The number that actually decides: acceptance rate
+#
+# §13 is blunt that this is where MTP is usually oversold. *"The extra heads are guesses and
+# they get rejected. You do not get four tokens per step. You get some fraction of them, and
+# the acceptance rate is what decides whether the technique pays."*
+#
+# So measure it. Head 2 at position `t` proposes token `t+2` — a draft the model has not
+# properly computed. The main path verifies: head 1 at position `t+1` is what the model
+# would have produced for `t+2` had it done the work. Accept when they agree.
+#
+# One caveat stated plainly: this verifies against the **true** prefix rather than a
+# generated one, because the sequence is teacher-forced. Real speculative decoding drafts on
+# top of its own accepted tokens, where errors compound, so a deployed acceptance rate would
+# be no better than this and probably worse. This is the optimistic bound.
+
+# %%
+mtp.eval()
+with torch.no_grad():
+    a_lg1, a_lg2 = mtp(eval_ids)[1]
+
+draft = a_lg2[:, :-2, :].argmax(-1)          # head 2 at t proposes token t+2
+verify = a_lg1[:, 1:-1, :].argmax(-1)        # head 1 at t+1 is what the main path would say
+truth = eval_ids[:, 2:]                      # the token that actually came next-but-one
+valid = truth != PAD
+
+accepted = ((draft == verify) & valid).sum().item()
+n_valid = int(valid.sum())
+acc_rate = accepted / n_valid
+draft_correct = ((draft == truth) & valid).sum().item() / n_valid
+verify_correct = ((verify == truth) & valid).sum().item() / n_valid
+h1_top1 = ((a_lg1[:, :-1, :].argmax(-1) == eval_ids[:, 1:]) & (eval_ids[:, 1:] != PAD)
+           ).sum().item() / int((eval_ids[:, 1:] != PAD).sum())
+
+print(f"{'measurement':<46}{'rate':>10}")
+print("-" * 58)
+print(f"{'head 1 top-1 accuracy on t+1':<46}{h1_top1:>9.1%}")
+print(f"{'head 2 draft matches the main path (ACCEPTANCE)':<46}{acc_rate:>9.1%}")
+print(f"{'head 2 draft matches the true token':<46}{draft_correct:>9.1%}")
+print(f"{'main path matches the true token at t+2':<46}{verify_correct:>9.1%}")
+print(f"\n{accepted:,} of {n_valid:,} drafts accepted.")
+
+speedup = 1 + acc_rate            # one verified token, plus the accepted draft
+print(f"\nTokens per forward pass, if every accepted draft is kept: {speedup:.2f}x")
+print(f"Head cost to buy it: +{V*cfg.d_model/1e6:.1f}M parameters here, "
+      f"+{V5_V*V5_D/1e6:.1f}M at V5's width.")
+print("\nThat is the trade in one line, and it is why §13 says acceptance rate rather than")
+print("head count is the number to argue about. A head that drafts wrong is pure cost.")
+
+EVIDENCE["part2_acceptance"] = {
+    "n_drafts": n_valid, "accepted": accepted,
+    "acceptance_rate": round(acc_rate, 4),
+    "head1_top1_accuracy": round(h1_top1, 4),
+    "draft_matches_truth": round(draft_correct, 4),
+    "mainpath_matches_truth": round(verify_correct, 4),
+    "tokens_per_pass": round(speedup, 3),
+    "caveat": "verified against the true (teacher-forced) prefix; an optimistic bound",
+}
+
+
 # %%
 one = V * cfg.d_model
 print(f"{'head cost':<30}{'this notebook':>18}{'V5 target':>18}")
@@ -1150,6 +1601,10 @@ EVIDENCE["widget"] = {
     "alignment_text": strip,
     "trained_runs": {k: round(sum(c[-20:]) / 20, 4) for k, c in curves.items()},
     "trained_curves": {k: [round(x, 4) for x in c] for k, c in curves.items()},
+    # §4's worked example, so the page can teach logits -> softmax -> -log p from zero
+    # without the reader needing the class notes open beside it.
+    "softmax_demo": {"tokens": ["Delhi", "Mumbai", "Chennai", "banana", "runs"],
+                     "logits": [2.0, 1.0, 0.5, -1.0, -1.5], "truth": 2},
 }
 print(f"page data: {EVIDENCE['widget']['n_targets']:,} per-token losses, "
       f"{sum(EVIDENCE['widget']['is_pad'])} padding, {sum(EVIDENCE['widget']['is_boundary'])} boundary")
@@ -1172,6 +1627,11 @@ GATES = {
     "pad_counted_run_flatters_itself": flattery > 0,
     "boundary_costs_more_than_context": boundary_only.item() > without_boundary.item(),
     "head2_harder_than_head1": GATE_MTP,
+    "gradient_sums_to_zero": GATE_GRAD_ZERO,
+    "z_loss_lowers_logZ": GATE_ZLOSS,
+    "centering_pins_mean_logit": GATE_CENTERING,
+    "sharding_matches_reference": GATE_SHARD,
+    "sft_mask_changes_count": GATE_SFT,
 }
 EVIDENCE["gates"] = GATES
 

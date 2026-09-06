@@ -29,7 +29,7 @@ CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 # live in the script source, so an unstripped dump counts each one twice and the check
 # silently passes on a page that rendered nothing.
 EXPECT = [
-    ("hero + mtp stat tiles",  r'<div class="tile"><div class="k">',        9,  9),
+    ("stat tiles (all panels)", r'<div class="tile"><div class="k">',      16, 16),
     ("switch toggles",         r'<div class="sw[^"]*" data-sw=',            3,  3),
     ("switch readout cells",   r'<div class="k">reported loss</div>',       1,  1),
     ("run chart bars",         r'<rect x="150" y="[\d.]+" width=',          4,  4),
@@ -37,11 +37,17 @@ EXPECT = [
     ("alignment pairs",        r'<div class="apair',                       20, 26),
     ("context readout",        r'<div class="k">logits \[1, T, V\]</div>',  1,  1),
     ("chunk readout",          r'<div class="k">chunked peak logits</div>', 1,  1),
-    ("mtp series (2) + gap (1)", r'stroke-width="2" stroke-linejoin="round"', 3,  3),
+    ("mtp 2 + gap 1 + stab 5", r'stroke-width="2" stroke-linejoin="round"', 8,  8),
     ("mtp crosshair target",   r'id="mtpHit"',                              1,  1),
     ("gap chart hit target",   r'id="gapHit"',                              1,  1),
-    ("gate rows",              r'<div class="gate (pass|fail)">',          11, 11),
-    ("data tables built",      r'<thead><tr><th',                           5,  5),
+    ("gate rows",              r'<div class="gate (pass|fail)">',          16, 16),
+    ("data tables built",      r'<thead><tr><th',                          12, 12),
+    # sections added so the page stands alone without the class notes
+    ("spine logit sliders",    r'<input type="range" id="lg\d"',            5,  5),
+    ("spine truth chips",      r'<button class="chip[^"]*" data-t="\d"',    5,  5),
+    ("stability series labels", r'>(plain|centering|soft-cap c=30)</text>', 3,  3),
+    ("loss-map rows",          r'✓ measured here',                          4,  4),
+    ("bits/byte language rows", r'<td class="n"[^>]*>\d\.\d{3}</td>',       6, 99),
 ]
 
 SCRIPT = re.compile(r"<script\b.*?</script>", re.S | re.I)
@@ -58,6 +64,11 @@ def expected_strings() -> list[tuple[str, str]]:
         ("head 2 final loss", f'{two["head2_t_plus_2"]:.3f}'),
         ("memory ratio", str(s["7_memory_ratio_measured"])),
         ("ln(V) reference", f'{ev["exp5_perplexity"]["ln_V"]:.4f}'),
+        ("acceptance rate", f'{ev["part2_acceptance"]["acceptance_rate"] * 100:.1f}%'),
+        ("centering final log Z", f'{ev["exp8_stability"]["final"]["centering"]["logZ"]:.4f}'),
+        ("SFT completion tokens", f'{ev["exp11_sft_mask"]["tokens_completion_only"]:,}'),
+        ("Devanagari bytes/char",
+         f'{[r for r in ev["exp10_bits_per_byte"]["languages"] if r["bytes_per_char"] > 1.5][0]["bytes_per_char"]:.2f}'),
     ]
 
 
