@@ -16,21 +16,27 @@ markdown/notes-only deliverables and are deliberately absent from the site nav a
 
 ## Site shell
 
-- `index.html` — homepage with a hand-written grid of `topic-card` links, one per widget.
+- `index.html` — homepage: a hand-written grid of `topic-card` tiles, one per widget. Each tile
+  carries `data-session="S7"` plus a `.card-badge`, a one-line `.card-hook` (always visible) and the
+  full `.card-detail` paragraph (a flyout on hover/focus; shown inline on touch, where the hook is
+  hidden instead). `initTopicFilter` in `shared.js` builds the session chips from the tiles'
+  `data-session` values and searches each tile's own text plus its `NAV_SECTIONS` label — so tiles
+  stay the only place the card list is written.
 - `shared.css` / `shared.js` — loaded by every session HTML page.
 - `shared.js` has a `NAV_SECTIONS` array that is the **single source of truth for the sidebar**,
   separate from `index.html`'s topic-card grid. Adding a new session widget means updating
-  **both**: a `topic-card` link in `index.html` and an entry in `NAV_SECTIONS` (plus an SVG icon
-  in the `ICONS` map) in `shared.js` — neither regenerates from the other.
+  **both**: a `topic-card` tile in `index.html` and an entry in `NAV_SECTIONS` (plus an SVG icon
+  in the `ICONS` map) in `shared.js` — neither regenerates from the other. The tile's `href` must
+  match the `NAV_SECTIONS` `href` exactly, or it gets no icon and no session label in search.
 - Pages set `window.PAGE_ID` (to highlight the active nav item) and optionally `window.ROOT_PATH`
   (relative prefix back to repo root) before loading `shared.js`.
 
-## The generate-then-bake pattern (S4, S6, S7, S9)
+## The generate-then-bake pattern (S4, S6, S7, S9, S10, S11)
 
 Sessions with real data pipelines follow the same shape: a Python pipeline writes JSON/JS into an
 `out/` (or `submission_artifacts/`) folder, and a small `build_html_data.py` (S4, S6), the
-`run_demo.py` itself (S7), or `build_notebook.py` (S9) injects that data as a literal
-`const DATASETS = {...}` / `s6data` / `S9DATA` blob directly into the session's `.html` file. The HTML has no fetch/XHR — page data is static and
+`run_demo.py` itself (S7), or `build_notebook.py` (S9, S10, S11) injects that data as a literal
+`const DATASETS = {...}` / `s6data` / `S9DATA` / `S11DATA` blob directly into the session's `.html` file. The HTML has no fetch/XHR — page data is static and
 inlined, so **the generated JS blob in the HTML must be regenerated any time the upstream Python
 output changes**; editing the JSON in `out/` alone does nothing until the build script re-runs.
 
@@ -67,7 +73,21 @@ python s07-model-internals/dynkron.py     # codec self-check only
 python s09-loss-functions/build_notebook.py   # .py -> executed .ipynb -> baked loss-harness.html
 python s09-loss-functions/s9_loss_harness.py  # or the harness alone, without rebuilding the notebook
 python s09-loss-functions/check_page.py       # renders the page in headless Chrome; needs Chrome
+
+# S10 — the training loop (6 tasks, 15 gates, ~2 min, CPU)
+python s10-training-loop/build_notebook.py    # .py -> executed .ipynb -> baked training-step.html
+python s10-training-loop/check_page.py        # renders the page in headless Chrome; needs Chrome
+
+# S11 — optimizers and schedules (6 tasks, 24 gates, ~55 min, CPU)
+python s11-optimizers/build_notebook.py       # .py -> executed .ipynb -> baked setting-the-distance.html
+python s11-optimizers/build_notebook.py --bake-only   # re-inject out/evidence.json into the page only
+python s11-optimizers/check_page.py
 ```
+
+S10 and S11 follow S9's shape exactly: a `# %%` cell-delimited `.py` is the source of truth, the
+committed `.ipynb` carries its outputs, and `out/evidence.json` is baked into the page. S11's
+learning-rate sweeps deliberately cap the vocabulary to 8,192 ids (the page and README say why);
+its Tasks 1-4 use the full 68,096-token model.
 
 S9's source of truth is `s9_loss_harness.py` (`# %%` cell-delimited). The `.ipynb` is a build
 artifact committed **with its outputs**, and both it and the page must be rebuilt when the `.py`

@@ -37,79 +37,136 @@
                 <h1>Machine Learning, Made Visible</h1>
                 <p>Interactive, in-browser visualizations of how standard machine learning algorithms actually
                     behave — watch models train, decision boundaries form, and architecture choices matter.</p>
+
+                <div class="topic-toolbar">
+                    <div class="topic-search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+                        </svg>
+                        <input id="topicFilter" type="search" autocomplete="off" spellcheck="false"
+                            placeholder="Filter widgets&hellip;" aria-label="Filter widgets" />
+                        <kbd>/</kbd>
+                    </div>
+                    <div class="topic-count" id="topicCount" role="status" aria-live="polite"></div>
+                </div>
+                <div class="topic-chips" id="topicChips" role="group" aria-label="Filter by session"></div>
+
                 <div class="topic-grid">
-                    <a class="topic-card" href="s01-understanding-network-components/beyond-straight-thinking.html">
+                    <a class="topic-card" data-session="S1"
+                        href="s01-understanding-network-components/beyond-straight-thinking.html">
+                        <span class="card-badge">S1</span>
                         <h3>Beyond Straight Thinking</h3>
-                        <p>See why a single linear layer fails on non-linearly separable data, and how adding a
-                            ReLU hidden layer solves it.</p>
+                        <p class="card-hook">One line can&rsquo;t split the data. A ReLU can.</p>
+                        <p class="card-detail">See why a single linear layer fails on non-linearly separable data, and
+                            how adding a ReLU hidden layer solves it.</p>
                     </a>
-                    <a class="topic-card" href="s01-understanding-network-components/depth-collapse.html">
+                    <a class="topic-card" data-session="S1"
+                        href="s01-understanding-network-components/depth-collapse.html">
+                        <span class="card-badge">S1</span>
                         <h3>Depth Without Creativity</h3>
-                        <p>Five stacked linear layers collapse into one linear map — proved both visually and by
-                            multiplying the weight matrices together.</p>
+                        <p class="card-hook">Five stacked linear layers are still just one.</p>
+                        <p class="card-detail">Five stacked linear layers collapse into one linear map — proved both
+                            visually and by multiplying the weight matrices together.</p>
                     </a>
-                    <a class="topic-card" href="s01-understanding-network-components/embedding-clustering.html">
+                    <a class="topic-card" data-session="S1"
+                        href="s01-understanding-network-components/embedding-clustering.html">
+                        <span class="card-badge">S1</span>
                         <h3>The Company We Keep</h3>
-                        <p>Trained only to predict the next token in a toy grammar, an embedding table clusters
-                            same-category words — similarity was never part of the loss.</p>
+                        <p class="card-hook">Next-token training clusters words nobody called alike.</p>
+                        <p class="card-detail">Trained only to predict the next token in a toy grammar, an embedding
+                            table clusters same-category words — similarity was never part of the loss.</p>
                     </a>
-                    <a class="topic-card" href="s01-understanding-network-components/generalization-gap.html">
+                    <a class="topic-card" data-session="S1"
+                        href="s01-understanding-network-components/generalization-gap.html">
+                        <span class="card-badge">S1</span>
                         <h3>Experience Shapes Understanding</h3>
-                        <p>The same over-parameterized network trained on 20, 200, and 2000 noisy points side by
-                            side — train loss hits zero every time, but test loss only catches up once there's
-                            enough data to learn from.</p>
+                        <p class="card-hook">20, 200, 2000 points — where learning replaces memorising.</p>
+                        <p class="card-detail">The same over-parameterized network trained on 20, 200, and 2000 noisy
+                            points side by side — train loss hits zero every time, but test loss only catches up once
+                            there&rsquo;s enough data to learn from.</p>
                     </a>
-                    <a class="topic-card" href="s02-tokenizer/tokenizer.html">
+                    <a class="topic-card" data-session="S2" href="s02-tokenizer/tokenizer.html">
+                        <span class="card-badge">S2</span>
                         <h3>One Vocab, Four Languages</h3>
-                        <p>A single 10,000-token BPE vocabulary trained jointly on English, Hindi, Telugu, and
-                            Marathi Wikipedia &mdash; scored on how evenly it compresses each one.</p>
+                        <p class="card-hook">10k BPE merges, scored on who they favour.</p>
+                        <p class="card-detail">A single 10,000-token BPE vocabulary trained jointly on English, Hindi,
+                            Telugu, and Marathi Wikipedia &mdash; scored on how evenly it compresses each one.</p>
                     </a>
-                    <a class="topic-card" href="s03-india-first-llm/india-first-llm.html">
+                    <a class="topic-card" data-session="S3" href="s03-india-first-llm/india-first-llm.html">
+                        <span class="card-badge">S3</span>
                         <h3>The World, Viewed From India</h3>
-                        <p>Blueprint for Bharat-40B &mdash; a Gemma-4-class model's data, cleaning, tokenizer (why a
-                            256k vocab), and evaluation, designed India-first across 11 scripts, coding, and agentic
-                            work.</p>
+                        <p class="card-hook">A 40B blueprint drawn India-first, across 11 scripts.</p>
+                        <p class="card-detail">Blueprint for Bharat-40B &mdash; a Gemma-4-class model&rsquo;s data,
+                            cleaning, tokenizer (why a 256k vocab), and evaluation, designed India-first across 11
+                            scripts, coding, and agentic work.</p>
                     </a>
-                    <a class="topic-card" href="s04-data-cleaning/data-cleaning.html">
+                    <a class="topic-card" data-session="S4" href="s04-data-cleaning/data-cleaning.html">
+                        <span class="card-badge">S4</span>
                         <h3>Raw Data Is Not Training Data</h3>
-                        <p>The 8 cleaning strategies of Session 4 run for real on 60k Hindi docs from AI4Bharat
-                            Sangraha &mdash; and the measure of how much good Hindi an English-tuned filter would have
-                            silently deleted.</p>
+                        <p class="card-hook">Eight cleaning filters, run for real on 60k Hindi docs.</p>
+                        <p class="card-detail">The 8 cleaning strategies of Session 4 run for real on 60k Hindi docs
+                            from AI4Bharat Sangraha &mdash; and the measure of how much good Hindi an English-tuned
+                            filter would have silently deleted.</p>
                     </a>
-                    <a class="topic-card" href="s06-dataset-creation/dataset-creation.html">
+                    <a class="topic-card" data-session="S6" href="s06-dataset-creation/dataset-creation.html">
+                        <span class="card-badge">S6</span>
                         <h3>Prove What You Trained On</h3>
-                        <p>A training data execution system that crashes on purpose, resumes, and proves the next
-                            batch is bit-identical &mdash; immutable shards, an eval firewall, per-step lane quotas,
-                            OPUS decisions and two ledgers, all checked by recomputing them from disk.</p>
+                        <p class="card-hook">Crash the run, resume, prove the batch is identical.</p>
+                        <p class="card-detail">A training data execution system that crashes on purpose, resumes, and
+                            proves the next batch is bit-identical &mdash; immutable shards, an eval firewall, per-step
+                            lane quotas, OPUS decisions and two ledgers, all checked by recomputing them from disk.</p>
                     </a>
-                    <a class="topic-card" href="s07-model-internals/fourier-embeddings.html">
+                    <a class="topic-card" data-session="S7" href="s07-model-internals/fourier-embeddings.html">
+                        <span class="card-badge">S7</span>
                         <h3>Words Made of Waves</h3>
-                        <p>The Kronecker embedding marks a 256&times;32 grid and throws away everything past byte 32
-                            &mdash; which silently merges Indic words. Rebuild it out of waves that add together and
-                            the grid stops being necessary: watch the arrows sum, then read the word back out of the
-                            code.</p>
+                        <p class="card-hook">Drop the embedding grid; rebuild it out of waves.</p>
+                        <p class="card-detail">The Kronecker embedding marks a 256&times;32 grid and throws away
+                            everything past byte 32 &mdash; which silently merges Indic words. Rebuild it out of waves
+                            that add together and the grid stops being necessary: watch the arrows sum, then read the
+                            word back out of the code.</p>
                     </a>
-                    <a class="topic-card" href="s08-model-architectures/attention-timeline.html">
+                    <a class="topic-card" data-session="S8" href="s08-model-architectures/attention-timeline.html">
+                        <span class="card-badge">S8</span>
                         <h3>The Field Changes Its Mind</h3>
-                        <p>Thirty attention mechanisms in the order they actually launched, each one an answer to a
-                            bill the last one sent &mdash; every one drawn from its own rule, and every date re-fetched
-                            from the paper's v1 record, because this is exactly where a confident agent invents things.</p>
+                        <p class="card-hook">Thirty attention mechanisms, each paying the last one&rsquo;s bill.</p>
+                        <p class="card-detail">Thirty attention mechanisms in the order they actually launched, each one
+                            an answer to a bill the last one sent &mdash; every one drawn from its own rule, and every
+                            date re-fetched from the paper&rsquo;s v1 record, because this is exactly where a confident
+                            agent invents things.</p>
                     </a>
-                    <a class="topic-card" href="s09-loss-functions/loss-harness.html">
+                    <a class="topic-card" data-session="S9" href="s09-loss-functions/loss-harness.html">
+                        <span class="card-badge">S9</span>
                         <h3>Four Ways to Lie About a Loss</h3>
-                        <p>Four lines stand between the model's output and the scalar the optimiser pushes down, and
-                            every bug that lives in them is silent &mdash; three of them make the loss look
-                            <em>better</em>. Flip each switch and watch the number you'd have been staring at during
-                            training move the wrong way.</p>
+                        <p class="card-hook">Four silent bugs between the logits and the number.</p>
+                        <p class="card-detail">Four lines stand between the model&rsquo;s output and the scalar the
+                            optimiser pushes down, and every bug that lives in them is silent &mdash; three of them make
+                            the loss look <em>better</em>. Flip each switch and watch the number you&rsquo;d have been
+                            staring at during training move the wrong way.</p>
                     </a>
-                    <a class="topic-card" href="s10-training-loop/training-step.html">
+                    <a class="topic-card" data-session="S10" href="s10-training-loop/training-step.html">
+                        <span class="card-badge">S10</span>
                         <h3>One Step, and What It Costs</h3>
-                        <p>How one number reaches back and moves every weight &mdash; a gradient checked by hand
-                            against the machine, the averaging bug that sat in every framework until 2024, the grad
-                            norm spiking three steps before the loss noticed, and 0.1 written out bit by bit in
-                            four float formats.</p>
+                        <p class="card-hook">One gradient, checked by hand against the machine.</p>
+                        <p class="card-detail">How one number reaches back and moves every weight &mdash; a gradient
+                            checked by hand against the machine, the averaging bug that sat in every framework until
+                            2024, the grad norm spiking three steps before the loss noticed, and 0.1 written out bit by
+                            bit in four float formats.</p>
+                    </a>
+                    <a class="topic-card" data-session="S11" href="s11-optimizers/setting-the-distance.html">
+                        <span class="card-badge">S11</span>
+                        <h3>Setting the Distance</h3>
+                        <p class="card-hook">A gradient says which way. Never how far.</p>
+                        <p class="card-detail">Adam rebuilt by hand and checked against PyTorch to machine epsilon,
+                            bias correction that takes 3,916 steps to stop mattering rather than 20, the
+                            update-to-weight ratio predicted per layer before it was measured, cosine against WSD at a
+                            stop nobody planned, and Muon against an AdamW that was actually tuned.</p>
                     </a>
                 </div>
+
+                <p class="topic-empty" id="topicEmpty" hidden>No widget matches that. <button type="button"
+                        class="link-button" id="topicReset">Clear the filter</button></p>
             </div>
         </main>
     </div>

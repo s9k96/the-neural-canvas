@@ -11,7 +11,8 @@ const ICONS = {
     'fourier-embeddings': '<path d="M2 12c2-6 4-6 6 0s4 6 6 0 4-6 6 0"/><circle cx="12" cy="12" r="1.4"/>',
     'attention-timeline': '<path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/><circle cx="7.5" cy="6" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="17" cy="18" r="1.9"/>',
     'loss-harness': '<path d="M4 4v15a1 1 0 0 0 1 1h15"/><path d="M7 16c3-1 4.5-8 7-8s2.5 4 5 3"/><circle cx="12" cy="10.5" r="1.6"/>',
-    'training-step': '<path d="M3 20h4v-4h5v-4h5V8h4"/><path d="M12 3v6"/><path d="m9.5 6.5 2.5 2.5 2.5-2.5"/>'
+    'training-step': '<path d="M3 20h4v-4h5v-4h5V8h4"/><path d="M12 3v6"/><path d="m9.5 6.5 2.5 2.5 2.5-2.5"/>',
+    'setting-the-distance': '<path d="M3 4c7 1 7 13 18 15"/><path d="M6 20h9"/><path d="M6 17.5v5M15 17.5v5"/>'
 };
 
 const NAV_SECTIONS = [
@@ -32,7 +33,8 @@ const NAV_SECTIONS = [
     { label: 'S7 · Model Internals', pages: [{ id: 'fourier-embeddings', label: 'Words Made of Waves', href: 's07-model-internals/fourier-embeddings.html' }] },
     { label: 'S8 · Model Architectures', pages: [{ id: 'attention-timeline', label: 'The Field Changes Its Mind', href: 's08-model-architectures/attention-timeline.html' }] },
     { label: 'S9 · Loss Functions', pages: [{ id: 'loss-harness', label: 'Four Ways to Lie About a Loss', href: 's09-loss-functions/loss-harness.html' }] },
-    { label: 'S10 · The Training Loop', pages: [{ id: 'training-step', label: 'One Step, and What It Costs', href: 's10-training-loop/training-step.html' }] }
+    { label: 'S10 · The Training Loop', pages: [{ id: 'training-step', label: 'One Step, and What It Costs', href: 's10-training-loop/training-step.html' }] },
+    { label: 'S11 · Optimizers & Schedules', pages: [{ id: 'setting-the-distance', label: 'Setting the Distance', href: 's11-optimizers/setting-the-distance.html' }] }
 ];
 
 function iconSvg(id) {
@@ -127,8 +129,114 @@ function decorateTopicCards() {
     });
 }
 
+// Home page only: search box + per-session chips over the hand-written topic-card grid.
+// Session ids come from each card's data-session; the searchable text is the card's own
+// copy plus its NAV_SECTIONS label, so nothing here duplicates the card list.
+function initTopicFilter() {
+    const grid = document.querySelector('.topic-grid');
+    const input = document.getElementById('topicFilter');
+    if (!grid || !input) return;
+
+    const labelByHref = {};
+    NAV_SECTIONS.forEach(s => s.pages.forEach(p => { labelByHref[p.href] = s.label || ''; }));
+
+    const cards = Array.from(grid.querySelectorAll('.topic-card')).map(el => ({
+        el,
+        session: el.dataset.session || '',
+        label: labelByHref[el.getAttribute('href') || ''] || '',
+        text: `${el.textContent} ${labelByHref[el.getAttribute('href') || ''] || ''}`
+            .toLowerCase().replace(/\s+/g, ' ')
+    }));
+
+    const chipRow = document.getElementById('topicChips');
+    const countEl = document.getElementById('topicCount');
+    const emptyEl = document.getElementById('topicEmpty');
+    const resetEl = document.getElementById('topicReset');
+    let session = 'all';
+
+    function apply() {
+        const q = input.value.trim().toLowerCase();
+        let shown = 0;
+        cards.forEach(c => {
+            const hit = (session === 'all' || c.session === session) && (!q || c.text.includes(q));
+            c.el.classList.toggle('filtered-out', !hit);
+            if (hit) shown += 1;
+        });
+        if (countEl) {
+            countEl.textContent = shown === cards.length
+                ? `${cards.length} widgets`
+                : `${shown} of ${cards.length}`;
+        }
+        if (emptyEl) emptyEl.hidden = shown > 0;
+    }
+
+    function setSession(id) {
+        session = id;
+        if (!chipRow) return;
+        chipRow.querySelectorAll('.topic-chip').forEach(chip => {
+            const on = chip.dataset.session === id;
+            chip.classList.toggle('active', on);
+            chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+    }
+
+    if (chipRow) {
+        const order = [];
+        cards.forEach(c => { if (c.session && !order.includes(c.session)) order.push(c.session); });
+        const chips = [{ id: 'all', label: 'All', title: 'Every widget' }].concat(
+            order.map(id => ({
+                id,
+                label: id,
+                title: (cards.find(c => c.session === id) || {}).label || id
+            }))
+        );
+        chips.forEach(spec => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'topic-chip';
+            chip.dataset.session = spec.id;
+            chip.textContent = spec.label;
+            chip.title = spec.title;
+            // Clicking the active session chip toggles back to All.
+            chip.addEventListener('click', () => {
+                setSession(session === spec.id && spec.id !== 'all' ? 'all' : spec.id);
+                apply();
+            });
+            chipRow.appendChild(chip);
+        });
+        setSession('all');
+    }
+
+    input.addEventListener('input', apply);
+    input.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        input.value = '';
+        apply();
+        input.blur();
+    });
+
+    resetEl?.addEventListener('click', () => {
+        input.value = '';
+        setSession('all');
+        apply();
+        input.focus();
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+        const t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+        e.preventDefault();
+        input.focus();
+        input.select();
+    });
+
+    apply();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     renderSidebarNav();
     initSidebarToggle();
     decorateTopicCards();
+    initTopicFilter();
 });
