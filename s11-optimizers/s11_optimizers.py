@@ -929,7 +929,7 @@ print(f"  cosine(300) truncated at {SCHED_STOP}   {lr_int_trunc:.4f}")
 print(f"  cosine planned for {SCHED_STOP}         {lr_int_plan:.4f}   "
       f"({lr_int_trunc/lr_int_plan:.2f}× less)")
 print(f"§10's claim, tested: the early-stopped run should have been worse. It is "
-      f"{abs(d_plan):.4f} nats BETTER.")
+      f"{abs(d_plan):.4f} nats {'BETTER' if d_plan < 0 else 'WORSE'}.")
 print("Not a refutation of §10 at scale — a demonstration that at 200 steps the learning-rate")
 print("integral dominates the annealing, which is precisely why WSD's decay phase is defined")
 print("as a fraction of the run rather than a fixed number of steps.")

@@ -21,6 +21,12 @@ python validate_palette.py "#3987e5,#d95926,#199e70" --mode dark --surface "#0a0
 `build_notebook.py` exits non-zero if any gate fails. That exit code is the pass/fail signal,
 not the printed summary. **Current state: 24/24 gates pass.**
 
+**On timings.** The whole harness is about **56 minutes** of CPU on an M-series laptop, measured
+end to end. `out/evidence.json` records `wall_seconds` of 117 minutes for the committed run
+because that machine was suspended partway through; it is elapsed time, not compute, and the two
+runs produced **bit-identical numbers** — every figure quoted below was reproduced exactly across
+both, which is what fixed seeds on CPU should give and is worth checking rather than assuming.
+
 ---
 
 ## 1 · The problem

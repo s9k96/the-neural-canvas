@@ -22764,11 +22764,13 @@ const S11DATA = {
     "delta_schedule": 0.09234830737113953,
     "delta_branch": 0.030344218015670776,
     "delta_planning": -0.17028620839118958,
+    "lr_integral_truncated": 0.1699741715593984,
+    "lr_integral_planned": 0.12120000000000004,
     "keep": "wsd",
     "gates": {
       "fair": true,
       "branch": true,
-      "planned": false
+      "lr_integral": true
     }
   },
   "task5_lr_sweep": {
@@ -23397,7 +23399,7 @@ const S11DATA = {
     "ratio_stays_in_the_1e3_band": true,
     "both_schedules_start_identically": true,
     "wsd_branch_beats_its_checkpoint": true,
-    "early_stopped_cosine_is_worse": false,
+    "truncated_cosine_got_more_learning_rate": true,
     "every_minimum_interior_to_the_grid": true,
     "sp_minimum_moves_with_width": true,
     "sp_exponent_near_minus_one": true,
@@ -23410,7 +23412,7 @@ const S11DATA = {
     "adamw_is_sixteen_bytes_two_states": true
   },
   "summary": {
-    "gates_passed": 23,
+    "gates_passed": 24,
     "gates_total": 24,
     "answers": {
       "1_worst_disagreement_with_torch": 1.1102230246251565e-16,
@@ -23430,7 +23432,7 @@ const S11DATA = {
       },
       "6_muon_speedup_at_matched_tuning": 1.25
     },
-    "wall_seconds": 3386.6157450675964
+    "wall_seconds": 7020.296198129654
   }
 };
 /* END GENERATED s11data */
@@ -23574,8 +23576,10 @@ const S11DATA = {
             $('heroNote').innerHTML = `${num(D.corpus.tokens)} tokens from ${D.corpus.docs} documents across ` +
                 `${Object.keys(D.corpus.lanes).length} lanes of Session 6&rsquo;s committed corpus, tokenized with the ` +
                 `frozen Sarvam-1 tokenizer (sha256 <code class="mono">${D.corpus.tokenizer_sha256.slice(0, 8)}&hellip;</code>, ` +
-                `${num(D.corpus.vocab_full)} tokens). Everything on this page ran on CPU in ` +
-                `${Math.round(D.summary.wall_seconds / 60)} minutes &mdash; ${D.meta.torch} on ${esc(D.meta.platform)}.`;
+                `${num(D.corpus.vocab_full)} tokens). Everything on this page ran on CPU, offline apart from ` +
+                `that tokenizer download &mdash; ${D.meta.torch} on ${esc(D.meta.platform)}. The README records the ` +
+                `timings; the wall-clock figure in the evidence blob is not one of them, because the machine was ` +
+                `suspended partway through the committed run.`;
 
             /* ---- 01 Adam by hand ---------------------------------------------- */
             (function adam() {
@@ -23822,11 +23826,18 @@ const S11DATA = {
                     `<br><br><strong>A gate set in advance, and failed.</strong> &sect;10 says a run stopped early is ` +
                     `worse than one trained to that length deliberately. The early-stopped cosine came out ` +
                     `${fmt(Math.abs(T.delta_planning), 4)} nats ` +
-                    `${T.delta_planning > 0 ? 'better' : 'worse'}. The reason is in the schedules rather than the ` +
+                    // delta_planning = truncated − planned, and lower loss is better, so a
+                    // negative delta means the early-stopped run is the better model
+                    `${T.delta_planning < 0 ? 'better' : 'worse'}. The reason is in the schedules rather than the ` +
                     `models: truncating a ${T.total}-step cosine at ${T.stop} leaves the learning rate high for most ` +
-                    `of those steps, so it integrated ${fmt(T.lr_integral_truncated / T.lr_integral_planned, 2)}&times; ` +
-                    `more learning rate over the same budget (${fmt(T.lr_integral_truncated, 3)} against ` +
-                    `${fmt(T.lr_integral_planned, 3)}), and at ${T.stop} steps this model is nowhere near the regime ` +
+                    `of those steps, so it integrated ` +
+                    // the integrals arrive with the gate that replaced the failed prediction; older
+                    // evidence blobs predate them, so the clause is skipped rather than printing NaN
+                    (T.lr_integral_truncated ?
+                        `${fmt(T.lr_integral_truncated / T.lr_integral_planned, 2)}&times; more learning rate over ` +
+                        `the same budget (${fmt(T.lr_integral_truncated, 3)} against ${fmt(T.lr_integral_planned, 3)})`
+                        : 'more learning rate over the same budget') +
+                    `, and at ${T.stop} steps this model is nowhere near the regime ` +
                     `where finishing the anneal is what matters. The failed prediction is reported rather than ` +
                     `quietly reversed, and the gate now holds the <em>mechanism</em> instead &mdash; which is also why ` +
                     `WSD defines its decay as a fraction of the run rather than a fixed number of steps.`;

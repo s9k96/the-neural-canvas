@@ -22424,11 +22424,13 @@
     "delta_schedule": 0.09234830737113953,
     "delta_branch": 0.030344218015670776,
     "delta_planning": -0.17028620839118958,
+    "lr_integral_truncated": 0.1699741715593984,
+    "lr_integral_planned": 0.12120000000000004,
     "keep": "wsd",
     "gates": {
       "fair": true,
       "branch": true,
-      "planned": false
+      "lr_integral": true
     }
   },
   "task5_lr_sweep": {
@@ -23057,7 +23059,7 @@
     "ratio_stays_in_the_1e3_band": true,
     "both_schedules_start_identically": true,
     "wsd_branch_beats_its_checkpoint": true,
-    "early_stopped_cosine_is_worse": false,
+    "truncated_cosine_got_more_learning_rate": true,
     "every_minimum_interior_to_the_grid": true,
     "sp_minimum_moves_with_width": true,
     "sp_exponent_near_minus_one": true,
@@ -23070,7 +23072,7 @@
     "adamw_is_sixteen_bytes_two_states": true
   },
   "summary": {
-    "gates_passed": 23,
+    "gates_passed": 24,
     "gates_total": 24,
     "answers": {
       "1_worst_disagreement_with_torch": 1.1102230246251565e-16,
@@ -23090,6 +23092,6 @@
       },
       "6_muon_speedup_at_matched_tuning": 1.25
     },
-    "wall_seconds": 3386.6157450675964
+    "wall_seconds": 7020.296198129654
   }
 }
