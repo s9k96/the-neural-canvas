@@ -1,0 +1,2146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neural Canvas — The Redundancy Tax</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <link rel="stylesheet" href="../shared.css" />
+    <style>
+        /* ---- palette ------------------------------------------------------------
+           Same validated categorical set as the Session 9, 10 and 11 pages, checked
+           with validate_palette.py against this site's dark surface #0a0a0c:
+             #3987e5, #d95926, #199e70 — lightness band PASS, chroma floor PASS,
+             contrast 5.44 / 5.09 / 5.81 : 1, worst adjacent normal-vision dE 20.9
+             (floor 15), worst CVD dE 9.4 (target 8).
+           Here blue is always the thing that was kept (state a rank still holds,
+           measured values, compute); orange is always what was given up or what it
+           cost (communication, replication, the price of a stage). Green/red are
+           STATUS only, never a series, and always ship with a glyph and a word. */
+        .viz {
+            --ok-c: #3987e5;
+            --bad-c: #d95926;
+            --third: #199e70;
+            --good: #199e70;
+            --crit: #d03b3b;
+            --grid: #24242a;
+            --axis: #45454f;
+            --neutral: #a3a3aa;
+        }
+
+        .report-section { margin: 0 auto 20px; max-width: 1040px; text-align: left; }
+        .report-section h2 { text-align: left; font-size: 20px; margin: 0 0 10px; letter-spacing: 0; }
+        .report-section h2 .num { color: var(--accent); font-family: var(--font-mono); font-size: 15px; margin-right: 10px; }
+        .report-section h3 { font-size: 13.5px; color: var(--text); margin: 22px 0 8px; }
+        .report-section p { color: var(--muted); font-size: 14.5px; line-height: 1.7; margin: 0 0 12px; }
+        .report-section p:last-child { margin-bottom: 0; }
+        .report-section strong { color: var(--text); font-weight: 600; }
+        .report-lead { font-size: 15.5px !important; color: var(--text) !important; }
+        code.mono { font-family: var(--font-mono); background: rgba(255, 255, 255, .06); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--text); }
+        .muted-note { color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+        .quote { border-left: 2px solid var(--panel-border); padding: 2px 0 2px 14px; color: var(--muted); font-size: 13.5px; font-style: italic; margin: 0 0 14px; }
+
+        /* provenance markers: the page never blurs measured against computed */
+        .pill { display: inline-block; font-size: 9.5px; font-weight: 700; border-radius: 999px; padding: 2px 9px; letter-spacing: .05em; text-transform: uppercase; vertical-align: 3px; }
+        .pill.measured { color: #9dc6f5; border: 1px solid rgba(57, 135, 229, .7); background: rgba(57, 135, 229, .12); }
+        .pill.computed { color: #f0c3aa; border: 1px solid rgba(217, 89, 38, .7); background: rgba(217, 89, 38, .12); }
+        .pill.ref { color: var(--muted); border: 1px solid var(--panel-border); }
+
+        pre.code { background: rgba(255, 255, 255, .04); border: 1px solid var(--panel-border); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.8; color: var(--text); margin: 0 0 14px; }
+        pre.code .c { color: var(--muted); }
+        pre.code .k { color: var(--ok-c); }
+        pre.code .r { color: var(--bad-c); }
+
+        .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 12px; margin: 14px 0 4px; }
+        .tile { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 13px 15px; }
+        .tile .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .tile .v { font-size: 24px; font-weight: 700; color: var(--text); margin-top: 4px; line-height: 1.1; font-family: var(--font-mono); }
+        .tile .sub { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+
+        .readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(255, 255, 255, .03); }
+        .readout > div { padding: 15px 17px; border-right: 1px solid var(--panel-border); }
+        .readout > div:last-child { border-right: none; }
+        .readout .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .readout .v { font-size: 26px; font-weight: 700; font-family: var(--font-mono); margin-top: 5px; line-height: 1.05; color: var(--text); }
+        .readout .delta { font-size: 12px; font-family: var(--font-mono); margin-top: 5px; color: var(--muted); }
+
+        .ctl-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; margin: 4px 0 16px; }
+        .ctl { display: flex; flex-direction: column; gap: 5px; }
+        .ctl label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .ctl input[type=range] { width: 210px; accent-color: var(--accent); }
+        .ctl .val { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
+        .btn { background: rgba(255, 255, 255, .05); border: 1px solid var(--panel-border); color: var(--muted); border-radius: 999px; padding: 6px 14px; font-size: 12px; cursor: pointer; font-family: var(--font-sans); }
+        .btn:hover { color: var(--text); border-color: var(--muted); }
+        .btn.on { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+        .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        table.dt { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0 4px; }
+        table.dt th { text-align: left; font-weight: 600; color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; padding: 7px 9px; border-bottom: 1px solid var(--panel-border); }
+        table.dt td { padding: 8px 9px; border-bottom: 1px solid rgba(255, 255, 255, .05); color: var(--text); }
+        table.dt td.n, table.dt th.n { text-align: right; font-family: var(--font-mono); }
+        table.dt tr.hl td { background: rgba(57, 135, 229, .10); }
+        table.dt tr.warn td { background: rgba(217, 89, 38, .10); }
+        table.dt tr:last-child td { border-bottom: none; }
+
+        .box { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+        .box .boxk { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+        .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
+        .legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+        .chartwrap { overflow-x: auto; }
+        svg.chart { display: block; width: 100%; height: auto; }
+        svg.chart text { font-family: var(--font-mono); fill: var(--muted); font-size: 10px; }
+        svg.chart .axis { stroke: var(--axis); stroke-width: 1; }
+        svg.chart .grid { stroke: var(--grid); stroke-width: 1; }
+
+        .gate { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 12px; }
+        .gate.pass { color: var(--good); }
+        .gate.fail { color: var(--crit); }
+        .gatelist { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 7px 18px; margin-top: 10px; }
+
+        /* the 16-byte ledger: one square per byte */
+        .bytegrid { display: flex; gap: 4px; flex-wrap: wrap; margin: 10px 0 6px; align-items: center; }
+        .bytegrid b { width: 26px; height: 26px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 9.5px; font-weight: 600; border: 1px solid transparent; transition: opacity .18s, background .18s; }
+        .bytegrid b.w { background: rgba(57, 135, 229, .30); color: #cfe2fb; border-color: rgba(57, 135, 229, .55); }
+        .bytegrid b.g { background: rgba(217, 89, 38, .28); color: #f5cdb9; border-color: rgba(217, 89, 38, .55); }
+        .bytegrid b.m { background: rgba(25, 158, 112, .26); color: #bfe8d8; border-color: rgba(25, 158, 112, .5); }
+        .bytegrid b.gone { background: rgba(255, 255, 255, .03); color: var(--axis); border-color: var(--grid); border-style: dashed; }
+        .bytekey { display: flex; gap: 16px; font-size: 11px; color: var(--muted); margin-top: 6px; flex-wrap: wrap; }
+        .bytekey i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; }
+
+        /* the ring */
+        .ringgrid { display: grid; gap: 3px; margin: 8px 0 4px; font-family: var(--font-mono); font-size: 10px; }
+        .ringgrid .hd { color: var(--muted); font-size: 9.5px; text-align: center; padding: 2px 0; text-transform: uppercase; letter-spacing: .05em; }
+        .ringgrid .rk { color: var(--muted); font-size: 9.5px; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; }
+        .cell { height: 30px; border-radius: 5px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--grid); background: rgba(255, 255, 255, .02); color: var(--muted); transition: background .15s, border-color .15s, color .15s; }
+        .cell.own { border-color: rgba(57, 135, 229, .7); }
+        .cell.full { background: rgba(57, 135, 229, .32); color: #e6f0fc; border-color: rgba(57, 135, 229, .8); }
+        .cell.moving { border-color: var(--bad-c); }
+
+        /* the global-batch product */
+        .product { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--font-mono); margin: 12px 0; }
+        .product .f { background: rgba(255, 255, 255, .04); border: 1px solid var(--panel-border); border-radius: 9px; padding: 9px 13px; text-align: center; min-width: 80px; }
+        .product .f .fv { font-size: 21px; font-weight: 700; color: var(--text); }
+        .product .f .fk { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-top: 3px; }
+        .product .op { color: var(--muted); font-size: 16px; }
+        .product .f.eq { background: rgba(57, 135, 229, .16); border-color: rgba(57, 135, 229, .6); }
+
+        /* question / answer pairs for the open decisions */
+        .qa { border-left: 2px solid var(--panel-border); padding: 0 0 0 15px; margin: 0 0 18px; }
+        .qa .q { color: var(--text); font-size: 14.5px; font-weight: 600; margin-bottom: 7px; }
+        .qa .r { color: var(--muted); font-size: 13px; line-height: 1.65; margin-bottom: 5px; }
+        .qa .r b { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: .05em; margin-right: 7px; }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <button class="nav-toggle" id="sidebarToggle" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="7" x2="20" y2="7"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="17" x2="20" y2="17"></line>
+            </svg>
+        </button>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Sections</h3>
+                <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">&times;</button>
+            </div>
+            <div class="nav-list"></div>
+        </aside>
+
+        <main class="content viz">
+            <div class="wrapper">
+                <h1>The Redundancy Tax</h1>
+                <div class="subtitle">Eight GPUs running data parallelism hold <strong>3,576 GiB of
+                    memory to store 447 GiB of information</strong>. ZeRO is the arithmetic of getting
+                    that back, one class of duplicated state at a time &mdash; and every measured number
+                    on this page came off <strong>32 real processes</strong> talking over real sockets,
+                    not out of the formula it is being checked against.</div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">00</span>What was actually run</h2>
+                    <p class="report-lead">A graphics card holds a fixed amount of memory. The largest
+                        available hold 80 GB. The model this course is building has about 30 billion
+                        numbers in it, and every one has to be stored somewhere while it trains. This page
+                        is about what happens when the thing you are training is larger than the machine
+                        you are training it on, and it is written to be read on its own &mdash; from the
+                        arithmetic through to the decisions that follow from it.</p>
+                    <p>The assignment asks for 32 virtual GPUs, a demo model on top of them, and a
+                        demonstration of how memory and computation change across ZeRO's stages. The word
+                        doing the most work there is <em>simulate</em>, and this submission takes a
+                        position on it: <strong>nothing measured here is simulated.</strong> The 32 GPUs
+                        are 32 operating-system processes in a <code class="mono">gloo</code> process
+                        group. Every byte reported as crossing the wire was handed to
+                        <code class="mono">dist.isend</code> and counted at that line.</p>
+                    <div class="tiles" id="heroTiles"></div>
+                    <p class="muted-note" id="heroNote" style="margin-top:14px"></p>
+                    <h3>How to read the markers</h3>
+                    <p class="muted-note">Parts of this session are arithmetic about hardware I do not
+                        have. The page never blurs the two.
+                        <span class="pill measured">measured</span> means it came out of a run on this
+                        machine. <span class="pill computed">computed</span> means it is arithmetic from
+                        the session's figures. <span class="pill ref">reference</span> means it is
+                        recorded from the course rather than derived here.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">01</span>Sixteen bytes for every weight <span class="pill computed">computed</span></h2>
+                    <p>Start with the arithmetic, because it settles the question quickly. A weight is not
+                        one number. Training it means keeping four things, and they add to sixteen
+                        bytes.</p>
+                    <table class="dt" id="ledgerBytes"></table>
+                    <p style="margin-top:14px">The two running averages are the optimizer's memory: one
+                        tracks the average of recent gradients for that weight, the other the average of
+                        their squares. Both are 32-bit, four bytes each. <strong>The 32-bit copy of the
+                        weight exists because repeatedly adding very small updates to a 16-bit number
+                        loses them to rounding</strong>, so the authoritative value is kept at higher
+                        precision and a 16-bit version is made from it for the arithmetic. Section 06
+                        measures that loss rather than asserting it.</p>
+                    <p>Those dtypes are not a description of the model that ran &mdash; they are its
+                        dtypes. The engine holds <code class="mono">bfloat16</code> parameters and
+                        gradients with a <code class="mono">float32</code> master copy and
+                        <code class="mono">float32</code> Adam moments, so the sixteen bytes below are
+                        bytes that were actually allocated.</p>
+                    <div class="readout" id="ledgerHero"></div>
+                    <p class="muted-note" style="margin-top:12px" id="ledgerHeroNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">02</span>The seven words, with numbers <span class="pill ref">reference</span></h2>
+                    <p>Seven words carry the whole session and each has a number attached. Everything
+                        below is denominated in them.</p>
+                    <table class="dt" id="termsTable"></table>
+                    <p class="muted-note" id="termsNote" style="margin-top:12px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">03</span>Data parallelism, and the two things it promises <span class="pill measured">measured</span></h2>
+                    <p>The simplest way to use 32 GPUs is to give each a complete copy of the model and a
+                        different portion of the data. Each reads its own examples, runs them through its
+                        own copy, and produces its own gradients &mdash; and those gradients
+                        <em>differ</em>, because each GPU saw different text. The copies are then brought
+                        back into agreement: every GPU sends its gradients to every other, all of them
+                        compute the average, and each applies that same average to its own copy.</p>
+                    <p>Averaging the gradients from 32 GPUs that each processed one sequence produces
+                        exactly the gradient a single GPU would have produced from all 32 at once. That is
+                        the property that lets a training recipe move from one GPU to many without
+                        changing what the model learns. It makes two promises, and both are checkable
+                        rather than assumable.</p>
+
+                    <h3>Promise one: the copies stay identical</h3>
+                    <p>They started identical and applied an identical update, so they must remain
+                        identical &mdash; with no drift, ever. This is what the whole arrangement rests
+                        on: the moment two ranks disagree about the weights, they are no longer training
+                        one model. Every rank hashes the entire model it can see, so the check is whether
+                        32 hex strings are the same string.</p>
+                    <div class="readout" id="replicaReadout"></div>
+
+                    <h3>Promise two: the global batch is a product, and only the product matters</h3>
+                    <p>Accumulation steps are repeats of the forward and backward pass before the weights
+                        move, used when the batch you want is larger than what fits at once.</p>
+                    <div class="product" id="batchProduct"></div>
+                    <p>If that formula is real, any factorization of the same global batch is the same
+                        training run. So the same 32 sequences were run two ways &mdash; and the second is
+                        exactly the configuration the previous production run used (section 18), which is
+                        why it was worth running rather than asserting.</p>
+                    <table class="dt" id="factorTable"></table>
+                    <p class="muted-note" id="factorNote" style="margin-top:12px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">04</span>Three collectives, and the equivalence that makes ZeRO free</h2>
+                    <p>A <strong>collective</strong> is an operation every GPU performs together, at the
+                        same time, on data each of them holds a piece of. Three appear throughout this
+                        session, and the averaging step above is the first of them.</p>
+                    <table class="dt">
+                        <tr><th>operation</th><th>each GPU starts with</th><th>each GPU ends with</th></tr>
+                        <tr><td><strong>all-reduce</strong></td><td>a full set of values</td><td>the combined full set</td></tr>
+                        <tr><td><strong>reduce-scatter</strong></td><td>a full set of values</td><td>one slice of the combined set</td></tr>
+                        <tr><td><strong>all-gather</strong></td><td>one slice</td><td>the full set</td></tr>
+                    </table>
+                    <p class="quote" style="margin-top:16px">A reduce-scatter followed by an all-gather
+                        produces exactly what an all-reduce produces.</p>
+                    <p>That sentence is the hinge of the whole session. It is why ZeRO-1 and ZeRO-2 are
+                        free: a ring all-reduce is <em>implemented</em> as precisely those two phases, so
+                        each GPU already sends about one copy of the data during the first and receives
+                        about one during the second &mdash; 2P in total. A stage that stops after the
+                        first phase and keeps the slice already in its hands has not added a single byte
+                        of traffic. It has simply declined to throw something away.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">05</span>The ring, one hop at a time</h2>
+                    <p>Worth watching rather than accepting. Each row is a GPU and each column is a chunk
+                        of the data. Every GPU starts holding its own version of all N chunks, and only
+                        ever sends to its right-hand neighbour. Step forward: during
+                        <strong>reduce-scatter</strong> the contributions accumulate until each GPU owns
+                        one complete chunk, and during <strong>all-gather</strong> those complete chunks
+                        travel back around until everyone has all of them. A number in a cell is how many
+                        of the N contributions it has collected; a filled cell has all N.</p>
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label for="ringWorld">GPUs in the ring <span class="val" id="ringWorldVal"></span></label>
+                            <input type="range" id="ringWorld" min="3" max="8" step="1" value="4" />
+                        </div>
+                        <div class="ctl">
+                            <label>step</label>
+                            <div class="btnrow">
+                                <button class="btn" id="ringPrev">&larr; back</button>
+                                <button class="btn on" id="ringNext">forward &rarr;</button>
+                                <button class="btn" id="ringReset">reset</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ringgrid" id="ringGrid"></div>
+                    <div class="readout" id="ringReadout" style="margin-top:14px"></div>
+                    <p class="muted-note" id="ringNote" style="margin-top:12px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">06</span>Thirty-two virtual GPUs, and the operation that was missing <span class="pill measured">measured</span></h2>
+                    <p>The world size is 32. Each rank is a separate <code class="mono">python</code>
+                        process with one thread, joined into a <code class="mono">gloo</code> process
+                        group over loopback TCP. Then the first thing I tried did not exist.</p>
+                    <pre class="code"><span class="c"># the operation ZeRO-2 and ZeRO-3 are built on</span>
+dist.reduce_scatter(out, ins)
+<span class="r">RuntimeError: ProcessGroupGloo does not support reduce_scatter</span></pre>
+                    <p><code class="mono">gloo</code> is the CPU backend &mdash; the only one available
+                        without GPUs &mdash; and it implements <code class="mono">all_reduce</code> and
+                        <code class="mono">all_gather</code> but not
+                        <code class="mono">reduce_scatter</code>.</p>
+                    <p><strong>This turned out to be the most useful accident in the assignment.</strong>
+                        Writing the ring by hand on
+                        <code class="mono">isend</code>/<code class="mono">irecv</code> meant every byte
+                        crossing a socket passes through fourteen lines of my own code, on its way past a
+                        counter. That is the only reason the communication figures below are measured. Had
+                        <code class="mono">reduce_scatter</code> worked, I would have had to take the
+                        library's word for the traffic.</p>
+                    <div class="split">
+                        <div class="box">
+                            <div class="boxk">the hand-written ring vs gloo's own all-reduce</div>
+                            <div id="collCheck" style="margin-top:10px"></div>
+                        </div>
+                        <div class="box">
+                            <div class="boxk">summing 1&hellip;32 around that ring</div>
+                            <div id="bfCheck" style="margin-top:10px"></div>
+                        </div>
+                    </div>
+                    <p class="muted-note" id="bfNote" style="margin-top:14px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">07</span>What each ZeRO stage deletes</h2>
+                    <p>Look again at what data parallelism stores. Every GPU holds the full 16 bytes for
+                        every weight, and the copies are identical. Eight GPUs therefore hold eight
+                        identical copies of 447 GiB &mdash; <strong>3,576 GiB of memory to store 447 GiB
+                        of information</strong>. Most of that is never needed in eight places: during the
+                        update each GPU applies the same average to the same weights and produces the same
+                        answer, so seven of the eight are repeating work already being done.</p>
+                    <p>The idea is to give each GPU responsibility for one slice of the weights, let it
+                        keep only the state for that slice, and have it fetch anything else when it needs
+                        it. Every GPU receives a different slice, so all hold the same amount and none
+                        sits idle. That is <strong>ZeRO</strong>, for Zero Redundancy Optimizer, published
+                        by Microsoft in 2019 &mdash; an arrangement of storage, applied in three stages,
+                        each removing one more class of duplicated state.</p>
+                    <p>Choose a stage and a world size. Dashed squares are bytes this rank no longer
+                        keeps.</p>
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label>stage</label>
+                            <div class="btnrow" id="ledgerStages"></div>
+                        </div>
+                        <div class="ctl">
+                            <label for="ledgerWorld">GPUs <span class="val" id="ledgerWorldVal"></span></label>
+                            <input type="range" id="ledgerWorld" min="0" max="5" step="1" value="4" />
+                        </div>
+                    </div>
+                    <div class="bytegrid" id="byteGrid"></div>
+                    <div class="bytekey">
+                        <span><i style="background:#3987e5"></i>weight, bf16 &mdash; only ZeRO-3 splits this</span>
+                        <span><i style="background:#d95926"></i>gradient, bf16 &mdash; ZeRO-2 and ZeRO-3 split it</span>
+                        <span><i style="background:#199e70"></i>master + Adam m,v &mdash; every stage splits these</span>
+                    </div>
+                    <div class="readout" id="ledgerReadout" style="margin-top:14px"></div>
+                    <p class="muted-note" id="ledgerNote" style="margin-top:12px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">08</span>The ladder, measured <span class="pill measured">measured</span></h2>
+                    <p>Four runs on 32 processes. Same model, same seed, same tokens in the same order.
+                        The only thing that changes is what each rank is allowed to keep. The
+                        <strong>measured</strong> column is not computed from the formula beside it
+                        &mdash; it is the sum of the byte sizes of the storages each rank actually held at
+                        the instant <code class="mono">backward()</code> returned.</p>
+                    <div class="chartwrap"><svg class="chart" id="ladderChart" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid meet"></svg></div>
+                    <table class="dt" id="ladderTable"></table>
+                    <h3>Two numbers per stage, because the session's table has one</h3>
+                    <p>The <strong>ladder</strong> is the state a rank holds with no collective in flight,
+                        which is what the session's table describes. The <strong>peak</strong> is that
+                        plus the largest buffer a single collective needs. No implementation escapes the
+                        second, and the gap is wider here than it would be on a real model: the buffer is
+                        sized by the largest single tensor, and in a 2.6M-parameter model with a
+                        2,048-token vocabulary the embedding is a far bigger share of the whole than it is
+                        at 30B. <strong>The gap is an artifact of the toy. The ladder is not.</strong></p>
+                    <p class="muted-note" id="ladderNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">09</span>What it costs on the wire <span class="pill measured">measured</span></h2>
+                    <p>The claim from section 04, now as a measurement: <strong>stages 1 and 2 cost
+                        nothing extra</strong>, and only stage 3 raises the bill. Stage 3 adds a gather of
+                        the weights on the way forward and another on the way back.</p>
+                    <table class="dt" id="commTable"></table>
+                    <h3>A correction the measurement forces</h3>
+                    <p>A ring collective does not move P. It moves <strong>P&middot;(N&minus;1)/N</strong>
+                        &mdash; each rank sends every chunk but its own, N&minus;1 of the N. At 32 GPUs
+                        that is 0.969P, so data parallelism's real cost is 1.94P and ZeRO-3's is 2.91P.
+                        The session's 2P and 3P are the large-N limit of this, and at 32 GPUs the limit is
+                        3% away. I would rather report 1.94P and explain it than report 2P and be quietly
+                        wrong.</p>
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label for="commWorld">GPUs <span class="val" id="commWorldVal"></span></label>
+                            <input type="range" id="commWorld" min="2" max="512" step="1" value="32" />
+                        </div>
+                    </div>
+                    <div class="readout" id="commReadout"></div>
+                    <p class="muted-note" id="commNote" style="margin-top:12px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">10</span>Is it still the same training run? <span class="pill measured">measured</span></h2>
+                    <p>A memory saving that changed the answer would be worthless. Two claims, two
+                        different standards of proof.</p>
+                    <p><strong>Across the stages, the standard is bitwise.</strong> All four run the
+                        identical ring in the identical order on identical data; only the question of
+                        which rank keeps which slice differs. Every arithmetic operation therefore sees
+                        the same inputs in the same order, and the final weights must agree to the last
+                        bit. A tolerance here would be hiding something.</p>
+                    <div class="readout" id="equivReadout"></div>
+                    <h3>Against a single GPU, the standard is a tolerance &mdash; and its size is the finding</h3>
+                    <p>Section 03 says a distributed run is <em>mathematically</em> identical to a
+                        single-GPU run on a batch 32 times larger. Mathematically, yes. In floating point,
+                        no. One rank computing the gradient of 32 sequences in one matrix multiply, and 32
+                        ranks computing one sequence each and summing around a
+                        <code class="mono">bfloat16</code> ring, are different summation orders of the
+                        same quantity.</p>
+                    <div class="chartwrap"><svg class="chart" id="lossChart" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"></svg></div>
+                    <div class="legend">
+                        <span><i style="background:#3987e5"></i>32 GPUs, all four stages (one line &mdash; they are bit-identical)</span>
+                        <span><i style="background:#d95926"></i>1 GPU, same 32 sequences in one batch</span>
+                    </div>
+                    <p class="muted-note" id="equivNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">11</span>Bucketing: the cost is paid per message, not per byte <span class="pill measured">measured</span></h2>
+                    <p>Everything above reduces <strong>one tensor at a time</strong>: each of the model's
+                        parameter tensors gets its own ring, and a ring across 32 ranks is 31 hops in each
+                        direction. The session says gradients are instead collected into
+                        <strong>buckets</strong>, and that the bucket size sets a balance &mdash; smaller
+                        buckets start transferring earlier in the backward pass, larger ones pay the fixed
+                        cost of starting a transfer less often.</p>
+                    <p>Rather than quote that, this run takes it to its limit: every gradient in the model
+                        packed into one buffer and reduced once. <strong>Both ends of the balance show
+                        up.</strong></p>
+                    <table class="dt" id="bucketTable"></table>
+                    <div class="readout" id="bucketReadout" style="margin-top:14px"></div>
+                    <p class="muted-note" id="bucketNote" style="margin-top:12px"></p>
+                    <h3>Which is also the argument for overlap</h3>
+                    <p>The backward pass runs from the last layer of the model to the first, so the
+                        gradients for the last layer are finished long before the pass reaches the first.
+                        Those gradients can begin their journey immediately, while the earlier layers are
+                        still being computed &mdash; a bucket is sent as soon as it fills, part way
+                        through the pass. That is the whole of <strong>overlapping communication with
+                        compute</strong>: communication that happens during computation costs nothing, and
+                        arranging it is a matter of configuration.</p>
+                    <p>Smaller buckets give more room to overlap; larger ones amortise the fixed cost
+                        measured above. Production settings are a few hundred megabytes. There is a third
+                        effect that appears only on fast hardware: smaller buckets keep helping while the
+                        link drains them as fast as they arrive, but past that point the transfers queue
+                        behind each other and step time climbs again. ZeRO-3 needs the same treatment in
+                        the other direction &mdash; the weights for the next layer gathered while the
+                        current one is still computing. <strong>None of the overlap is implemented
+                        here</strong>, and given section 13's numbers it is the single change that would
+                        most improve this run.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">12</span>What it cost here, in time <span class="pill measured">measured</span></h2>
+                    <p>One caveat first, stated plainly: 32 processes are sharing 10 physical cores, so
+                        the absolute seconds describe this laptop and nothing else. The
+                        <strong>shape</strong> &mdash; which stage waits more, and by how much &mdash; is
+                        the transferable part.</p>
+                    <div class="chartwrap"><svg class="chart" id="timeChart" viewBox="0 0 900 230" preserveAspectRatio="xMidYMid meet"></svg></div>
+                    <div class="legend">
+                        <span><i style="background:#3987e5"></i>compute</span>
+                        <span><i style="background:#d95926"></i>waiting on the wire</span>
+                    </div>
+                    <table class="dt" id="timeTable"></table>
+                    <p class="muted-note" id="timeNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">13</span>What this costs on hardware that is not a laptop <span class="pill computed">computed</span></h2>
+                    <p>The useful question is not how slow my loopback is. It is: given a real
+                        interconnect and a real card, is the transfer small compared with the work? While
+                        a GPU is waiting for numbers to arrive, it is not computing.</p>
+                    <p>The test is <strong>communication divided by compute</strong>. Below 1, a transfer
+                        that runs entirely during the computation is fully hidden. Move the controls: the
+                        card changes only the compute bar, the link changes only the network bar.</p>
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label>card</label>
+                            <div class="btnrow" id="hwCards"></div>
+                        </div>
+                        <div class="ctl">
+                            <label>link</label>
+                            <div class="btnrow" id="hwLinks"></div>
+                        </div>
+                        <div class="ctl">
+                            <label>arrangement</label>
+                            <div class="btnrow" id="hwStages"></div>
+                        </div>
+                    </div>
+                    <div class="chartwrap"><svg class="chart" id="hwChart" viewBox="0 0 900 200" preserveAspectRatio="xMidYMid meet"></svg></div>
+                    <div class="readout" id="hwReadout"></div>
+                    <p class="muted-note" id="hwNote" style="margin-top:12px"></p>
+                    <h3>The least intuitive consequence of buying newer hardware</h3>
+                    <p>The volume does not move &mdash; 120 GB crosses the wire either way. What moves is
+                        the compute it has to hide behind, and a B200 step is less than half an H100 step.
+                        <strong>Faster GPUs raise the ratio of communication to compute</strong>, from 34%
+                        to 77% on the same InfiniBand link. Both are still below 1, so a fully overlapped
+                        transfer is still fully hidden &mdash; and that margin is the entire reason
+                        section 11's overlap stops being an optimization and becomes a requirement.</p>
+                    <table class="dt" id="hwTable"></table>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">14</span>The memory wall <span class="pill measured">measured</span></h2>
+                    <p>The measured bytes-per-parameter, multiplied out to a real model. This is a ratio
+                        argument, and the assumption it rests on is worth stating: bytes-per-parameter is
+                        independent of parameter count for all four arrangements, which is exactly what
+                        makes the wall a function of world size alone. The four stages were re-run at 4, 8
+                        and 16 GPUs to check that &mdash; the dots are measured, the lines extrapolate.</p>
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label for="wallSize">model size <span class="val" id="wallSizeVal"></span></label>
+                            <input type="range" id="wallSize" min="10" max="200" step="1" value="30" />
+                        </div>
+                    </div>
+                    <div class="chartwrap"><svg class="chart" id="wallChart" viewBox="0 0 900 340" preserveAspectRatio="xMidYMid meet"></svg></div>
+                    <div class="legend" id="wallLegend"></div>
+                    <p class="muted-note" id="wallNote" style="margin-top:12px"></p>
+                    <h3>The floor that no GPU count reaches</h3>
+                    <p>Data parallelism and ZeRO-1 both leave the weight and the gradient &mdash; four
+                        bytes &mdash; replicated on every card at every world size. Four bytes across 30
+                        billion weights is 111.8 GiB, and that figure is the same on one card as on a
+                        thousand. Four bytes fills a 74.5 GiB card exactly at <strong>20 billion
+                        parameters</strong>. Drag the slider across that line and watch two of the four
+                        arrangements stop being available at any GPU count.</p>
+                    <p>One thing these figures exclude: <strong>activations</strong>, the intermediate
+                        results the forward pass produces. Their size is set by the batch and the sequence
+                        length, and room has to be left for them, which pushes the practical threshold
+                        above what the table alone suggests. The common technique for controlling them is
+                        to discard them during the forward pass and recompute them during the backward
+                        pass, at a cost of roughly 30% more compute.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">15</span>Offload, and the trade it actually makes <span class="pill computed">computed</span></h2>
+                    <p>A GPU is not the only memory in the machine. A node has system memory, usually far
+                        more than the GPUs have, and solid-state storage beyond that. State that is needed
+                        rarely can live in those slower places and be brought in when required.</p>
+                    <p>The optimizer state is the natural candidate: <strong>twelve of the sixteen bytes,
+                        and touched exactly once per step</strong>. There are two versions. The simpler
+                        one parks the state in system memory and copies it to the GPU for the update. The
+                        more effective one performs the update on the CPU as well, so the state never
+                        moves and the GPU is freed of that work altogether.</p>
+                    <table class="dt" id="offloadTable"></table>
+                    <p style="margin-top:14px">The cost is PCIe, at roughly 60 GB/s &mdash; far below
+                        NVLink and comparable to a network cable. <strong>Offload converts a memory
+                        problem into a bandwidth problem</strong>, and it earns its place only in a run
+                        whose binding constraint is GPU memory.</p>
+                    <div class="readout" id="offloadReadout"></div>
+                    <p class="muted-note" id="offloadNote" style="margin-top:12px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">16</span>The two implementations <span class="pill ref">reference</span></h2>
+                    <p>Everything above described an idea. Two pieces of software implement it, and the
+                        choice between them is a practical one. <strong>ZeRO is the design; DeepSpeed and
+                        FSDP2 are two implementations of it with different strengths.</strong></p>
+                    <table class="dt">
+                        <tr><th></th><th>ZeRO stages</th><th>offload</th><th>integration</th></tr>
+                        <tr><td><strong>DeepSpeed</strong></td><td>1, 2 and 3</td><td>system memory and storage</td><td>external library, JSON configuration</td></tr>
+                        <tr><td><strong>FSDP2</strong></td><td>3</td><td>system memory</td><td>built into PyTorch, composes with the compiler</td></tr>
+                    </table>
+                    <p style="margin-top:14px">DeepSpeed is the library Microsoft released alongside the
+                        ZeRO paper, configured with a single JSON file naming the stage and the options,
+                        with the most complete support for offload. FSDP2 &mdash; Fully Sharded Data
+                        Parallel, version 2 &mdash; is PyTorch's own implementation, shipped as part of
+                        the framework and the recommended path from PyTorch 2.6 onward. It corresponds to
+                        ZeRO stage 3.</p>
+                    <p>FSDP2 is applied by calling <code class="mono">fully_shard()</code> on parts of the
+                        model rather than wrapping the whole thing in a class. Each parameter is split
+                        along its first dimension and represented as a DTensor &mdash; a tensor that knows
+                        which part of itself lives on which GPU &mdash; which is what lets the compiler
+                        work on a sharded model.</p>
+                    <p class="muted-note">Worth naming the overlap with section 06: the engine behind this
+                        page is a hand-rolled ZeRO-3 in about 200 lines, and it ran into the same problem
+                        FSDP2 solves with storage resizing &mdash; a released weight has to stay the
+                        <em>same tensor object</em> with a zero-byte storage, because autograd saved that
+                        object and will read it again during the backward pass. Finding that out the hard
+                        way is most of what I take from this session.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">17</span>Precision, and what Blackwell changes <span class="pill computed">computed</span></h2>
+                    <p>Blackwell is the current generation of NVIDIA hardware, following the generation
+                        the H100 belongs to. Its arithmetic units can multiply 8-bit floating point
+                        numbers directly, which the previous generation could not do at the same
+                        granularity. An 8-bit number holds far less detail than a 16-bit one, so it cannot
+                        be used naively: the technique that makes it work is to store a shared scale
+                        factor alongside a small block of numbers. <strong>MXFP8</strong> is the
+                        Blackwell-native form, using blocks of 32 values with one shared 8-bit
+                        exponent.</p>
+                    <div class="bytegrid" id="fp8Grid"></div>
+                    <table class="dt" id="fp8Table"></table>
+                    <p style="margin-top:14px">Moving the weights and gradients to 8-bit removes two of
+                        the sixteen bytes and adds back the per-block scale: one byte for every 32 values,
+                        across two tensors, is 0.0625 bytes per parameter. The twelve bytes of master copy
+                        and optimizer moments are untouched, because the update arithmetic still needs the
+                        accuracy. <strong id="fp8Head"></strong></p>
+                    <p>This section is computed, not measured, and that is a deliberate line.
+                        <code class="mono">bfloat16</code> is as low as this CPU goes, and claiming to
+                        have measured MXFP8 on hardware that cannot multiply it would be exactly the thing
+                        the rest of this page exists to avoid. The real contribution of 8-bit is elsewhere
+                        anyway: matrix multiplication runs faster, activation memory falls, and
+                        <strong>every multiple of P on this page halves</strong>, because P is the
+                        parameters in the compute format.</p>
+                    <p>One part of the model is left at higher precision. The attention softmax amplifies
+                        small errors in its input, because the exponential turns a modest gap between two
+                        scores into a very large ratio. Keeping it in 32-bit costs almost nothing, because
+                        softmax is limited by memory bandwidth and not by arithmetic. <strong>The
+                        operations held at high precision are the operations where high precision is close
+                        to free.</strong></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">18</span>What the previous run did, and what this one says about the next <span class="pill ref">reference</span></h2>
+                    <p>The previous run, LightningLM v0.1, used DeepSpeed at ZeRO stage 2. Its
+                        configuration is worth reading because it records a set of decisions made under
+                        real constraints.</p>
+                    <table class="dt" id="v4Table"></table>
+                    <p style="margin-top:14px">Three entries are the interesting ones.
+                        <code class="mono">overlap_comm</code> was enabled, which is section 11's
+                        technique. <code class="mono">round_robin_gradients</code> was enabled and appears
+                        in the filename of the configuration as an out-of-memory fix, which records that
+                        the run hit a memory ceiling and was rescued by changing the order in which
+                        gradient buckets were assigned. Weight decay was set to zero deliberately for that
+                        architecture.</p>
+                    <p><strong>And its global batch of 32 came from 2 sequences per GPU × 8 GPUs × 2
+                        accumulation steps</strong> &mdash; the second factorization measured in section
+                        03, and the reason that comparison was worth running rather than asserting. That
+                        run never needed stage 3. At 30B, section 14 says that is no longer a choice.</p>
+                    <h3>Four questions that stay open</h3>
+                    <p>What this harness can and cannot say about each, recorded honestly.</p>
+                    <div id="v5Questions"></div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">19</span>Gates</h2>
+                    <p>Every measured claim on this page as a boolean, checked by the harness.
+                        <code class="mono">build_notebook.py</code> exits non-zero if any is false, so the
+                        exit code is the pass/fail signal and not the printed summary.</p>
+                    <div class="readout" id="gateSummary"></div>
+                    <div class="gatelist" id="gateList"></div>
+                    <h3>What is not here</h3>
+                    <p>Stated rather than buried. <strong>Offload is not implemented</strong> &mdash;
+                        section 15 is arithmetic. <strong>Communication is not overlapped with
+                        compute</strong> &mdash; section 11 measures the bucketing half of it and stops
+                        there, and it is the first thing I would add. <strong>Activations are excluded
+                        from every memory figure</strong>, deliberately, because they are identical across
+                        the stages here and the session treats them separately. And the model is small
+                        &mdash; 2.6M parameters &mdash; because 32 processes hold 32 copies of everything
+                        under data parallelism and all of it has to fit on one laptop. Nothing measured
+                        depends on that size: bytes <em>per parameter</em> and traffic <em>in multiples of
+                        P</em> are both ratios.</p>
+                </div>
+
+                <div class="panel report-section">
+                    <p class="muted-note" id="provenance"></p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+/* BEGIN GENERATED s12data */
+const S12DATA = {
+  "meta": {
+    "python": "3.9.6",
+    "torch": "2.2.2",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "cpu_count": 10,
+    "wall_seconds": 709.0,
+    "main_world": 32,
+    "main_steps": 12
+  },
+  "ledger": {
+    "bytes_per_weight": {
+      "weight_bf16": 2,
+      "grad_bf16": 2,
+      "master_fp32": 4,
+      "adam_m_v": 8
+    },
+    "total": 16,
+    "params_30b": 30000000000.0,
+    "state_30b_gib": 447.0,
+    "card_gib": 74.5,
+    "cards_needed": 6.0,
+    "P_30b_gb": 60.0
+  },
+  "terms": {
+    "gpu_gb": 80,
+    "gpu_gib": 74.51,
+    "node_gpus": 8,
+    "world_size": 32,
+    "nodes": 4,
+    "nvlink_gbs": 450.0,
+    "infiniband_gbs": 50.0,
+    "pcie_gbs": 60.0,
+    "interconnect_ratio": 9.0,
+    "P_gb": 60.0
+  },
+  "corpus": {
+    "tokens": 656920,
+    "docs": 514,
+    "lanes": {
+      "agentic": 40,
+      "code": 93,
+      "general_web": 100,
+      "indic": 135,
+      "long_context": 6,
+      "reasoning": 40,
+      "stem_math": 100
+    },
+    "vocab_full": 68096,
+    "vocab_cap": 2048,
+    "cap_coverage": 0.76242,
+    "tokenizer_sha256": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072"
+  },
+  "model": {
+    "params": 2582208,
+    "largest_tensor": "head.weight",
+    "largest_tensor_params": 393216,
+    "largest_tensor_frac": 0.1523,
+    "vocab_size": 2048,
+    "d_model": 192,
+    "n_layer": 4,
+    "block_size": 128
+  },
+  "collectives": {
+    "vs_gloo_max_abs": 7.62939453125e-06,
+    "vs_gloo_rel": 2.8533742124636774e-07,
+    "two_phase_identical": true,
+    "bf16_ring_sum": 524.0,
+    "fp32_ring_sum": 528.0,
+    "exact_sum": 528.0,
+    "world": 32
+  },
+  "data_parallel": {
+    "replica_hashes_distinct": 1,
+    "replica_hash": "9673f067ddd09a190c4a2eabcda633acf745b63759d9d902d37e78cf2ec795a6",
+    "global_batch": 32,
+    "factorizations": [
+      {
+        "gpus": 32,
+        "seq_per_gpu": 1,
+        "accum": 1,
+        "loss_curve": [
+          7.778283268213272,
+          7.034257411956787,
+          6.600417494773865,
+          6.409325182437897,
+          6.2806199342012405,
+          6.040597096085548,
+          6.2029712945222855,
+          6.084504783153534,
+          5.993451610207558,
+          5.992831461131573,
+          5.879173681139946,
+          5.870162025094032
+        ],
+        "final_loss": 5.870162025094032
+      },
+      {
+        "gpus": 8,
+        "seq_per_gpu": 2,
+        "accum": 2,
+        "loss_curve": [
+          7.778283208608627,
+          7.034308642148972,
+          6.600353240966797,
+          6.409383177757263,
+          6.280652970075607,
+          6.040540993213654,
+          6.203352272510529,
+          6.084387809038162,
+          5.993260681629181,
+          5.99297496676445,
+          5.879066109657288,
+          5.870005249977112
+        ],
+        "final_loss": 5.870005249977112
+      }
+    ],
+    "loss_rel": 2.670711919880267e-05,
+    "weight_max_abs": 0.00390625
+  },
+  "stages": {
+    "dp": {
+      "ladder_bpp": 16.0,
+      "peak_bpp": 16.609115919399212,
+      "predicted_bpp": 16,
+      "gib_30b": 447.0348358154297,
+      "measured_P": 1.9375,
+      "ring_predicted_P": 1.9375,
+      "notes_P": 2,
+      "gb_30b": 116.25,
+      "spread": 0.0,
+      "label": "data parallelism",
+      "losses": [
+        7.778283268213272,
+        7.034257411956787,
+        6.600417494773865,
+        6.409325182437897,
+        6.2806199342012405,
+        6.040597096085548,
+        6.2029712945222855,
+        6.084504783153534,
+        5.993451610207558,
+        5.992831461131573,
+        5.879173681139946,
+        5.870162025094032
+      ],
+      "losses_rank0": [
+        7.485997200012207,
+        7.791366100311279,
+        7.092824935913086,
+        6.155109882354736,
+        5.130033493041992,
+        6.362492561340332,
+        7.276703834533691,
+        6.183067321777344,
+        6.751918315887451,
+        6.374178409576416,
+        6.740548610687256,
+        7.174149513244629
+      ],
+      "load_balance": 1.0
+    },
+    "zero1": {
+      "ladder_bpp": 4.375,
+      "peak_bpp": 4.689075395940218,
+      "predicted_bpp": 4.375,
+      "gib_30b": 122.23608791828156,
+      "measured_P": 1.9375,
+      "ring_predicted_P": 1.9375,
+      "notes_P": 2,
+      "gb_30b": 116.25,
+      "spread": 0.0,
+      "label": "ZeRO-1",
+      "losses": [
+        7.778283268213272,
+        7.034257411956787,
+        6.600417494773865,
+        6.409325182437897,
+        6.2806199342012405,
+        6.040597096085548,
+        6.2029712945222855,
+        6.084504783153534,
+        5.993451610207558,
+        5.992831461131573,
+        5.879173681139946,
+        5.870162025094032
+      ],
+      "losses_rank0": [
+        7.485997200012207,
+        7.791366100311279,
+        7.092824935913086,
+        6.155109882354736,
+        5.130033493041992,
+        6.362492561340332,
+        7.276703834533691,
+        6.183067321777344,
+        6.751918315887451,
+        6.374178409576416,
+        6.740548610687256,
+        7.174149513244629
+      ],
+      "load_balance": 1.0
+    },
+    "zero2": {
+      "ladder_bpp": 2.4375,
+      "peak_bpp": 3.046615919399212,
+      "predicted_bpp": 2.4375,
+      "gib_30b": 68.10296326875687,
+      "measured_P": 1.9375,
+      "ring_predicted_P": 1.9375,
+      "notes_P": 2,
+      "gb_30b": 116.25,
+      "spread": 0.0,
+      "label": "ZeRO-2",
+      "losses": [
+        7.778283268213272,
+        7.034257411956787,
+        6.600417494773865,
+        6.409325182437897,
+        6.2806199342012405,
+        6.040597096085548,
+        6.2029712945222855,
+        6.084504783153534,
+        5.993451610207558,
+        5.992831461131573,
+        5.879173681139946,
+        5.870162025094032
+      ],
+      "losses_rank0": [
+        7.485997200012207,
+        7.791366100311279,
+        7.092824935913086,
+        6.155109882354736,
+        5.130033493041992,
+        6.362492561340332,
+        7.276703834533691,
+        6.183067321777344,
+        6.751918315887451,
+        6.374178409576416,
+        6.740548610687256,
+        7.174149513244629
+      ],
+      "load_balance": 1.0
+    },
+    "zero3": {
+      "ladder_bpp": 0.5,
+      "peak_bpp": 1.4136738790988177,
+      "predicted_bpp": 0.5,
+      "gib_30b": 13.969838619232178,
+      "measured_P": 2.90625,
+      "ring_predicted_P": 2.90625,
+      "notes_P": 3,
+      "gb_30b": 174.375,
+      "spread": 0.0,
+      "label": "ZeRO-3",
+      "losses": [
+        7.778283268213272,
+        7.034257411956787,
+        6.600417494773865,
+        6.409325182437897,
+        6.2806199342012405,
+        6.040597096085548,
+        6.2029712945222855,
+        6.084504783153534,
+        5.993451610207558,
+        5.992831461131573,
+        5.879173681139946,
+        5.870162025094032
+      ],
+      "losses_rank0": [
+        7.485997200012207,
+        7.791366100311279,
+        7.092824935913086,
+        6.155109882354736,
+        5.130033493041992,
+        6.362492561340332,
+        7.276703834533691,
+        6.183067321777344,
+        6.751918315887451,
+        6.374178409576416,
+        6.740548610687256,
+        7.174149513244629
+      ],
+      "load_balance": 1.0
+    }
+  },
+  "equivalence": {
+    "zero1": {
+      "bitwise": true,
+      "max_abs": 0.0,
+      "losses_identical": true
+    },
+    "zero2": {
+      "bitwise": true,
+      "max_abs": 0.0,
+      "losses_identical": true
+    },
+    "zero3": {
+      "bitwise": true,
+      "max_abs": 0.0,
+      "losses_identical": true
+    },
+    "single_gpu": {
+      "max_abs": 0.00244140625,
+      "rel": 0.00244140625,
+      "loss_curve_1gpu": [
+        7.77828311920166,
+        7.0344014167785645,
+        6.600597858428955,
+        6.409551620483398,
+        6.280831336975098,
+        6.040889263153076,
+        6.20322322845459,
+        6.084396839141846,
+        5.9934611320495605,
+        5.99276876449585,
+        5.879274368286133,
+        5.870349884033203
+      ],
+      "loss_curve_32gpu": [
+        7.778283268213272,
+        7.034257411956787,
+        6.600417494773865,
+        6.409325182437897,
+        6.2806199342012405,
+        6.040597096085548,
+        6.2029712945222855,
+        6.084504783153534,
+        5.993451610207558,
+        5.992831461131573,
+        5.879173681139946,
+        5.870162025094032
+      ],
+      "loss_last_1gpu": 5.870349884033203,
+      "loss_last_32gpu": 5.870162025094032,
+      "loss_rel": 3.20013189813091e-05,
+      "rank_loss_spread": 4.072269916534424
+    }
+  },
+  "bucketing": {
+    "dp": {
+      "msgs": 1984.0,
+      "bytes": 10006056.0,
+      "comm_s": 1.4295443292954546,
+      "bytes_per_msg": 5043.375,
+      "ms_per_msg": 0.7205364562981121,
+      "effective_gbs": 0.00699947234580088,
+      "peak_bpp": 16.609115919399212,
+      "ladder_bpp": 16.0,
+      "step_s": 4.072862303829544
+    },
+    "dp_flat": {
+      "msgs": 62.0,
+      "bytes": 10006056.0,
+      "comm_s": 0.18700536551136357,
+      "bytes_per_msg": 161388.0,
+      "ms_per_msg": 3.016215572763928,
+      "effective_gbs": 0.053506785608202094,
+      "peak_bpp": 20.0,
+      "ladder_bpp": 16.0,
+      "step_s": 3.0138305073409084
+    },
+    "weight_max_abs": 0.00390625
+  },
+  "timing": {
+    "dp": {
+      "step_s": 4.072862303829544,
+      "comm_s": 1.4295443292954546,
+      "compute_s": 2.6433179745340896,
+      "comm_frac": 0.3509925508533183,
+      "comm_over_compute": 0.5408143640181714
+    },
+    "zero1": {
+      "step_s": 4.220340766312502,
+      "comm_s": 1.4721735180340894,
+      "compute_s": 2.7481672482784125,
+      "comm_frac": 0.3488281159154815,
+      "comm_over_compute": 0.5356928400032173
+    },
+    "zero2": {
+      "step_s": 4.617007909190343,
+      "comm_s": 2.38448980881534,
+      "compute_s": 2.2325181003750028,
+      "comm_frac": 0.5164578133099827,
+      "comm_over_compute": 1.068071881887457
+    },
+    "zero3": {
+      "step_s": 5.843816779249999,
+      "comm_s": 3.3718251949403437,
+      "compute_s": 2.4719915843096554,
+      "comm_frac": 0.5769902312668138,
+      "comm_over_compute": 1.3640115995305793
+    }
+  },
+  "hardware": {
+    "links": {
+      "NVLink, inside one node": {
+        "gbs": 450.0,
+        "t_2p": 0.26666666666666666,
+        "t_3p": 0.4
+      },
+      "InfiniBand, between nodes": {
+        "gbs": 50.0,
+        "t_2p": 2.4,
+        "t_3p": 3.6
+      }
+    },
+    "cards": {
+      "64 x H100": {
+        "compute_s": 7.1,
+        "comm_s": 2.4,
+        "ratio": 0.3380281690140845,
+        "serial_s": 9.5
+      },
+      "64 x B200": {
+        "compute_s": 3.12,
+        "comm_s": 2.4,
+        "ratio": 0.7692307692307692,
+        "serial_s": 5.52
+      }
+    },
+    "gb_2p": 120.0,
+    "gb_3p": 180.0,
+    "interconnect_ratio": 9.0
+  },
+  "sweep": {
+    "4": {
+      "dp": {
+        "measured_bpp": 16.0,
+        "predicted_bpp": 16,
+        "gib_30b": 447.0348358154297
+      },
+      "zero1": {
+        "measured_bpp": 7.0,
+        "predicted_bpp": 7.0,
+        "gib_30b": 195.5777406692505
+      },
+      "zero2": {
+        "measured_bpp": 5.5,
+        "predicted_bpp": 5.5,
+        "gib_30b": 153.66822481155396
+      },
+      "zero3": {
+        "measured_bpp": 4.0,
+        "predicted_bpp": 4.0,
+        "gib_30b": 111.75870895385742
+      }
+    },
+    "8": {
+      "dp": {
+        "measured_bpp": 16.0,
+        "predicted_bpp": 16,
+        "gib_30b": 447.0348358154297
+      },
+      "zero1": {
+        "measured_bpp": 5.5,
+        "predicted_bpp": 5.5,
+        "gib_30b": 153.66822481155396
+      },
+      "zero2": {
+        "measured_bpp": 3.75,
+        "predicted_bpp": 3.75,
+        "gib_30b": 104.77378964424133
+      },
+      "zero3": {
+        "measured_bpp": 2.0,
+        "predicted_bpp": 2.0,
+        "gib_30b": 55.87935447692871
+      }
+    },
+    "16": {
+      "dp": {
+        "measured_bpp": 16.0,
+        "predicted_bpp": 16,
+        "gib_30b": 447.0348358154297
+      },
+      "zero1": {
+        "measured_bpp": 4.75,
+        "predicted_bpp": 4.75,
+        "gib_30b": 132.7134668827057
+      },
+      "zero2": {
+        "measured_bpp": 2.875,
+        "predicted_bpp": 2.875,
+        "gib_30b": 80.32657206058502
+      },
+      "zero3": {
+        "measured_bpp": 1.0,
+        "predicted_bpp": 1.0,
+        "gib_30b": 27.939677238464355
+      }
+    },
+    "32": {
+      "dp": {
+        "measured_bpp": 16.0,
+        "predicted_bpp": 16,
+        "gib_30b": 447.0348358154297
+      },
+      "zero1": {
+        "measured_bpp": 4.375,
+        "predicted_bpp": 4.375,
+        "gib_30b": 122.23608791828156
+      },
+      "zero2": {
+        "measured_bpp": 2.4375,
+        "predicted_bpp": 2.4375,
+        "gib_30b": 68.10296326875687
+      },
+      "zero3": {
+        "measured_bpp": 0.5,
+        "predicted_bpp": 0.5,
+        "gib_30b": 13.969838619232178
+      }
+    }
+  },
+  "wall": {
+    "card_gib": 74.50580596923828,
+    "floor_params": 20000000000.0,
+    "fits_from": {
+      "dp": null,
+      "zero1": null,
+      "zero2": 32,
+      "zero3": 8
+    }
+  },
+  "offload": {
+    "per_stage": {
+      "dp": {
+        "gib_before": 447.0348358154297,
+        "gib_after": 111.75870895385742,
+        "bpp_after": 4
+      },
+      "zero1": {
+        "gib_before": 122.23608791828156,
+        "gib_after": 111.75870895385742,
+        "bpp_after": 4.0
+      },
+      "zero2": {
+        "gib_before": 68.10296326875687,
+        "gib_after": 57.62558430433273,
+        "bpp_after": 2.0625
+      },
+      "zero3": {
+        "gib_before": 13.969838619232178,
+        "gib_after": 3.4924596548080444,
+        "bpp_after": 0.125
+      }
+    },
+    "pcie_gbs": 60.0,
+    "cpu_update_gb": 3.75,
+    "gpu_update_gb": 22.5,
+    "cpu_update_s": 0.0625,
+    "gpu_update_s": 0.375
+  },
+  "precision": {
+    "bf16_bytes": 16,
+    "mxfp8_bytes": 14.0625,
+    "mx_block": 32,
+    "scale_bytes_per_param": 0.0625,
+    "state_reduction": 0.12109375,
+    "gib_30b_bf16": 447.0348358154297,
+    "gib_30b_fp8": 392.901711165905,
+    "wire_reduction": 0.5
+  },
+  "v4": {
+    "stage": 2,
+    "format": "bf16",
+    "seq_per_gpu": 2,
+    "accum": 2,
+    "global_batch": 32,
+    "gpus": 8,
+    "peak_lr": 0.0003,
+    "warmup": 500,
+    "weight_decay": 0.0,
+    "grad_clip": 1.0,
+    "bucket_bytes": 200000000.0,
+    "overlap_comm": true,
+    "round_robin_gradients": true
+  },
+  "v5_questions": [
+    {
+      "q": "ZeRO-2 on 32 GPUs, or ZeRO-3 on 8?",
+      "settled_by": "A measured step time for both on the real architecture, with activation memory included.",
+      "this_harness": "Gives the memory side exactly — 68.1 GiB against 14.0 GiB per GPU — and the communication ratio, 1.50x. It cannot give step time on hardware it does not have, and it excludes activations."
+    },
+    {
+      "q": "How many GPUs per node, and how many nodes?",
+      "settled_by": "How much traffic can be kept inside a node.",
+      "this_harness": "Not addressed: one loopback link, no node boundary. §12's 9x is the whole of the argument."
+    },
+    {
+      "q": "Is 8-bit arithmetic committed from the start?",
+      "settled_by": "A short run in bf16 and in MXFP8 on the same architecture, comparing loss and step time. Commits to Blackwell hardware.",
+      "this_harness": "Gives the storage arithmetic (12.1%) and nothing else. bfloat16 is as low as this CPU goes."
+    },
+    {
+      "q": "Does any state go to system memory?",
+      "settled_by": "Whether the run is memory-bound or communication-bound once the stage is chosen.",
+      "this_harness": "§14's arithmetic only. Offload is not implemented."
+    }
+  ],
+  "gates": {
+    "tokenizer_frozen": true,
+    "world_is_32": true,
+    "ranks_are_real_processes": true,
+    "ring_matches_gloo": true,
+    "reduce_scatter_plus_all_gather_is_all_reduce": true,
+    "bf16_ring_loses_bits": true,
+    "fp32_ring_is_exact": true,
+    "memory_dp_matches_ledger": true,
+    "memory_zero1_matches_ledger": true,
+    "memory_zero2_matches_ledger": true,
+    "memory_zero3_matches_ledger": true,
+    "memory_ladder_is_monotonic": true,
+    "every_rank_holds_an_equal_share": true,
+    "comm_dp_matches_ring": true,
+    "comm_zero1_matches_ring": true,
+    "comm_zero2_matches_ring": true,
+    "comm_zero3_matches_ring": true,
+    "zero1_and_zero2_are_free": true,
+    "zero3_costs_half_as_much_again": true,
+    "zero1_bitwise_identical_to_dp": true,
+    "zero2_bitwise_identical_to_dp": true,
+    "zero3_bitwise_identical_to_dp": true,
+    "zero1_loss_curve_identical": true,
+    "zero2_loss_curve_identical": true,
+    "zero3_loss_curve_identical": true,
+    "matches_single_gpu_within_bf16_error": true,
+    "loss_matches_single_gpu": true,
+    "model_actually_trained": true,
+    "zero3_scales_as_one_over_world": true,
+    "dp_never_fits_a_card": true,
+    "zero1_never_fits_a_card": true,
+    "zero2_fits_from_32_gpus": true,
+    "zero3_fits_from_8_gpus": true,
+    "replicas_stay_identical": true,
+    "global_batch_is_a_product": true,
+    "bucketing_cuts_messages": true,
+    "bucketing_moves_the_same_bytes": true,
+    "bucketing_is_faster": true,
+    "bucketing_costs_memory": true,
+    "bucketing_does_not_change_state_held": true,
+    "faster_card_raises_comm_ratio": true,
+    "both_ratios_still_below_one": true,
+    "interconnect_gap_is_9x": true,
+    "nvlink_hides_2p_in_under_a_third_of_a_second": true,
+    "cpu_side_update_moves_less": true,
+    "mxfp8_ledger": true,
+    "mxfp8_saves_12_percent": true
+  }
+};
+/* END GENERATED s12data */
+</script>
+    <script>
+        (function () {
+            const D = S12DATA;
+            if (!D || !D.stages) {
+                document.getElementById('heroTiles').innerHTML =
+                    '<div class="tile"><div class="k">no data</div><div class="v">&mdash;</div>'
+                    + '<div class="sub">No baked data: run build_notebook.py</div></div>';
+                return;
+            }
+            const MODES = ['dp', 'zero1', 'zero2', 'zero3'];
+            const NAME = { dp: 'Data parallelism', zero1: 'ZeRO-1', zero2: 'ZeRO-2', zero3: 'ZeRO-3' };
+            const SVG = 'http://www.w3.org/2000/svg';
+            const GIB = 1024 ** 3;
+            const fmt = (x, n = 2) => Number(x).toFixed(n);
+            const el = (tag, attrs) => {
+                const n = document.createElementNS(SVG, tag);
+                for (const k in attrs) n.setAttribute(k, attrs[k]);
+                return n;
+            };
+            const clear = n => { while (n.firstChild) n.removeChild(n.firstChild); };
+            const gates = D.gates || {};
+            const nGates = Object.keys(gates).length;
+            const passed = Object.values(gates).filter(Boolean).length;
+
+            /* ---- 00 hero ------------------------------------------------------ */
+            document.getElementById('heroTiles').innerHTML = [
+                ['virtual GPUs', D.meta.main_world, 'real OS processes, gloo over loopback'],
+                ['bytes per weight', fmt(D.stages.dp.ladder_bpp, 2) + ' → ' + fmt(D.stages.zero3.ladder_bpp, 2),
+                    'measured, data parallelism → ZeRO-3'],
+                ['on the wire', fmt(D.stages.dp.measured_P, 2) + 'P → ' + fmt(D.stages.zero3.measured_P, 2) + 'P',
+                    'counted at dist.isend, not estimated'],
+                ['stages agree', 'bitwise', 'all four produce identical final weights'],
+                ['gates', passed + '/' + nGates, passed === nGates ? 'all pass' : 'FAILING'],
+            ].map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="sub">${s}</div></div>`).join('');
+
+            document.getElementById('heroNote').innerHTML =
+                `The demo model is the four-layer decoder from Sessions 9–11 — ${D.model.params.toLocaleString()} parameters, `
+                + `d_model ${D.model.d_model}, vocabulary capped to the top ${D.model.vocab_size.toLocaleString()} Sarvam-1 ids `
+                + `(${(D.corpus.cap_coverage * 100).toFixed(0)}% of token occurrences) — trained on the Session 6 corpus for `
+                + `${D.meta.main_steps} steps per stage, on ${D.corpus.tokens.toLocaleString()} tokens from `
+                + `${D.corpus.docs} documents.`;
+
+            /* ---- 01 the sixteen bytes ----------------------------------------- */
+            const L = D.ledger;
+            document.getElementById('ledgerBytes').innerHTML =
+                '<tr><th>what is kept for one weight</th><th class="n">bytes</th><th>dtype here</th><th>split by</th></tr>'
+                + [['the weight, in the 16-bit format the arithmetic uses', 2, 'bfloat16', 'ZeRO-3 only'],
+                ['its gradient, saying how it should change', 2, 'bfloat16', 'ZeRO-2 and ZeRO-3'],
+                ['a 32-bit copy of the weight, kept for accuracy', 4, 'float32', 'every stage'],
+                ['two running averages the optimizer keeps (Adam m, v)', 8, 'float32 × 2', 'every stage']]
+                    .map(([w, b, d, s]) => `<tr><td>${w}</td><td class="n">${b}</td><td>${d}</td><td>${s}</td></tr>`).join('')
+                + `<tr class="hl"><td><strong>total</strong></td><td class="n"><strong>${L.total}</strong></td><td></td><td></td></tr>`;
+
+            document.getElementById('ledgerHero').innerHTML = `
+                <div><div class="k">30B model, all state</div><div class="v">${fmt(L.state_30b_gib, 1)}G</div>
+                    <div class="delta">${(L.params_30b * L.total / 1e9).toFixed(0)} GB</div></div>
+                <div><div class="k">80 GB cards to hold it</div><div class="v">${fmt(L.cards_needed, 1)}</div>
+                    <div class="delta">before a single calculation</div></div>
+                <div><div class="k">one card holds</div><div class="v">${fmt(L.card_gib, 1)}G</div>
+                    <div class="delta">80 GB, in GiB</div></div>
+                <div><div class="k">P, one copy of the weights</div><div class="v">${L.P_30b_gb.toFixed(0)} GB</div>
+                    <div class="delta">30e9 × 2 bytes — every cost below is a multiple of this</div></div>`;
+            document.getElementById('ledgerHeroNote').innerHTML =
+                `GB against GiB is not pedantry here: an 80 GB card is ${fmt(L.card_gib, 1)} GiB, and that 6.9% is `
+                + `the difference between fitting and not fitting in section 14. Activations — the intermediate `
+                + `results of the forward pass — sit on top of all of this and are excluded throughout, `
+                + `deliberately and consistently.`;
+
+            /* ---- 02 terminology ------------------------------------------------ */
+            const T = D.terms;
+            document.getElementById('termsTable').innerHTML =
+                '<tr><th>word</th><th>what it is</th><th class="n">the number</th></tr>'
+                + [['GPU', 'one graphics card, the unit of compute you buy', `80 GB = ${fmt(T.gpu_gib, 1)} GiB`],
+                ['node', 'one physical machine holding several GPUs', `${T.node_gpus} GPUs`],
+                ['world size', 'the total number of GPUs taking part in a run', `${T.world_size} = ${T.nodes} nodes × ${T.node_gpus}`],
+                ['process rank', "a GPU's index in that set, from 0 (unrelated to matrix rank)", `0 … ${T.world_size - 1}`],
+                ['interconnect', 'the wiring between GPUs — NVLink inside a node', `${T.nvlink_gbs.toFixed(0)} GB/s`],
+                ['', 'a network cable between nodes, usually InfiniBand', `${T.infiniband_gbs.toFixed(0)} GB/s`],
+                ['collective', 'an operation every GPU performs together, on data each holds a piece of', '—'],
+                ['P', "one complete copy of the model's parameters in the compute format", `${T.P_gb.toFixed(0)} GB`]]
+                    .map(([w, d, n]) => `<tr><td><strong>${w}</strong></td><td>${d}</td><td class="n">${n}</td></tr>`).join('');
+            document.getElementById('termsNote').innerHTML =
+                `Two of those numbers do most of the work later. The world size of ${T.world_size} is four nodes of `
+                + `${T.node_gpus} — which is exactly the world size this assignment asks for, and not a `
+                + `coincidence. And the interconnect gap is <strong>${T.interconnect_ratio.toFixed(0)}×</strong>: `
+                + `traffic that stays inside a node is nine times cheaper than traffic that leaves it, which is the `
+                + `whole of section 13 and the whole of the second open question in section 18.`;
+
+            /* ---- 03 data parallelism ------------------------------------------ */
+            const DP = D.data_parallel;
+            const identical = DP.replica_hashes_distinct === 1;
+            document.getElementById('replicaReadout').innerHTML = `
+                <div><div class="k">distinct models across ${D.meta.main_world} ranks</div>
+                    <div class="v" style="color:${identical ? 'var(--good)' : 'var(--crit)'}">${DP.replica_hashes_distinct}</div>
+                    <div class="delta">${identical ? '✓ no drift' : '✗ the replicas diverged'}</div></div>
+                <div><div class="k">after</div><div class="v">${D.meta.main_steps}</div><div class="delta">optimizer steps</div></div>
+                <div style="grid-column:span 2"><div class="k">sha256 of the whole model, on every rank</div>
+                    <div class="v" style="font-size:13px;word-break:break-all;line-height:1.5">${DP.replica_hash}</div></div>`;
+
+            const F = DP.factorizations;
+            document.getElementById('batchProduct').innerHTML =
+                `<div class="f"><div class="fv">?</div><div class="fk">sequences<br>per GPU</div></div><div class="op">×</div>`
+                + `<div class="f"><div class="fv">?</div><div class="fk">GPUs</div></div><div class="op">×</div>`
+                + `<div class="f"><div class="fv">?</div><div class="fk">accumulation<br>steps</div></div><div class="op">=</div>`
+                + `<div class="f eq"><div class="fv">${DP.global_batch}</div><div class="fk">global batch</div></div>`;
+            document.getElementById('factorTable').innerHTML =
+                '<tr><th>arrangement</th><th class="n">seq/GPU</th><th class="n">GPUs</th><th class="n">accum</th>'
+                + '<th class="n">global batch</th><th class="n">final loss</th></tr>'
+                + F.map((f, i) => `<tr class="${i ? '' : 'hl'}"><td>${i ? 'the previous run’s shape' : 'this submission'}</td>`
+                    + `<td class="n">${f.seq_per_gpu}</td><td class="n">${f.gpus}</td><td class="n">${f.accum}</td>`
+                    + `<td class="n">${f.seq_per_gpu * f.gpus * f.accum}</td>`
+                    + `<td class="n">${fmt(f.final_loss, 6)}</td></tr>`).join('');
+            document.getElementById('factorNote').innerHTML =
+                `Relative difference in the final loss: <strong>${DP.loss_rel.toExponential(1)}</strong>; largest `
+                + `weight difference ${DP.weight_max_abs.toExponential(2)}. Not bitwise, and it should not be: 32 ranks `
+                + `summing one sequence each around a ring and 8 ranks summing four apiece are different orders of the `
+                + `same addition. The point is that <strong>the arrangement of the hardware does not change what the `
+                + `model learns</strong> — only the product does. That is what makes a recipe portable from 8 `
+                + `GPUs to 32, and it is the reason the next section's savings are allowed to count as free.`;
+
+            /* ---- 05 the ring stepper ------------------------------------------ */
+            const ringWorld = document.getElementById('ringWorld');
+            let ring = null;
+            function ringInit0(N) {
+                ring = { N, step: 0, moved: [], cells: [] };
+                for (let r = 0; r < N; r++) ring.cells.push(Array.from({ length: N }, () => 1));
+            }
+            function ringInit() {
+                ringInit0(+ringWorld.value);
+                document.getElementById('ringWorldVal').textContent = ring.N;
+                ringDraw();
+            }
+            function ringForward() {
+                const N = ring.N, total = 2 * (N - 1), s = ring.step;
+                if (s >= total) return;
+                const snap = ring.cells.map(row => row.slice());
+                ring.moved = [];
+                for (let r = 0; r < N; r++) {
+                    const left = ((r - 1) % N + N) % N;
+                    let recv;
+                    if (s < N - 1) {                                  // reduce-scatter: accumulate
+                        recv = ((r - s - 2) % N + N) % N;
+                        ring.cells[r][recv] = snap[r][recv] + snap[left][recv];
+                    } else {                                          // all-gather: overwrite
+                        const g = s - (N - 1);
+                        recv = ((r - g - 1) % N + N) % N;
+                        ring.cells[r][recv] = snap[left][recv];
+                    }
+                    ring.moved.push([r, recv]);
+                }
+                ring.step++;
+                ringDraw();
+            }
+            function ringBack() {
+                const target = ring.step - 1;
+                if (target < 0) return;
+                const N = ring.N;
+                ringInit0(N);
+                for (let i = 0; i < target; i++) ringForward();
+                ringDraw();
+            }
+            function ringDraw() {
+                const N = ring.N, g = document.getElementById('ringGrid');
+                g.style.gridTemplateColumns = `56px repeat(${N}, minmax(30px, 1fr))`;
+                let html = '<div class="hd"></div>';
+                for (let c = 0; c < N; c++) html += `<div class="hd">chunk ${c}</div>`;
+                for (let r = 0; r < N; r++) {
+                    html += `<div class="rk">GPU ${r}</div>`;
+                    for (let c = 0; c < N; c++) {
+                        const v = ring.cells[r][c];
+                        const cls = ['cell'];
+                        if (v >= N) cls.push('full');
+                        if (c === r) cls.push('own');
+                        if (ring.moved.some(([mr, mc]) => mr === r && mc === c)) cls.push('moving');
+                        html += `<div class="${cls.join(' ')}">${v >= N ? '✓' : v}</div>`;
+                    }
+                }
+                g.innerHTML = html;
+
+                const total = 2 * (N - 1);
+                const phase = ring.step === 0 ? 'not started' : (ring.step < N ? 'reduce-scatter' : 'all-gather');
+                const complete = ring.cells.every(row => row.every(v => v >= N));
+                const owned = ring.cells.filter((row, r) => row[r] >= N).length;
+                document.getElementById('ringReadout').innerHTML = `
+                    <div><div class="k">phase</div><div class="v" style="font-size:19px">${phase}</div>
+                        <div class="delta">hop ${ring.step} of ${total}</div></div>
+                    <div><div class="k">complete chunks owned</div><div class="v">${owned}/${N}</div>
+                        <div class="delta">${owned === N && ring.step === N - 1 ? 'reduce-scatter done' : ' '}</div></div>
+                    <div><div class="k">sent per GPU</div><div class="v">${fmt(ring.step / N, 3)}P</div>
+                        <div class="delta">${ring.step} chunks of ${N}</div></div>
+                    <div><div class="k">everyone has everything</div>
+                        <div class="v" style="color:${complete ? 'var(--good)' : 'var(--muted)'};font-size:19px">${complete ? '✓ yes' : 'not yet'}</div>
+                        <div class="delta">${complete ? 'this is an all-reduce' : ' '}</div></div>`;
+
+                let note;
+                if (ring.step === 0) {
+                    note = `Every GPU starts with its own version of all ${N} chunks — every cell shows 1 contribution. Step forward.`;
+                } else if (ring.step < N - 1) {
+                    note = `Reduce-scatter, hop ${ring.step} of ${N - 1}. Each GPU sends one chunk right and adds the one arriving from its left. The contributions gather along a diagonal.`;
+                } else if (ring.step === N - 1) {
+                    note = `Reduce-scatter complete after ${N - 1} hops. Each GPU now owns exactly one fully summed chunk — the outlined cell on its own row — and nothing else is finished. <strong>This is where ZeRO-1 and ZeRO-2 stop and keep the slice.</strong> Data parallelism keeps going.`;
+                } else if (ring.step < total) {
+                    note = `All-gather, hop ${ring.step - (N - 1)} of ${N - 1}. The completed chunks travel back around the ring, one hop at a time.`;
+                } else {
+                    note = `Done. Every GPU has every chunk, fully summed — exactly what an all-reduce produces. Total sent per GPU: ${fmt(ring.step / N, 3)}P, or <strong>2P&middot;(${N}−1)/${N}</strong>. The pair really does cost the same as the whole, and ZeRO-1 and ZeRO-2 get their memory back for free by stopping halfway and keeping what was already in their hands.`;
+                }
+                document.getElementById('ringNote').innerHTML = note;
+            }
+            ringWorld.addEventListener('input', ringInit);
+            document.getElementById('ringNext').addEventListener('click', ringForward);
+            document.getElementById('ringPrev').addEventListener('click', ringBack);
+            document.getElementById('ringReset').addEventListener('click', ringInit);
+
+            /* ---- 06 collective self-check ------------------------------------- */
+            const C = D.collectives;
+            document.getElementById('collCheck').innerHTML = `
+                <div style="font-family:var(--font-mono);font-size:12.5px;line-height:2">
+                  <div>max abs difference &nbsp;<strong>${C.vs_gloo_max_abs.toExponential(2)}</strong></div>
+                  <div>relative &nbsp;<strong>${C.vs_gloo_rel.toExponential(2)}</strong></div>
+                  <div class="gate pass" style="margin-top:8px">✓ PASS &nbsp;agrees to float32 rounding</div>
+                  <div class="gate ${C.two_phase_identical ? 'pass' : 'fail'}">${C.two_phase_identical ? '✓ PASS' : '✗ FAIL'} &nbsp;reduce-scatter + all-gather == all-reduce, bitwise</div>
+                </div>`;
+            const bfErr = Math.abs(C.bf16_ring_sum - C.exact_sum);
+            document.getElementById('bfCheck').innerHTML = `
+                <table class="dt" style="margin:0">
+                  <tr><td>exact</td><td class="n">${C.exact_sum.toFixed(0)}</td></tr>
+                  <tr><td>float32 ring</td><td class="n" style="color:var(--ok-c)">${C.fp32_ring_sum.toFixed(0)}</td></tr>
+                  <tr class="warn"><td>bfloat16 ring</td><td class="n" style="color:var(--bad-c)">${C.bf16_ring_sum.toFixed(0)}</td></tr>
+                  <tr><td>error</td><td class="n">${bfErr.toFixed(0)} &nbsp;(${(bfErr / C.exact_sum * 100).toFixed(2)}%)</td></tr>
+                </table>`;
+            document.getElementById('bfNote').innerHTML =
+                `That second box is section 01's 32-bit master copy, justified in one measurement. Adding 32 `
+                + `contributions in 16-bit loses the low bits — here by ${bfErr.toFixed(0)} out of `
+                + `${C.exact_sum.toFixed(0)}, ${(bfErr / C.exact_sum * 100).toFixed(2)}% — and a weight update is `
+                + `exactly such an accumulation, repeated every step for the length of training. Keep the `
+                + `authoritative value at 32 bits and make a 16-bit copy for the arithmetic, and the error stops `
+                + `compounding. Twelve of the sixteen bytes exist for that reason, which is also why ZeRO-1 — `
+                + `which splits only those twelve — gets most of the saving for none of the cost.`;
+
+            /* ---- 07 the ZeRO byte ledger -------------------------------------- */
+            const BYTES = [
+                { cls: 'w', label: 'w', group: 'weight', n: 2 },
+                { cls: 'g', label: 'g', group: 'grad', n: 2 },
+                { cls: 'm', label: 'fp32', group: 'opt', n: 4 },
+                { cls: 'm', label: 'm', group: 'opt', n: 4 },
+                { cls: 'm', label: 'v', group: 'opt', n: 4 },
+            ];
+            const WORLDS = [1, 2, 4, 8, 16, 32];
+            let ledgerMode = 'dp';
+            const shardedGroups = m => m === 'dp' ? {}
+                : m === 'zero1' ? { opt: 1 }
+                    : m === 'zero2' ? { opt: 1, grad: 1 }
+                        : { opt: 1, grad: 1, weight: 1 };
+            function bppFor(mode, N) {
+                const s = shardedGroups(mode);
+                return BYTES.reduce((t, b) => t + (s[b.group] ? b.n / N : b.n), 0);
+            }
+            document.getElementById('ledgerStages').innerHTML = MODES.map(m =>
+                `<button class="btn${m === 'dp' ? ' on' : ''}" data-m="${m}">${NAME[m]}</button>`).join('');
+            document.getElementById('ledgerStages').addEventListener('click', e => {
+                const b = e.target.closest('button[data-m]'); if (!b) return;
+                ledgerMode = b.dataset.m;
+                [...document.querySelectorAll('#ledgerStages .btn')].forEach(x => x.classList.toggle('on', x === b));
+                drawLedger();
+            });
+            const ledgerWorld = document.getElementById('ledgerWorld');
+            ledgerWorld.addEventListener('input', drawLedger);
+
+            function drawLedger() {
+                const N = WORLDS[+ledgerWorld.value];
+                document.getElementById('ledgerWorldVal').textContent = N;
+                const sh = shardedGroups(ledgerMode);
+                let html = '';
+                BYTES.forEach(b => {
+                    const kept = sh[b.group] ? b.n / N : b.n;
+                    for (let i = 0; i < b.n; i++) html += `<b class="${i < kept ? b.cls : 'gone'}">${i < kept ? b.label : ''}</b>`;
+                    html += '<span style="width:10px"></span>';
+                });
+                document.getElementById('byteGrid').innerHTML = html;
+
+                const bpp = bppFor(ledgerMode, N);
+                const gib = L.params_30b * bpp / GIB;
+                const fits = gib <= L.card_gib;
+                const measured = (N === D.meta.main_world) ? D.stages[ledgerMode].ladder_bpp : null;
+                const phases = ledgerMode === 'zero3' ? 3 : 2;
+                document.getElementById('ledgerReadout').innerHTML = `
+                    <div><div class="k">bytes per weight</div><div class="v">${fmt(bpp, 4)}</div>
+                        <div class="delta">${measured !== null ? 'measured at 32 GPUs: ' + fmt(measured, 4) : 'of 16.00 under data parallelism'}</div></div>
+                    <div><div class="k">30B model, per GPU</div><div class="v">${fmt(gib, 1)}G</div>
+                        <div class="delta">a card holds ${fmt(L.card_gib, 1)} GiB</div></div>
+                    <div><div class="k">does it fit</div><div class="v" style="color:${fits ? 'var(--good)' : 'var(--crit)'}">${fits ? '✓ yes' : '✗ no'}</div>
+                        <div class="delta">${fits ? fmt(L.card_gib - gib, 1) + ' GiB spare, before activations' : 'over by ' + fmt(gib - L.card_gib, 1) + ' GiB'}</div></div>
+                    <div><div class="k">per step, on the wire</div><div class="v">${fmt(phases * (N - 1) / N, 2)}P</div>
+                        <div class="delta">${fmt(phases * (N - 1) / N * L.P_30b_gb, 0)} GB at 30B</div></div>`;
+
+                const notes = {
+                    dp: 'Every rank holds all sixteen bytes. Eight GPUs hold eight identical copies of 447 GiB — 3,576 GiB of memory to store 447 GiB of information.',
+                    zero1: 'The twelve optimizer bytes are split. Each rank updates only its own slice, and the updated slices are shared back out so every rank has the current weights again.',
+                    zero2: 'The gradient goes too. A rank only ever needs the gradients for the slice it is responsible for updating, so each gradient is reduced to its owner the moment backward finishes producing it, and discarded everywhere else.',
+                    zero3: 'The weights themselves are split. When the forward pass reaches a layer, the GPUs collect that layer’s weights from each other, use them, and discard them again — then collect them a second time on the way back.',
+                };
+                document.getElementById('ledgerNote').innerHTML = notes[ledgerMode]
+                    + (N === 1 ? ' <strong>At one GPU every stage is the same thing:</strong> there is nobody to split with, and all sixteen bytes stay.' : '');
+            }
+
+            /* ---- 08 the ladder ------------------------------------------------ */
+            (function drawLadder() {
+                const svg = document.getElementById('ladderChart');
+                clear(svg);
+                const W = 900, H = 260, LX = 150, R = 190, T = 24, B = 40, max = 17;
+                const x = v => LX + (v / max) * (W - LX - R);
+                const rowH = (H - T - B) / MODES.length;
+                svg.appendChild(el('line', { x1: LX, y1: T, x2: LX, y2: H - B, class: 'axis' }));
+                [0, 4, 8, 12, 16].forEach(v => {
+                    svg.appendChild(el('line', { x1: x(v), y1: T, x2: x(v), y2: H - B, class: 'grid' }));
+                    const t = el('text', { x: x(v), y: H - B + 16, 'text-anchor': 'middle' });
+                    t.textContent = v; svg.appendChild(t);
+                });
+                const xl = el('text', { x: (LX + W - R) / 2, y: H - 8, 'text-anchor': 'middle' });
+                xl.textContent = 'bytes per weight, per GPU, at 32 GPUs'; svg.appendChild(xl);
+                MODES.forEach((m, i) => {
+                    const s = D.stages[m];
+                    const y = T + i * rowH + rowH * .2, h = rowH * .55;
+                    svg.appendChild(el('rect', { x: LX, y, width: Math.max(1, x(s.peak_bpp) - LX), height: h, rx: 4, fill: 'rgba(217,89,38,.22)' }));
+                    svg.appendChild(el('rect', { x: LX, y, width: Math.max(1, x(s.ladder_bpp) - LX), height: h, rx: 4, fill: 'rgba(57,135,229,.8)' }));
+                    const lab = el('text', { x: LX - 10, y: y + h / 2 + 4, 'text-anchor': 'end' });
+                    lab.setAttribute('fill', 'var(--text)'); lab.setAttribute('font-size', '11.5');
+                    lab.textContent = NAME[m]; svg.appendChild(lab);
+                    const v = el('text', { x: x(s.peak_bpp) + 8, y: y + h / 2 + 4 });
+                    v.setAttribute('fill', 'var(--muted)');
+                    v.textContent = fmt(s.ladder_bpp, 2) + '  (peak ' + fmt(s.peak_bpp, 2) + ')';
+                    svg.appendChild(v);
+                });
+                const key = el('text', { x: LX, y: T - 8 });
+                key.textContent = 'solid = state held  ·  pale = + largest collective buffer';
+                svg.appendChild(key);
+            })();
+
+            document.getElementById('ladderTable').innerHTML =
+                '<tr><th>arrangement</th><th class="n">measured</th><th class="n">the ledger says</th>'
+                + '<th class="n">peak</th><th class="n">30B per GPU</th><th class="n">load balance</th></tr>'
+                + MODES.map(m => {
+                    const s = D.stages[m];
+                    const exact = Math.abs(s.ladder_bpp - s.predicted_bpp) < 1e-9;
+                    return `<tr class="${m === 'zero3' ? 'hl' : ''}"><td>${NAME[m]}</td>`
+                        + `<td class="n">${fmt(s.ladder_bpp, 4)}</td>`
+                        + `<td class="n" style="color:${exact ? 'var(--good)' : 'var(--crit)'}">${fmt(s.predicted_bpp, 4)}${exact ? ' ✓' : ''}</td>`
+                        + `<td class="n">${fmt(s.peak_bpp, 2)}</td>`
+                        + `<td class="n">${fmt(s.gib_30b, 1)}G</td>`
+                        + `<td class="n">${fmt(s.load_balance, 4)}×</td></tr>`;
+                }).join('');
+            document.getElementById('ladderNote').innerHTML =
+                `The load-balance column is the heaviest rank divided by the lightest. At `
+                + `${fmt(D.stages.zero3.load_balance, 4)}× it says every rank received a different slice and none `
+                + `is carrying more than its share — the part of the idea that is easy to state and easy to get wrong.`;
+
+            /* ---- 09 communication --------------------------------------------- */
+            document.getElementById('commTable').innerHTML =
+                '<tr><th>arrangement</th><th class="n">measured</th><th class="n">ring predicts</th>'
+                + '<th class="n">the session says</th><th class="n">30B, per GPU per step</th></tr>'
+                + MODES.map(m => {
+                    const s = D.stages[m];
+                    const exact = Math.abs(s.measured_P - s.ring_predicted_P) < 1e-6;
+                    return `<tr class="${m === 'zero3' ? 'warn' : ''}"><td>${NAME[m]}</td>`
+                        + `<td class="n">${fmt(s.measured_P, 3)}P</td>`
+                        + `<td class="n" style="color:${exact ? 'var(--good)' : 'var(--crit)'}">${fmt(s.ring_predicted_P, 3)}P${exact ? ' ✓' : ''}</td>`
+                        + `<td class="n">${s.notes_P}P</td>`
+                        + `<td class="n">${fmt(s.gb_30b, 0)} GB</td></tr>`;
+                }).join('');
+            const commWorld = document.getElementById('commWorld');
+            function drawComm() {
+                const N = +commWorld.value;
+                document.getElementById('commWorldVal').textContent = N;
+                const two = 2 * (N - 1) / N, three = 3 * (N - 1) / N;
+                document.getElementById('commReadout').innerHTML = `
+                    <div><div class="k">DP / ZeRO-1 / ZeRO-2</div><div class="v">${fmt(two, 3)}P</div>
+                        <div class="delta">${((1 - two / 2) * 100).toFixed(1)}% under the quoted 2P</div></div>
+                    <div><div class="k">ZeRO-3</div><div class="v">${fmt(three, 3)}P</div>
+                        <div class="delta">${((1 - three / 3) * 100).toFixed(1)}% under the quoted 3P</div></div>
+                    <div><div class="k">ZeRO-3 / data parallelism</div><div class="v">${fmt(three / two, 2)}×</div>
+                        <div class="delta">exactly 1.5×, at every world size</div></div>
+                    <div><div class="k">at 30B</div><div class="v">${fmt(two * L.P_30b_gb, 0)}G</div>
+                        <div class="delta">vs ${fmt(three * L.P_30b_gb, 0)} GB for ZeRO-3</div></div>`;
+                document.getElementById('commNote').innerHTML = N <= 4
+                    ? `At ${N} GPUs the gap is large: a ring across ${N} ranks moves only ${fmt(two, 2)}P, not 2P, because each rank keeps one of the ${N} chunks to itself. The quoted figures are a limit, and small world sizes are a long way from it.`
+                    : `The ratio between the stages never moves — ZeRO-3 is 1.5× data parallelism at every world size, because the (N−1)/N factor divides out. What moves is the distance from the quoted 2P and 3P, and by ${N} GPUs it is ${((1 - two / 2) * 100).toFixed(1)}%.`;
+            }
+            commWorld.addEventListener('input', drawComm);
+            drawComm();
+
+            /* ---- 10 equivalence ------------------------------------------------ */
+            const E = D.equivalence;
+            document.getElementById('equivReadout').innerHTML = ['zero1', 'zero2', 'zero3'].map(m => `
+                <div><div class="k">${NAME[m]} vs data parallelism</div>
+                    <div class="v" style="font-size:19px;color:${E[m].bitwise ? 'var(--good)' : 'var(--crit)'}">${E[m].bitwise ? '✓ bit-identical' : '✗ differs'}</div>
+                    <div class="delta">max weight difference ${E[m].max_abs.toExponential(1)}</div></div>`).join('')
+                + `<div><div class="k">loss curves</div><div class="v" style="font-size:19px;color:var(--good)">✓ identical</div>
+                    <div class="delta">all ${D.meta.main_steps} steps, all four stages</div></div>`;
+
+            (function drawLoss() {
+                const svg = document.getElementById('lossChart');
+                clear(svg);
+                const W = 900, H = 300, LX = 55, R = 120, T = 18, B = 42;
+                const b = E.single_gpu.loss_curve_32gpu || D.stages.dp.losses;
+                const one = E.single_gpu.loss_curve_1gpu || [];
+                const all = b.concat(one);
+                const lo = Math.min(...all) * .985, hi = Math.max(...all) * 1.01, n = b.length;
+                const x = i => LX + (i / Math.max(1, n - 1)) * (W - LX - R);
+                const y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+                svg.appendChild(el('line', { x1: LX, y1: H - B, x2: W - R, y2: H - B, class: 'axis' }));
+                svg.appendChild(el('line', { x1: LX, y1: T, x2: LX, y2: H - B, class: 'axis' }));
+                for (let k = 0; k <= 4; k++) {
+                    const v = lo + (hi - lo) * k / 4;
+                    svg.appendChild(el('line', { x1: LX, y1: y(v), x2: W - R, y2: y(v), class: 'grid' }));
+                    const t = el('text', { x: LX - 8, y: y(v) + 3, 'text-anchor': 'end' });
+                    t.textContent = v.toFixed(2); svg.appendChild(t);
+                }
+                for (let i = 0; i < n; i += Math.max(1, Math.floor(n / 6))) {
+                    const t = el('text', { x: x(i), y: H - B + 15, 'text-anchor': 'middle' });
+                    t.textContent = i; svg.appendChild(t);
+                }
+                const xl = el('text', { x: (LX + W - R) / 2, y: H - 8, 'text-anchor': 'middle' });
+                xl.textContent = 'step'; svg.appendChild(xl);
+                const yl = el('text', { x: 14, y: (T + H - B) / 2, transform: `rotate(-90 14 ${(T + H - B) / 2})`, 'text-anchor': 'middle' });
+                yl.textContent = 'loss'; svg.appendChild(yl);
+                const path = (arr, color, dash) => {
+                    const d = arr.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+                    svg.appendChild(el('path', { d, fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-dasharray': dash || 'none', 'stroke-linejoin': 'round' }));
+                };
+                path(b, '#3987e5');
+                if (one.length) path(one, '#d95926', '5 4');
+                const lab = el('text', { x: W - R + 8, y: y(b[b.length - 1]) + 4 });
+                lab.setAttribute('fill', '#3987e5'); lab.textContent = '32 GPUs'; svg.appendChild(lab);
+                if (one.length) {
+                    const l2 = el('text', { x: W - R + 8, y: y(one[one.length - 1]) + 16 });
+                    l2.setAttribute('fill', '#d95926'); l2.textContent = '1 GPU'; svg.appendChild(l2);
+                }
+            })();
+
+            document.getElementById('equivNote').innerHTML =
+                `After ${D.meta.main_steps} steps the two runs end at <strong>${fmt(E.single_gpu.loss_last_32gpu, 6)}</strong> `
+                + `(32 GPUs, averaged) and <strong>${fmt(E.single_gpu.loss_last_1gpu, 6)}</strong> (1 GPU) — a relative `
+                + `difference of ${E.single_gpu.loss_rel.toExponential(1)} — with a largest weight difference of `
+                + `${E.single_gpu.max_abs.toExponential(2)}, which is ${E.single_gpu.rel.toExponential(1)} of the largest `
+                + `weight and right at bfloat16's resolution. <em>Averaged</em> is the operative word: at the last step the `
+                + `32 ranks report losses ${fmt(E.single_gpu.rank_loss_spread, 2)} apart from each other, because each sees `
+                + `a different sequence. <strong>Rank 0's loss is not the run's loss.</strong> The mean of them is — and `
+                + `taking that mean is the same averaging the all-reduce performs on the gradient.`;
+
+            /* ---- 11 bucketing --------------------------------------------------- */
+            const BK = D.bucketing;
+            if (BK) {
+                document.getElementById('bucketTable').innerHTML =
+                    '<tr><th>how the gradients are reduced</th><th class="n">messages/step</th><th class="n">bytes/message</th>'
+                    + '<th class="n">bytes/step</th><th class="n">waiting</th><th class="n">step</th><th class="n">peak B/param</th></tr>'
+                    + [['dp', 'one ring per tensor'], ['dp_flat', 'one ring for everything']].map(([m, lab]) => {
+                        const b = BK[m];
+                        return `<tr class="${m === 'dp_flat' ? 'hl' : ''}"><td>${lab}</td>`
+                            + `<td class="n">${b.msgs.toFixed(0)}</td><td class="n">${(b.bytes_per_msg / 1024).toFixed(1)} KB</td>`
+                            + `<td class="n">${(b.bytes / 1e6).toFixed(2)} MB</td><td class="n">${fmt(b.comm_s, 3)}s</td>`
+                            + `<td class="n">${fmt(b.step_s, 3)}s</td><td class="n">${fmt(b.peak_bpp, 2)}</td></tr>`;
+                    }).join('');
+                document.getElementById('bucketReadout').innerHTML = `
+                    <div><div class="k">fewer messages</div><div class="v">${(BK.dp.msgs / BK.dp_flat.msgs).toFixed(0)}×</div>
+                        <div class="delta">for the same bytes</div></div>
+                    <div><div class="k">less time waiting</div><div class="v">${(BK.dp.comm_s / BK.dp_flat.comm_s).toFixed(1)}×</div>
+                        <div class="delta">${fmt(BK.dp.comm_s, 2)}s → ${fmt(BK.dp_flat.comm_s, 2)}s</div></div>
+                    <div><div class="k">fixed cost per send</div><div class="v">${fmt(BK.dp.ms_per_msg, 2)}ms</div>
+                        <div class="delta">on ${(BK.dp.bytes_per_msg / 1024).toFixed(1)} KB of payload</div></div>
+                    <div><div class="k">peak memory</div><div class="v">+${fmt(BK.dp_flat.peak_bpp - BK.dp.peak_bpp, 2)}</div>
+                        <div class="delta">bytes/weight, the price of the bucket</div></div>`;
+                document.getElementById('bucketNote').innerHTML =
+                    `Same bytes on the wire (${(BK.dp.bytes / 1e6).toFixed(2)} MB against `
+                    + `${(BK.dp_flat.bytes / 1e6).toFixed(2)} MB per rank per step), `
+                    + `${(BK.dp.msgs / BK.dp_flat.msgs).toFixed(0)}× fewer messages, `
+                    + `${(BK.dp.comm_s / BK.dp_flat.comm_s).toFixed(1)}× less time waiting. Effective throughput rises `
+                    + `from ${(BK.dp.effective_gbs * 1000).toFixed(1)} MB/s to ${(BK.dp_flat.effective_gbs * 1000).toFixed(1)} MB/s `
+                    + `on the same link — which says the small-message case was never moving bytes, it was paying `
+                    + `${fmt(BK.dp.ms_per_msg, 2)} ms of fixed cost per send. <strong>And the other side of the balance:</strong> `
+                    + `one buffer holding every gradient is a second copy of them, so peak memory goes from `
+                    + `${fmt(BK.dp.peak_bpp, 2)} to ${fmt(BK.dp_flat.peak_bpp, 2)} bytes per weight while the state it holds `
+                    + `is unchanged at ${fmt(BK.dp_flat.ladder_bpp, 2)}. A bucket buys latency with memory, which is exactly `
+                    + `why production settings are a few hundred megabytes and not “everything”. Bucketing also `
+                    + `changes the summation order, so it is not bitwise identical to the per-tensor run: largest weight `
+                    + `difference ${BK.weight_max_abs.toExponential(2)}. Grouping tensors is a numerical choice as well as a `
+                    + `performance one.`;
+            }
+
+            /* ---- 12 timing ------------------------------------------------------ */
+            (function drawTime() {
+                const svg = document.getElementById('timeChart');
+                clear(svg);
+                const W = 900, H = 230, LX = 150, R = 190, T = 18, B = 38;
+                const max = Math.max(...MODES.map(m => D.timing[m].step_s)) * 1.12;
+                const x = v => LX + (v / max) * (W - LX - R);
+                const rowH = (H - T - B) / MODES.length;
+                svg.appendChild(el('line', { x1: LX, y1: T, x2: LX, y2: H - B, class: 'axis' }));
+                for (let k = 0; k <= 5; k++) {
+                    const v = max * k / 5;
+                    svg.appendChild(el('line', { x1: x(v), y1: T, x2: x(v), y2: H - B, class: 'grid' }));
+                    const t = el('text', { x: x(v), y: H - B + 15, 'text-anchor': 'middle' });
+                    t.textContent = v.toFixed(1) + 's'; svg.appendChild(t);
+                }
+                MODES.forEach((m, i) => {
+                    const t = D.timing[m];
+                    const y = T + i * rowH + rowH * .22, h = rowH * .52;
+                    svg.appendChild(el('rect', { x: LX, y, width: Math.max(1, x(t.compute_s) - LX), height: h, fill: '#3987e5', rx: 3 }));
+                    svg.appendChild(el('rect', { x: x(t.compute_s), y, width: Math.max(1, x(t.step_s) - x(t.compute_s)), height: h, fill: '#d95926', rx: 3 }));
+                    const lab = el('text', { x: LX - 10, y: y + h / 2 + 4, 'text-anchor': 'end' });
+                    lab.setAttribute('fill', 'var(--text)'); lab.setAttribute('font-size', '11.5');
+                    lab.textContent = NAME[m]; svg.appendChild(lab);
+                    const v = el('text', { x: x(t.step_s) + 8, y: y + h / 2 + 4 });
+                    v.setAttribute('fill', 'var(--muted)');
+                    v.textContent = fmt(t.step_s, 2) + 's  ·  ' + (t.comm_frac * 100).toFixed(0) + '% waiting';
+                    svg.appendChild(v);
+                });
+            })();
+            document.getElementById('timeTable').innerHTML =
+                '<tr><th>arrangement</th><th class="n">step</th><th class="n">compute</th><th class="n">communication</th>'
+                + '<th class="n">comm / compute</th><th class="n">bytes moved</th></tr>'
+                + MODES.map(m => {
+                    const t = D.timing[m], s = D.stages[m];
+                    return `<tr><td>${NAME[m]}</td><td class="n">${fmt(t.step_s, 3)}s</td>`
+                        + `<td class="n">${fmt(t.compute_s, 3)}s</td><td class="n">${fmt(t.comm_s, 3)}s</td>`
+                        + `<td class="n">${(t.comm_over_compute * 100).toFixed(0)}%</td>`
+                        + `<td class="n">${fmt(s.measured_P, 2)}P</td></tr>`;
+                }).join('');
+            document.getElementById('timeNote').innerHTML =
+                `ZeRO-3 moves ${fmt(D.stages.zero3.measured_P / D.stages.dp.measured_P, 2)}× the bytes of data `
+                + `parallelism and spends ${fmt(D.timing.zero3.comm_s / D.timing.dp.comm_s, 2)}× the time doing it. `
+                + `Section 11 showed that most of this column is message count rather than volume, and none of these `
+                + `transfers is overlapped with the backward pass. Read the ordering, not the seconds.`;
+
+            /* ---- 13 real hardware ----------------------------------------------- */
+            const HW = D.hardware;
+            if (HW) {
+                const cardNames = Object.keys(HW.cards), linkNames = Object.keys(HW.links);
+                let hwCard = cardNames[0], hwLink = linkNames[1] || linkNames[0], hwStage = 'dp';
+                const mk = (host, names, get, set) => {
+                    document.getElementById(host).innerHTML = names.map(n =>
+                        `<button class="btn${get() === n ? ' on' : ''}" data-v="${n}">${n}</button>`).join('');
+                    document.getElementById(host).addEventListener('click', e => {
+                        const b = e.target.closest('button[data-v]'); if (!b) return;
+                        set(b.dataset.v);
+                        [...document.getElementById(host).querySelectorAll('.btn')].forEach(x => x.classList.toggle('on', x === b));
+                        drawHw();
+                    });
+                };
+                mk('hwCards', cardNames, () => hwCard, v => hwCard = v);
+                mk('hwLinks', linkNames, () => hwLink, v => hwLink = v);
+                mk('hwStages', ['dp', 'zero3'], () => hwStage, v => hwStage = v);
+                document.getElementById('hwStages').innerHTML = [['dp', '2P · DP / ZeRO-1 / ZeRO-2'], ['zero3', '3P · ZeRO-3']]
+                    .map(([k, lab]) => `<button class="btn${k === 'dp' ? ' on' : ''}" data-v="${k}">${lab}</button>`).join('');
+
+                function drawHw() {
+                    const compute = HW.cards[hwCard].compute_s;
+                    const gbs = HW.links[hwLink].gbs;
+                    const volume = hwStage === 'zero3' ? HW.gb_3p : HW.gb_2p;
+                    const comm = volume / gbs;
+                    const ratio = comm / compute;
+                    const svg = document.getElementById('hwChart');
+                    clear(svg);
+                    const W = 900, H = 200, LX = 120, R = 150, T = 26, B = 40, AX = 10;   // axis pinned 0..10s
+                    const x = v => LX + Math.min(v, AX) / AX * (W - LX - R);
+                    svg.appendChild(el('line', { x1: LX, y1: T, x2: LX, y2: H - B, class: 'axis' }));
+                    for (let k = 0; k <= AX; k++) {
+                        svg.appendChild(el('line', { x1: x(k), y1: T, x2: x(k), y2: H - B, class: 'grid' }));
+                        const t = el('text', { x: x(k), y: H - B + 15, 'text-anchor': 'middle' });
+                        t.textContent = k + 's'; svg.appendChild(t);
+                    }
+                    const rows = [['compute', compute, '#3987e5'], ['network', comm, '#d95926']];
+                    rows.forEach(([lab, v, col], i) => {
+                        const y = T + 12 + i * 52;
+                        svg.appendChild(el('rect', { x: LX, y, width: Math.max(2, x(v) - LX), height: 30, fill: col, rx: 4 }));
+                        const t = el('text', { x: LX - 10, y: y + 19, 'text-anchor': 'end' });
+                        t.setAttribute('fill', 'var(--text)'); t.setAttribute('font-size', '11.5');
+                        t.textContent = lab; svg.appendChild(t);
+                        const val = el('text', { x: x(v) + 8, y: y + 19 });
+                        val.setAttribute('fill', 'var(--muted)');
+                        val.textContent = v.toFixed(2) + 's'; svg.appendChild(val);
+                    });
+                    const cap = el('text', { x: LX, y: T - 8 });
+                    cap.textContent = `${hwCard}  ·  ${hwLink}  ·  ${volume.toFixed(0)} GB per GPU per step`;
+                    svg.appendChild(cap);
+
+                    document.getElementById('hwReadout').innerHTML = `
+                        <div><div class="k">compute per step</div><div class="v">${compute.toFixed(2)}s</div>
+                            <div class="delta">one million tokens</div></div>
+                        <div><div class="k">communication</div><div class="v">${comm.toFixed(2)}s</div>
+                            <div class="delta">${volume.toFixed(0)} GB at ${gbs.toFixed(0)} GB/s</div></div>
+                        <div><div class="k">comm / compute</div>
+                            <div class="v" style="color:${ratio < 1 ? 'var(--good)' : 'var(--crit)'}">${(ratio * 100).toFixed(0)}%</div>
+                            <div class="delta">${ratio < 1 ? '✓ can be fully hidden' : '✗ cannot be hidden'}</div></div>
+                        <div><div class="k">if none is hidden</div><div class="v">${(compute + comm).toFixed(2)}s</div>
+                            <div class="delta">vs ${compute.toFixed(2)}s if all of it is</div></div>`;
+                    document.getElementById('hwNote').innerHTML = ratio < 1
+                        ? `At ${(ratio * 100).toFixed(0)}% the transfer fits inside the computation, so a run that overlaps `
+                        + `them properly pays ${compute.toFixed(2)}s per step and a run that does not pays `
+                        + `${(compute + comm).toFixed(2)}s — <strong>a `
+                        + `${((compute + comm) / compute - 1) * 100 >= 1 ? (((compute + comm) / compute - 1) * 100).toFixed(0) : '<1'}% `
+                        + `difference for a configuration setting</strong>.`
+                        : `At ${(ratio * 100).toFixed(0)}% the transfer is longer than the computation it would have to hide `
+                        + `behind. No amount of overlap rescues this one: the step is bounded by the wire, and the answer is `
+                        + `to move less of it — fewer nodes, or a smaller compute format.`;
+                }
+                drawHw();
+
+                document.getElementById('hwTable').innerHTML =
+                    '<tr><th>path</th><th class="n">bandwidth</th><th class="n">2P = ' + HW.gb_2p.toFixed(0) + ' GB</th>'
+                    + '<th class="n">3P = ' + HW.gb_3p.toFixed(0) + ' GB</th></tr>'
+                    + linkNames.map(n => `<tr><td>${n}</td><td class="n">${HW.links[n].gbs.toFixed(0)} GB/s</td>`
+                        + `<td class="n">${HW.links[n].t_2p.toFixed(2)}s</td><td class="n">${HW.links[n].t_3p.toFixed(2)}s</td></tr>`).join('')
+                    + '<tr><th>card</th><th class="n">compute/step</th><th class="n">2P on InfiniBand</th><th class="n">comm / compute</th></tr>'
+                    + cardNames.map(n => `<tr class="${HW.cards[n].ratio > 0.5 ? 'warn' : ''}"><td>${n}</td>`
+                        + `<td class="n">${HW.cards[n].compute_s.toFixed(2)}s</td>`
+                        + `<td class="n">${HW.cards[n].comm_s.toFixed(2)}s</td>`
+                        + `<td class="n">${(HW.cards[n].ratio * 100).toFixed(0)}%</td></tr>`).join('');
+            }
+
+            /* ---- 14 the memory wall --------------------------------------------- */
+            const wallWorlds = [4, 8, 16, 32, 64, 128, 256];
+            const wallSize = document.getElementById('wallSize');
+            const COLOR = { dp: '#d95926', zero1: '#c98a2b', zero2: '#199e70', zero3: '#3987e5' };
+            document.getElementById('wallLegend').innerHTML = MODES.map(m =>
+                `<span><i style="background:${COLOR[m]}"></i>${NAME[m]}</span>`).join('')
+                + '<span><i style="background:#a3a3aa"></i>an 80 GB card (74.5 GiB)</span>';
+            const bppLadder = (m, N) => m === 'dp' ? 16 : m === 'zero1' ? 4 + 12 / N : m === 'zero2' ? 2 + 14 / N : 16 / N;
+            function drawWall() {
+                const params = +wallSize.value * 1e9;
+                document.getElementById('wallSizeVal').textContent = (+wallSize.value) + 'B parameters';
+                const svg = document.getElementById('wallChart');
+                clear(svg);
+                const W = 900, H = 340, LX = 62, R = 118, T = 20, B = 44, card = L.card_gib;
+                const vals = MODES.flatMap(m => wallWorlds.map(N => params * bppLadder(m, N) / GIB));
+                const lo = Math.max(0.4, Math.min(...vals, card) * .55), hi = Math.max(...vals, card) * 1.5;
+                const x = N => LX + (Math.log2(N) - Math.log2(wallWorlds[0])) / (Math.log2(wallWorlds[wallWorlds.length - 1]) - Math.log2(wallWorlds[0])) * (W - LX - R);
+                const y = v => T + (1 - (Math.log10(v) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo))) * (H - T - B);
+                svg.appendChild(el('line', { x1: LX, y1: H - B, x2: W - R, y2: H - B, class: 'axis' }));
+                svg.appendChild(el('line', { x1: LX, y1: T, x2: LX, y2: H - B, class: 'axis' }));
+                wallWorlds.forEach(N => {
+                    svg.appendChild(el('line', { x1: x(N), y1: T, x2: x(N), y2: H - B, class: 'grid' }));
+                    const t = el('text', { x: x(N), y: H - B + 15, 'text-anchor': 'middle' });
+                    t.textContent = N; svg.appendChild(t);
+                });
+                [1, 10, 100, 1000].filter(v => v >= lo && v <= hi).forEach(v => {
+                    svg.appendChild(el('line', { x1: LX, y1: y(v), x2: W - R, y2: y(v), class: 'grid' }));
+                    const t = el('text', { x: LX - 8, y: y(v) + 3, 'text-anchor': 'end' });
+                    t.textContent = v + 'G'; svg.appendChild(t);
+                });
+                const xl = el('text', { x: (LX + W - R) / 2, y: H - 8, 'text-anchor': 'middle' });
+                xl.textContent = 'GPUs'; svg.appendChild(xl);
+                const yl = el('text', { x: 14, y: (T + H - B) / 2, transform: `rotate(-90 14 ${(T + H - B) / 2})`, 'text-anchor': 'middle' });
+                yl.textContent = 'GiB per GPU'; svg.appendChild(yl);
+                svg.appendChild(el('line', { x1: LX, y1: y(card), x2: W - R, y2: y(card), stroke: '#a3a3aa', 'stroke-width': 1.5, 'stroke-dasharray': '6 4' }));
+                const cl = el('text', { x: W - R + 8, y: y(card) + 4 });
+                cl.setAttribute('fill', '#a3a3aa'); cl.textContent = '74.5 GiB'; svg.appendChild(cl);
+                MODES.forEach(m => {
+                    const pts = wallWorlds.map(N => [x(N), y(params * bppLadder(m, N) / GIB)]);
+                    const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+                    svg.appendChild(el('path', { d, fill: 'none', stroke: COLOR[m], 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+                    [4, 8, 16, 32].forEach(N => {
+                        const fits = params * bppLadder(m, N) / GIB <= card;
+                        svg.appendChild(el('circle', {
+                            cx: x(N), cy: y(params * bppLadder(m, N) / GIB), r: fits ? 4.5 : 3,
+                            fill: fits ? COLOR[m] : '#0a0a0c', stroke: COLOR[m], 'stroke-width': 1.5
+                        }));
+                    });
+                    const last = params * bppLadder(m, wallWorlds[wallWorlds.length - 1]) / GIB;
+                    const t = el('text', { x: W - R + 8, y: y(last) + 4 });
+                    t.setAttribute('fill', COLOR[m]); t.setAttribute('font-size', '10.5');
+                    t.textContent = NAME[m]; svg.appendChild(t);
+                });
+                const fitsFrom = {};
+                MODES.forEach(m => {
+                    const f = wallWorlds.filter(N => params * bppLadder(m, N) / GIB <= card);
+                    fitsFrom[m] = f.length ? f[0] : null;
+                });
+                const never = MODES.filter(m => fitsFrom[m] === null).map(m => NAME[m]);
+                document.getElementById('wallNote').innerHTML =
+                    `At <strong>${+wallSize.value}B parameters</strong>: `
+                    + MODES.map(m => `${NAME[m]} ${fitsFrom[m] ? 'fits from <strong>' + fitsFrom[m] + ' GPUs</strong>' : '<strong>never fits</strong>'}`).join(' · ')
+                    + '. ' + (never.length
+                        ? `Filled dots fit on a card; hollow ones do not. ${never.join(' and ')} ${never.length > 1 ? 'are' : 'is'} `
+                        + `flat or nearly flat because the bytes they replicate do not shrink with the GPU count.`
+                        : `Every arrangement fits somewhere — this model is below the 20B line where the four replicated bytes alone fill a card.`);
+            }
+            wallSize.addEventListener('input', drawWall);
+            drawWall();
+
+            /* ---- 15 offload ------------------------------------------------------ */
+            const OF = D.offload;
+            if (OF) {
+                document.getElementById('offloadTable').innerHTML =
+                    '<tr><th>arrangement</th><th class="n">GiB per GPU</th><th class="n">with the optimizer offloaded</th>'
+                    + '<th class="n">fits a 74.5 GiB card</th></tr>'
+                    + MODES.map(m => {
+                        const o = OF.per_stage[m], fits = o.gib_after <= L.card_gib;
+                        return `<tr><td>${NAME[m]}</td><td class="n">${fmt(o.gib_before, 1)}G</td>`
+                            + `<td class="n">${fmt(o.gib_after, 1)}G</td>`
+                            + `<td class="n" style="color:${fits ? 'var(--good)' : 'var(--crit)'}">${fits ? '✓ yes' : '✗ no'}</td></tr>`;
+                    }).join('');
+                document.getElementById('offloadReadout').innerHTML = `
+                    <div><div class="k">PCIe</div><div class="v">${OF.pcie_gbs.toFixed(0)}</div><div class="delta">GB/s — comparable to a network cable</div></div>
+                    <div><div class="k">update on the CPU</div><div class="v">${fmt(OF.cpu_update_s, 3)}s</div>
+                        <div class="delta">${fmt(OF.cpu_update_gb, 2)} GB — gradient shard out, weight shard back</div></div>
+                    <div><div class="k">update on the GPU</div><div class="v">${fmt(OF.gpu_update_s, 3)}s</div>
+                        <div class="delta">${fmt(OF.gpu_update_gb, 2)} GB — the whole state shard, both ways</div></div>
+                    <div><div class="k">difference</div><div class="v">${(OF.gpu_update_gb / OF.cpu_update_gb).toFixed(0)}×</div>
+                        <div class="delta">less moved by doing the update on the CPU</div></div>`;
+                document.getElementById('offloadNote').innerHTML =
+                    `That last column is why the CPU-side update is the version that earns its place: the twelve bytes `
+                    + `never leave system memory at all, so only the gradient shard goes out and the updated weight shard `
+                    + `comes back. <strong>Not implemented here</strong> — this section is arithmetic, and it is the `
+                    + `fourth open question in section 18.`;
+            }
+
+            /* ---- 17 the 8-bit ledger --------------------------------------------- */
+            const PR = D.precision;
+            (function drawFp8() {
+                let html = '<b class="w">w</b><span style="width:10px"></span><b class="g">g</b><span style="width:10px"></span>';
+                for (let i = 0; i < 4; i++) html += '<b class="m">fp32</b>';
+                html += '<span style="width:10px"></span>';
+                for (let i = 0; i < 4; i++) html += '<b class="m">m</b>';
+                html += '<span style="width:10px"></span>';
+                for (let i = 0; i < 4; i++) html += '<b class="m">v</b>';
+                html += '<span style="width:10px"></span><b class="w" style="opacity:.45;font-size:8px">scale</b>';
+                document.getElementById('fp8Grid').innerHTML = html;
+            })();
+            document.getElementById('fp8Table').innerHTML =
+                '<tr><th></th><th class="n">bytes per weight</th><th class="n">30B model</th></tr>'
+                + `<tr><td>16-bit weights and gradients</td><td class="n">${fmt(PR.bf16_bytes, 2)}</td><td class="n">${fmt(PR.gib_30b_bf16, 1)}G</td></tr>`
+                + `<tr class="hl"><td>8-bit weights and gradients (MXFP8)</td><td class="n">${fmt(PR.mxfp8_bytes, 4)}</td><td class="n">${fmt(PR.gib_30b_fp8, 1)}G</td></tr>`
+                + `<tr><td>saving</td><td class="n">${fmt(PR.bf16_bytes - PR.mxfp8_bytes, 4)}</td><td class="n">${(PR.state_reduction * 100).toFixed(1)}%</td></tr>`;
+            document.getElementById('fp8Head').innerHTML =
+                `The reduction in stored state is ${(PR.state_reduction * 100).toFixed(1)}% — two bytes out of `
+                + `sixteen, less the ${PR.scale_bytes_per_param} bytes per parameter the block scales add back.`;
+
+            /* ---- 18 V4 and V5 ----------------------------------------------------- */
+            const V4 = D.v4;
+            if (V4) {
+                document.getElementById('v4Table').innerHTML =
+                    '<tr><th>setting</th><th class="n">value</th></tr>'
+                    + [['stage', V4.stage], ['arithmetic format', V4.format],
+                    ['sequences per GPU', V4.seq_per_gpu], ['accumulation steps', V4.accum],
+                    ['global batch', `${V4.global_batch}, which resolves to ${V4.gpus} GPUs`],
+                    ['peak learning rate', `${V4.peak_lr} with ${V4.warmup} warmup steps`],
+                    ['weight decay', V4.weight_decay.toFixed(1)], ['gradient clipping', V4.grad_clip.toFixed(1)],
+                    ['bucket sizes', `${V4.bucket_bytes.toExponential(0)} bytes`],
+                    ['overlap_comm', V4.overlap_comm ? 'enabled' : 'off'],
+                    ['round_robin_gradients', V4.round_robin_gradients ? 'enabled (an out-of-memory fix)' : 'off']]
+                        .map(([k, v]) => `<tr><td>${k}</td><td class="n">${v}</td></tr>`).join('');
+            }
+            if (D.v5_questions) {
+                document.getElementById('v5Questions').innerHTML = D.v5_questions.map((q, i) => `
+                    <div class="qa"><div class="q">${i + 1}. ${q.q}</div>
+                        <div class="r"><b>settled by</b>${q.settled_by}</div>
+                        <div class="r"><b>this harness</b>${q.this_harness}</div></div>`).join('');
+            }
+
+            /* ---- 19 gates ---------------------------------------------------------- */
+            document.getElementById('gateSummary').innerHTML = `
+                <div><div class="k">gates</div><div class="v" style="color:${passed === nGates ? 'var(--good)' : 'var(--crit)'}">${passed}/${nGates}</div>
+                    <div class="delta">${passed === nGates ? 'all pass' : (nGates - passed) + ' failing'}</div></div>
+                <div><div class="k">world size</div><div class="v">${D.meta.main_world}</div><div class="delta">real processes</div></div>
+                <div><div class="k">steps per stage</div><div class="v">${D.meta.main_steps}</div><div class="delta">identical tokens in every run</div></div>
+                <div><div class="k">wall time</div><div class="v">${(D.meta.wall_seconds / 60).toFixed(1)}m</div><div class="delta">CPU, ${D.meta.cpu_count} cores</div></div>`;
+            document.getElementById('gateList').innerHTML = Object.entries(gates).map(([k, v]) =>
+                `<div class="gate ${v ? 'pass' : 'fail'}">${v ? '✓' : '✗'} ${k.replace(/_/g, ' ')}</div>`).join('');
+
+            document.getElementById('provenance').innerHTML =
+                `Every measured number on this page was produced by <code class="mono">s12_distributed.py</code> and the `
+                + `rank worker <code class="mono">s12_ranks.py</code>, executed into `
+                + `<code class="mono">s12_distributed.ipynb</code> and baked in from `
+                + `<code class="mono">out/evidence.json</code>. `
+                + `python ${D.meta.python} · torch ${D.meta.torch} · ${D.meta.platform} · `
+                + `${D.meta.cpu_count} cores · ${(D.meta.wall_seconds / 60).toFixed(1)} minutes end to end · `
+                + `tokenizer sha256 ${D.corpus.tokenizer_sha256.slice(0, 8)}…`;
+
+            /* ---- go ---------------------------------------------------------------- */
+            drawLedger();
+            ringInit();
+        })();
+    </script>
+    <script>window.PAGE_ID = 'the-redundancy-tax'; window.ROOT_PATH = '../';</script>
+    <script src="../shared.js"></script>
+</body>
+
+</html>

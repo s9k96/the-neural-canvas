@@ -12,7 +12,8 @@ const ICONS = {
     'attention-timeline': '<path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/><circle cx="7.5" cy="6" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="17" cy="18" r="1.9"/>',
     'loss-harness': '<path d="M4 4v15a1 1 0 0 0 1 1h15"/><path d="M7 16c3-1 4.5-8 7-8s2.5 4 5 3"/><circle cx="12" cy="10.5" r="1.6"/>',
     'training-step': '<path d="M3 20h4v-4h5v-4h5V8h4"/><path d="M12 3v6"/><path d="m9.5 6.5 2.5 2.5 2.5-2.5"/>',
-    'setting-the-distance': '<path d="M3 4c7 1 7 13 18 15"/><path d="M6 20h9"/><path d="M6 17.5v5M15 17.5v5"/>'
+    'setting-the-distance': '<path d="M3 4c7 1 7 13 18 15"/><path d="M6 20h9"/><path d="M6 17.5v5M15 17.5v5"/>',
+    'the-redundancy-tax': '<rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="15" width="7" height="5" rx="1.5"/><rect x="14" y="15" width="7" height="5" rx="1.5"/><path d="M10 7.5h4M10 17.5h4M6.5 11v4M17.5 11v4"/>'
 };
 
 const NAV_SECTIONS = [
@@ -34,7 +35,8 @@ const NAV_SECTIONS = [
     { label: 'S8 · Model Architectures', pages: [{ id: 'attention-timeline', label: 'The Field Changes Its Mind', href: 's08-model-architectures/attention-timeline.html' }] },
     { label: 'S9 · Loss Functions', pages: [{ id: 'loss-harness', label: 'Four Ways to Lie About a Loss', href: 's09-loss-functions/loss-harness.html' }] },
     { label: 'S10 · The Training Loop', pages: [{ id: 'training-step', label: 'One Step, and What It Costs', href: 's10-training-loop/training-step.html' }] },
-    { label: 'S11 · Optimizers & Schedules', pages: [{ id: 'setting-the-distance', label: 'Setting the Distance', href: 's11-optimizers/setting-the-distance.html' }] }
+    { label: 'S11 · Optimizers & Schedules', pages: [{ id: 'setting-the-distance', label: 'Setting the Distance', href: 's11-optimizers/setting-the-distance.html' }] },
+    { label: 'S12 · Distributed Training', pages: [{ id: 'the-redundancy-tax', label: 'The Redundancy Tax', href: 's12-distributed-training/the-redundancy-tax.html' }] }
 ];
 
 function iconSvg(id) {

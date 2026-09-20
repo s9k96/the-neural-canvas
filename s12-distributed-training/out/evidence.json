@@ -1,0 +1,652 @@
+{
+  "meta": {
+    "python": "3.9.6",
+    "torch": "2.2.2",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "cpu_count": 10,
+    "wall_seconds": 709.0,
+    "main_world": 32,
+    "main_steps": 12
+  },
+  "ledger": {
+    "bytes_per_weight": {
+      "weight_bf16": 2,
+      "grad_bf16": 2,
+      "master_fp32": 4,
+      "adam_m_v": 8
+    },
+    "total": 16,
+    "params_30b": 30000000000.0,
+    "state_30b_gib": 447.0,
+    "card_gib": 74.5,
+    "cards_needed": 6.0,
+    "P_30b_gb": 60.0
+  },
+  "terms": {
+    "gpu_gb": 80,
+    "gpu_gib": 74.51,
+    "node_gpus": 8,
+    "world_size": 32,
+    "nodes": 4,
+    "nvlink_gbs": 450.0,
+    "infiniband_gbs": 50.0,
+    "pcie_gbs": 60.0,
+    "interconnect_ratio": 9.0,
+    "P_gb": 60.0
+  },
+  "corpus": {
+    "tokens": 656920,
+    "docs": 514,
+    "lanes": {
+      "agentic": 40,
+      "code": 93,
+      "general_web": 100,
+      "indic": 135,
+      "long_context": 6,
+      "reasoning": 40,
+      "stem_math": 100
+    },
+    "vocab_full": 68096,
+    "vocab_cap": 2048,
+    "cap_coverage": 0.76242,
+    "tokenizer_sha256": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072"
+  },
+  "model": {
+    "params": 2582208,
+    "largest_tensor": "head.weight",
+    "largest_tensor_params": 393216,
+    "largest_tensor_frac": 0.1523,
+    "vocab_size": 2048,
+    "d_model": 192,
+    "n_layer": 4,
+    "block_size": 128
+  },
+  "collectives": {
+    "vs_gloo_max_abs": 7.62939453125e-06,
+    "vs_gloo_rel": 2.8533742124636774e-07,
+    "two_phase_identical": true,
+    "bf16_ring_sum": 524.0,
+    "fp32_ring_sum": 528.0,
+    "exact_sum": 528.0,
+    "world": 32
+  },
+  "data_parallel": {
+    "replica_hashes_distinct": 1,
+    "replica_hash": "9673f067ddd09a190c4a2eabcda633acf745b63759d9d902d37e78cf2ec795a6",
+    "global_batch": 32,
+    "factorizations": [
+      {
+        "gpus": 32,
+        "seq_per_gpu": 1,
+        "accum": 1,
+        "loss_curve": [
+          7.778283268213272,
+          7.034257411956787,
+          6.600417494773865,
+          6.409325182437897,
+          6.2806199342012405,
+          6.040597096085548,
+          6.2029712945222855,
+          6.084504783153534,
+          5.993451610207558,
+          5.992831461131573,
+          5.879173681139946,
+          5.870162025094032
+        ],
+        "final_loss": 5.870162025094032
+      },
+      {
+        "gpus": 8,
+        "seq_per_gpu": 2,
+        "accum": 2,
+        "loss_curve": [
+          7.778283208608627,
+          7.034308642148972,
+          6.600353240966797,
+          6.409383177757263,
+          6.280652970075607,
+          6.040540993213654,
+          6.203352272510529,
+          6.084387809038162,
+          5.993260681629181,
+          5.99297496676445,
+          5.879066109657288,
+          5.870005249977112
+        ],
+        "final_loss": 5.870005249977112
+      }
+    ],
+    "loss_rel": 2.670711919880267e-05,
+    "weight_max_abs": 0.00390625
+  },
+  "stages": {
+    "dp": {
+      "ladder_bpp": 16.0,
+      "peak_bpp": 16.609115919399212,
+      "predicted_bpp": 16,
+      "gib_30b": 447.0348358154297,
+      "measured_P": 1.9375,
+      "ring_predicted_P": 1.9375,
+      "notes_P": 2,
+      "gb_30b": 116.25,
+      "spread": 0.0,
+      "label": "data parallelism",
+      "losses": [
+        7.778283268213272,
+        7.034257411956787,
+        6.600417494773865,
+        6.409325182437897,
+        6.2806199342012405,
+        6.040597096085548,
+        6.2029712945222855,
+        6.084504783153534,
+        5.993451610207558,
+        5.992831461131573,
+        5.879173681139946,
+        5.870162025094032
+      ],
+      "losses_rank0": [
+        7.485997200012207,
+        7.791366100311279,
+        7.092824935913086,
+        6.155109882354736,
+        5.130033493041992,
+        6.362492561340332,
+        7.276703834533691,
+        6.183067321777344,
+        6.751918315887451,
+        6.374178409576416,
+        6.740548610687256,
+        7.174149513244629
+      ],
+      "load_balance": 1.0
+    },
+    "zero1": {
+      "ladder_bpp": 4.375,
+      "peak_bpp": 4.689075395940218,
+      "predicted_bpp": 4.375,
+      "gib_30b": 122.23608791828156,
+      "measured_P": 1.9375,
+      "ring_predicted_P": 1.9375,
+      "notes_P": 2,
+      "gb_30b": 116.25,
+      "spread": 0.0,
+      "label": "ZeRO-1",
+      "losses": [
+        7.778283268213272,
+        7.034257411956787,
+        6.600417494773865,
+        6.409325182437897,
+        6.2806199342012405,
+        6.040597096085548,
+        6.2029712945222855,
+        6.084504783153534,
+        5.993451610207558,
+        5.992831461131573,
+        5.879173681139946,
+        5.870162025094032
+      ],
+      "losses_rank0": [
+        7.485997200012207,
+        7.791366100311279,
+        7.092824935913086,
+        6.155109882354736,
+        5.130033493041992,
+        6.362492561340332,
+        7.276703834533691,
+        6.183067321777344,
+        6.751918315887451,
+        6.374178409576416,
+        6.740548610687256,
+        7.174149513244629
+      ],
+      "load_balance": 1.0
+    },
+    "zero2": {
+      "ladder_bpp": 2.4375,
+      "peak_bpp": 3.046615919399212,
+      "predicted_bpp": 2.4375,
+      "gib_30b": 68.10296326875687,
+      "measured_P": 1.9375,
+      "ring_predicted_P": 1.9375,
+      "notes_P": 2,
+      "gb_30b": 116.25,
+      "spread": 0.0,
+      "label": "ZeRO-2",
+      "losses": [
+        7.778283268213272,
+        7.034257411956787,
+        6.600417494773865,
+        6.409325182437897,
+        6.2806199342012405,
+        6.040597096085548,
+        6.2029712945222855,
+        6.084504783153534,
+        5.993451610207558,
+        5.992831461131573,
+        5.879173681139946,
+        5.870162025094032
+      ],
+      "losses_rank0": [
+        7.485997200012207,
+        7.791366100311279,
+        7.092824935913086,
+        6.155109882354736,
+        5.130033493041992,
+        6.362492561340332,
+        7.276703834533691,
+        6.183067321777344,
+        6.751918315887451,
+        6.374178409576416,
+        6.740548610687256,
+        7.174149513244629
+      ],
+      "load_balance": 1.0
+    },
+    "zero3": {
+      "ladder_bpp": 0.5,
+      "peak_bpp": 1.4136738790988177,
+      "predicted_bpp": 0.5,
+      "gib_30b": 13.969838619232178,
+      "measured_P": 2.90625,
+      "ring_predicted_P": 2.90625,
+      "notes_P": 3,
+      "gb_30b": 174.375,
+      "spread": 0.0,
+      "label": "ZeRO-3",
+      "losses": [
+        7.778283268213272,
+        7.034257411956787,
+        6.600417494773865,
+        6.409325182437897,
+        6.2806199342012405,
+        6.040597096085548,
+        6.2029712945222855,
+        6.084504783153534,
+        5.993451610207558,
+        5.992831461131573,
+        5.879173681139946,
+        5.870162025094032
+      ],
+      "losses_rank0": [
+        7.485997200012207,
+        7.791366100311279,
+        7.092824935913086,
+        6.155109882354736,
+        5.130033493041992,
+        6.362492561340332,
+        7.276703834533691,
+        6.183067321777344,
+        6.751918315887451,
+        6.374178409576416,
+        6.740548610687256,
+        7.174149513244629
+      ],
+      "load_balance": 1.0
+    }
+  },
+  "equivalence": {
+    "zero1": {
+      "bitwise": true,
+      "max_abs": 0.0,
+      "losses_identical": true
+    },
+    "zero2": {
+      "bitwise": true,
+      "max_abs": 0.0,
+      "losses_identical": true
+    },
+    "zero3": {
+      "bitwise": true,
+      "max_abs": 0.0,
+      "losses_identical": true
+    },
+    "single_gpu": {
+      "max_abs": 0.00244140625,
+      "rel": 0.00244140625,
+      "loss_curve_1gpu": [
+        7.77828311920166,
+        7.0344014167785645,
+        6.600597858428955,
+        6.409551620483398,
+        6.280831336975098,
+        6.040889263153076,
+        6.20322322845459,
+        6.084396839141846,
+        5.9934611320495605,
+        5.99276876449585,
+        5.879274368286133,
+        5.870349884033203
+      ],
+      "loss_curve_32gpu": [
+        7.778283268213272,
+        7.034257411956787,
+        6.600417494773865,
+        6.409325182437897,
+        6.2806199342012405,
+        6.040597096085548,
+        6.2029712945222855,
+        6.084504783153534,
+        5.993451610207558,
+        5.992831461131573,
+        5.879173681139946,
+        5.870162025094032
+      ],
+      "loss_last_1gpu": 5.870349884033203,
+      "loss_last_32gpu": 5.870162025094032,
+      "loss_rel": 3.20013189813091e-05,
+      "rank_loss_spread": 4.072269916534424
+    }
+  },
+  "bucketing": {
+    "dp": {
+      "msgs": 1984.0,
+      "bytes": 10006056.0,
+      "comm_s": 1.4295443292954546,
+      "bytes_per_msg": 5043.375,
+      "ms_per_msg": 0.7205364562981121,
+      "effective_gbs": 0.00699947234580088,
+      "peak_bpp": 16.609115919399212,
+      "ladder_bpp": 16.0,
+      "step_s": 4.072862303829544
+    },
+    "dp_flat": {
+      "msgs": 62.0,
+      "bytes": 10006056.0,
+      "comm_s": 0.18700536551136357,
+      "bytes_per_msg": 161388.0,
+      "ms_per_msg": 3.016215572763928,
+      "effective_gbs": 0.053506785608202094,
+      "peak_bpp": 20.0,
+      "ladder_bpp": 16.0,
+      "step_s": 3.0138305073409084
+    },
+    "weight_max_abs": 0.00390625
+  },
+  "timing": {
+    "dp": {
+      "step_s": 4.072862303829544,
+      "comm_s": 1.4295443292954546,
+      "compute_s": 2.6433179745340896,
+      "comm_frac": 0.3509925508533183,
+      "comm_over_compute": 0.5408143640181714
+    },
+    "zero1": {
+      "step_s": 4.220340766312502,
+      "comm_s": 1.4721735180340894,
+      "compute_s": 2.7481672482784125,
+      "comm_frac": 0.3488281159154815,
+      "comm_over_compute": 0.5356928400032173
+    },
+    "zero2": {
+      "step_s": 4.617007909190343,
+      "comm_s": 2.38448980881534,
+      "compute_s": 2.2325181003750028,
+      "comm_frac": 0.5164578133099827,
+      "comm_over_compute": 1.068071881887457
+    },
+    "zero3": {
+      "step_s": 5.843816779249999,
+      "comm_s": 3.3718251949403437,
+      "compute_s": 2.4719915843096554,
+      "comm_frac": 0.5769902312668138,
+      "comm_over_compute": 1.3640115995305793
+    }
+  },
+  "hardware": {
+    "links": {
+      "NVLink, inside one node": {
+        "gbs": 450.0,
+        "t_2p": 0.26666666666666666,
+        "t_3p": 0.4
+      },
+      "InfiniBand, between nodes": {
+        "gbs": 50.0,
+        "t_2p": 2.4,
+        "t_3p": 3.6
+      }
+    },
+    "cards": {
+      "64 x H100": {
+        "compute_s": 7.1,
+        "comm_s": 2.4,
+        "ratio": 0.3380281690140845,
+        "serial_s": 9.5
+      },
+      "64 x B200": {
+        "compute_s": 3.12,
+        "comm_s": 2.4,
+        "ratio": 0.7692307692307692,
+        "serial_s": 5.52
+      }
+    },
+    "gb_2p": 120.0,
+    "gb_3p": 180.0,
+    "interconnect_ratio": 9.0
+  },
+  "sweep": {
+    "4": {
+      "dp": {
+        "measured_bpp": 16.0,
+        "predicted_bpp": 16,
+        "gib_30b": 447.0348358154297
+      },
+      "zero1": {
+        "measured_bpp": 7.0,
+        "predicted_bpp": 7.0,
+        "gib_30b": 195.5777406692505
+      },
+      "zero2": {
+        "measured_bpp": 5.5,
+        "predicted_bpp": 5.5,
+        "gib_30b": 153.66822481155396
+      },
+      "zero3": {
+        "measured_bpp": 4.0,
+        "predicted_bpp": 4.0,
+        "gib_30b": 111.75870895385742
+      }
+    },
+    "8": {
+      "dp": {
+        "measured_bpp": 16.0,
+        "predicted_bpp": 16,
+        "gib_30b": 447.0348358154297
+      },
+      "zero1": {
+        "measured_bpp": 5.5,
+        "predicted_bpp": 5.5,
+        "gib_30b": 153.66822481155396
+      },
+      "zero2": {
+        "measured_bpp": 3.75,
+        "predicted_bpp": 3.75,
+        "gib_30b": 104.77378964424133
+      },
+      "zero3": {
+        "measured_bpp": 2.0,
+        "predicted_bpp": 2.0,
+        "gib_30b": 55.87935447692871
+      }
+    },
+    "16": {
+      "dp": {
+        "measured_bpp": 16.0,
+        "predicted_bpp": 16,
+        "gib_30b": 447.0348358154297
+      },
+      "zero1": {
+        "measured_bpp": 4.75,
+        "predicted_bpp": 4.75,
+        "gib_30b": 132.7134668827057
+      },
+      "zero2": {
+        "measured_bpp": 2.875,
+        "predicted_bpp": 2.875,
+        "gib_30b": 80.32657206058502
+      },
+      "zero3": {
+        "measured_bpp": 1.0,
+        "predicted_bpp": 1.0,
+        "gib_30b": 27.939677238464355
+      }
+    },
+    "32": {
+      "dp": {
+        "measured_bpp": 16.0,
+        "predicted_bpp": 16,
+        "gib_30b": 447.0348358154297
+      },
+      "zero1": {
+        "measured_bpp": 4.375,
+        "predicted_bpp": 4.375,
+        "gib_30b": 122.23608791828156
+      },
+      "zero2": {
+        "measured_bpp": 2.4375,
+        "predicted_bpp": 2.4375,
+        "gib_30b": 68.10296326875687
+      },
+      "zero3": {
+        "measured_bpp": 0.5,
+        "predicted_bpp": 0.5,
+        "gib_30b": 13.969838619232178
+      }
+    }
+  },
+  "wall": {
+    "card_gib": 74.50580596923828,
+    "floor_params": 20000000000.0,
+    "fits_from": {
+      "dp": null,
+      "zero1": null,
+      "zero2": 32,
+      "zero3": 8
+    }
+  },
+  "offload": {
+    "per_stage": {
+      "dp": {
+        "gib_before": 447.0348358154297,
+        "gib_after": 111.75870895385742,
+        "bpp_after": 4
+      },
+      "zero1": {
+        "gib_before": 122.23608791828156,
+        "gib_after": 111.75870895385742,
+        "bpp_after": 4.0
+      },
+      "zero2": {
+        "gib_before": 68.10296326875687,
+        "gib_after": 57.62558430433273,
+        "bpp_after": 2.0625
+      },
+      "zero3": {
+        "gib_before": 13.969838619232178,
+        "gib_after": 3.4924596548080444,
+        "bpp_after": 0.125
+      }
+    },
+    "pcie_gbs": 60.0,
+    "cpu_update_gb": 3.75,
+    "gpu_update_gb": 22.5,
+    "cpu_update_s": 0.0625,
+    "gpu_update_s": 0.375
+  },
+  "precision": {
+    "bf16_bytes": 16,
+    "mxfp8_bytes": 14.0625,
+    "mx_block": 32,
+    "scale_bytes_per_param": 0.0625,
+    "state_reduction": 0.12109375,
+    "gib_30b_bf16": 447.0348358154297,
+    "gib_30b_fp8": 392.901711165905,
+    "wire_reduction": 0.5
+  },
+  "v4": {
+    "stage": 2,
+    "format": "bf16",
+    "seq_per_gpu": 2,
+    "accum": 2,
+    "global_batch": 32,
+    "gpus": 8,
+    "peak_lr": 0.0003,
+    "warmup": 500,
+    "weight_decay": 0.0,
+    "grad_clip": 1.0,
+    "bucket_bytes": 200000000.0,
+    "overlap_comm": true,
+    "round_robin_gradients": true
+  },
+  "v5_questions": [
+    {
+      "q": "ZeRO-2 on 32 GPUs, or ZeRO-3 on 8?",
+      "settled_by": "A measured step time for both on the real architecture, with activation memory included.",
+      "this_harness": "Gives the memory side exactly \u2014 68.1 GiB against 14.0 GiB per GPU \u2014 and the communication ratio, 1.50x. It cannot give step time on hardware it does not have, and it excludes activations."
+    },
+    {
+      "q": "How many GPUs per node, and how many nodes?",
+      "settled_by": "How much traffic can be kept inside a node.",
+      "this_harness": "Not addressed: one loopback link, no node boundary. \u00a712's 9x is the whole of the argument."
+    },
+    {
+      "q": "Is 8-bit arithmetic committed from the start?",
+      "settled_by": "A short run in bf16 and in MXFP8 on the same architecture, comparing loss and step time. Commits to Blackwell hardware.",
+      "this_harness": "Gives the storage arithmetic (12.1%) and nothing else. bfloat16 is as low as this CPU goes."
+    },
+    {
+      "q": "Does any state go to system memory?",
+      "settled_by": "Whether the run is memory-bound or communication-bound once the stage is chosen.",
+      "this_harness": "\u00a714's arithmetic only. Offload is not implemented."
+    }
+  ],
+  "gates": {
+    "tokenizer_frozen": true,
+    "world_is_32": true,
+    "ranks_are_real_processes": true,
+    "ring_matches_gloo": true,
+    "reduce_scatter_plus_all_gather_is_all_reduce": true,
+    "bf16_ring_loses_bits": true,
+    "fp32_ring_is_exact": true,
+    "memory_dp_matches_ledger": true,
+    "memory_zero1_matches_ledger": true,
+    "memory_zero2_matches_ledger": true,
+    "memory_zero3_matches_ledger": true,
+    "memory_ladder_is_monotonic": true,
+    "every_rank_holds_an_equal_share": true,
+    "comm_dp_matches_ring": true,
+    "comm_zero1_matches_ring": true,
+    "comm_zero2_matches_ring": true,
+    "comm_zero3_matches_ring": true,
+    "zero1_and_zero2_are_free": true,
+    "zero3_costs_half_as_much_again": true,
+    "zero1_bitwise_identical_to_dp": true,
+    "zero2_bitwise_identical_to_dp": true,
+    "zero3_bitwise_identical_to_dp": true,
+    "zero1_loss_curve_identical": true,
+    "zero2_loss_curve_identical": true,
+    "zero3_loss_curve_identical": true,
+    "matches_single_gpu_within_bf16_error": true,
+    "loss_matches_single_gpu": true,
+    "model_actually_trained": true,
+    "zero3_scales_as_one_over_world": true,
+    "dp_never_fits_a_card": true,
+    "zero1_never_fits_a_card": true,
+    "zero2_fits_from_32_gpus": true,
+    "zero3_fits_from_8_gpus": true,
+    "replicas_stay_identical": true,
+    "global_batch_is_a_product": true,
+    "bucketing_cuts_messages": true,
+    "bucketing_moves_the_same_bytes": true,
+    "bucketing_is_faster": true,
+    "bucketing_costs_memory": true,
+    "bucketing_does_not_change_state_held": true,
+    "faster_card_raises_comm_ratio": true,
+    "both_ratios_still_below_one": true,
+    "interconnect_gap_is_9x": true,
+    "nvlink_hides_2p_in_under_a_third_of_a_second": true,
+    "cpu_side_update_moves_less": true,
+    "mxfp8_ledger": true,
+    "mxfp8_saves_12_percent": true
+  }
+}

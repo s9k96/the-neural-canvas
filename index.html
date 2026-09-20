@@ -163,6 +163,16 @@
                             update-to-weight ratio predicted per layer before it was measured, cosine against WSD at a
                             stop nobody planned, and Muon against an AdamW that was actually tuned.</p>
                     </a>
+                    <a class="topic-card" data-session="S12" href="s12-distributed-training/the-redundancy-tax.html">
+                        <span class="card-badge">S12</span>
+                        <h3>The Redundancy Tax</h3>
+                        <p class="card-hook">Eight cards, 3,576 GiB, to store 447 GiB.</p>
+                        <p class="card-detail">Data parallelism and ZeRO-1, 2 and 3 run on 32 real processes, not a
+                            simulation &mdash; with the ring reduce-scatter written by hand because gloo has none, so
+                            16.00 down to 0.50 bytes per weight and 1.94P against 2.91P on the wire are measured rather
+                            than quoted. All four stages end bit-identical, and the 30B memory wall is re-derived from
+                            what the ranks actually held.</p>
+                    </a>
                 </div>
 
                 <p class="topic-empty" id="topicEmpty" hidden>No widget matches that. <button type="button"

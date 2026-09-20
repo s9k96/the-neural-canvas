@@ -31,12 +31,12 @@ markdown/notes-only deliverables and are deliberately absent from the site nav a
 - Pages set `window.PAGE_ID` (to highlight the active nav item) and optionally `window.ROOT_PATH`
   (relative prefix back to repo root) before loading `shared.js`.
 
-## The generate-then-bake pattern (S4, S6, S7, S9, S10, S11)
+## The generate-then-bake pattern (S4, S6, S7, S9, S10, S11, S12)
 
 Sessions with real data pipelines follow the same shape: a Python pipeline writes JSON/JS into an
 `out/` (or `submission_artifacts/`) folder, and a small `build_html_data.py` (S4, S6), the
-`run_demo.py` itself (S7), or `build_notebook.py` (S9, S10, S11) injects that data as a literal
-`const DATASETS = {...}` / `s6data` / `S9DATA` / `S11DATA` blob directly into the session's `.html` file. The HTML has no fetch/XHR — page data is static and
+`run_demo.py` itself (S7), or `build_notebook.py` (S9, S10, S11, S12) injects that data as a literal
+`const DATASETS = {...}` / `s6data` / `S9DATA` / `S11DATA` / `S12DATA` blob directly into the session's `.html` file. The HTML has no fetch/XHR — page data is static and
 inlined, so **the generated JS blob in the HTML must be regenerated any time the upstream Python
 output changes**; editing the JSON in `out/` alone does nothing until the build script re-runs.
 
@@ -82,9 +82,29 @@ python s10-training-loop/check_page.py        # renders the page in headless Chr
 python s11-optimizers/build_notebook.py       # .py -> executed .ipynb -> baked setting-the-distance.html
 python s11-optimizers/build_notebook.py --bake-only   # re-inject out/evidence.json into the page only
 python s11-optimizers/check_page.py
+
+# S12 — distributed training / ZeRO (4 stages + a bucketing variant on 32 real
+#       processes, 47 gates, ~13 min, CPU)
+python s12-distributed-training/build_notebook.py     # .py -> executed .ipynb -> baked the-redundancy-tax.html
+python s12-distributed-training/s12_distributed.py    # or the harness alone
+python s12-distributed-training/build_notebook.py --bake-only
+python s12-distributed-training/check_page.py
 ```
 
-S10 and S11 follow S9's shape exactly: a `# %%` cell-delimited `.py` is the source of truth, the
+S12 is the one session whose harness is **two** Python files. `s12_ranks.py` holds the rank
+worker and must stay importable as a module: `mp.spawn` pickles the worker by module path, so a
+copy living in a notebook cell cannot be sent to a spawned process. `s12_distributed.py` never
+spawns — it shells out to `s12_ranks.py`'s own `__main__`, which is what makes the harness behave
+identically as a script and as a notebook. S12's `out/runs/` (per-rank JSON + weight checkpoints,
+~175 MB) is gitignored and regenerated on every run; `out/evidence.json` is the committed
+artifact. Note also that gloo has no `reduce_scatter`, so the ring collectives in `s12_ranks.Ring`
+are hand-written on `isend`/`irecv` — that is deliberate, not a workaround to replace with a
+library call, and it is what makes the communication figures measured. The page marks every
+figure `measured`, `computed` or `reference`; keep that distinction when adding to it, since
+several sections (real-GPU timings, MXFP8, offload) are arithmetic about hardware this repo
+cannot run.
+
+S10, S11 and S12 follow S9's shape exactly: a `# %%` cell-delimited `.py` is the source of truth, the
 committed `.ipynb` carries its outputs, and `out/evidence.json` is baked into the page. S11's
 learning-rate sweeps deliberately cap the vocabulary to 8,192 ids (the page and README say why);
 its Tasks 1-4 use the full 68,096-token model.
