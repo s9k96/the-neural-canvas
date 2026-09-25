@@ -1,0 +1,8 @@
+{
+  "source": "s06-corpus (local fallback)",
+  "coverage": 0.671545,
+  "tokenizer_sha256": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "dataset_config": null,
+  "token_sha256": "36150c314c5d6ecdb26e355ed1d014ae250dc262cecf121c6bb91736cf2c42a8",
+  "built_utc": "2026-09-25T10:35:16Z"
+}

@@ -13,7 +13,8 @@ const ICONS = {
     'loss-harness': '<path d="M4 4v15a1 1 0 0 0 1 1h15"/><path d="M7 16c3-1 4.5-8 7-8s2.5 4 5 3"/><circle cx="12" cy="10.5" r="1.6"/>',
     'training-step': '<path d="M3 20h4v-4h5v-4h5V8h4"/><path d="M12 3v6"/><path d="m9.5 6.5 2.5 2.5 2.5-2.5"/>',
     'setting-the-distance': '<path d="M3 4c7 1 7 13 18 15"/><path d="M6 20h9"/><path d="M6 17.5v5M15 17.5v5"/>',
-    'the-redundancy-tax': '<rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="15" width="7" height="5" rx="1.5"/><rect x="14" y="15" width="7" height="5" rx="1.5"/><path d="M10 7.5h4M10 17.5h4M6.5 11v4M17.5 11v4"/>'
+    'the-redundancy-tax': '<rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="15" width="7" height="5" rx="1.5"/><rect x="14" y="15" width="7" height="5" rx="1.5"/><path d="M10 7.5h4M10 17.5h4M6.5 11v4M17.5 11v4"/>',
+    'forget-the-middle': '<path d="M5 4h14"/><path d="M5 20h14"/><path d="M8 8.5h8M8 12h8M8 15.5h8" stroke-dasharray="2 3"/><path d="m17 9 2.5 3-2.5 3"/>'
 };
 
 const NAV_SECTIONS = [
@@ -36,7 +37,8 @@ const NAV_SECTIONS = [
     { label: 'S9 · Loss Functions', pages: [{ id: 'loss-harness', label: 'Four Ways to Lie About a Loss', href: 's09-loss-functions/loss-harness.html' }] },
     { label: 'S10 · The Training Loop', pages: [{ id: 'training-step', label: 'One Step, and What It Costs', href: 's10-training-loop/training-step.html' }] },
     { label: 'S11 · Optimizers & Schedules', pages: [{ id: 'setting-the-distance', label: 'Setting the Distance', href: 's11-optimizers/setting-the-distance.html' }] },
-    { label: 'S12 · Distributed Training', pages: [{ id: 'the-redundancy-tax', label: 'The Redundancy Tax', href: 's12-distributed-training/the-redundancy-tax.html' }] }
+    { label: 'S12 · Distributed Training', pages: [{ id: 'the-redundancy-tax', label: 'The Redundancy Tax', href: 's12-distributed-training/the-redundancy-tax.html' }] },
+    { label: 'S13 · Reversibility', pages: [{ id: 'forget-the-middle', label: 'Forget the Middle', href: 's13-distributed-training-2/forget-the-middle.html' }] }
 ];
 
 function iconSvg(id) {

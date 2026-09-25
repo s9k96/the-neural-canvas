@@ -1,0 +1,607 @@
+{
+  "meta": {
+    "python": "3.13.15",
+    "torch": "2.11.0+cu128",
+    "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+    "device": "cuda",
+    "quick": false,
+    "gpu": "Tesla T4",
+    "vram_gb": 15.6,
+    "capability": "7.5",
+    "bf16_native": false,
+    "bf16_including_emulation": true,
+    "wall_seconds": 9.5,
+    "wall_seconds_full_run": 4434.9
+  },
+  "activation_arithmetic": [
+    {
+      "seq": 8192,
+      "stored_gib": 127.5,
+      "reversible_gib": 1.484375,
+      "ratio": 85.89473684210526
+    },
+    {
+      "seq": 32768,
+      "stored_gib": 510.0,
+      "reversible_gib": 5.9375,
+      "ratio": 85.89473684210526
+    },
+    {
+      "seq": 131072,
+      "stored_gib": 2040.0,
+      "reversible_gib": 23.75,
+      "ratio": 85.89473684210526
+    }
+  ],
+  "corpus": {
+    "tokens": 50000000,
+    "target": 50000000,
+    "vocab_cap": 8192,
+    "source": "HuggingFaceFW/fineweb-edu",
+    "dataset_config": "sample-10BT",
+    "tokenizer": "sarvamai/sarvam-1",
+    "source_provenance": "inferred, not recorded. This run's token cache was built before the harness wrote a provenance sidecar, so it reported its source as 'cache'. The fallback chain was re-resolved in the same environment and selected fineweb-edu on the first attempt, 50/50 sampled documents passing the length filter, so no fallback was reached. Strong inference, not a measurement of this run."
+  },
+  "configs": {
+    "standard": {
+      "d_model": 288,
+      "d_ff": 1408,
+      "n_layer": 10,
+      "params": 19986336,
+      "h": 1.0,
+      "gamma": 0.0
+    },
+    "midpoint": {
+      "d_model": 288,
+      "d_ff": 1408,
+      "n_layer": 10,
+      "params": 19986336,
+      "h": 0.25,
+      "gamma": 0.0
+    },
+    "blended": {
+      "d_model": 288,
+      "d_ff": 1408,
+      "n_layer": 10,
+      "params": 19986336,
+      "h": 0.25,
+      "gamma": 0.5
+    },
+    "revnet": {
+      "d_model": 288,
+      "d_ff": 3328,
+      "n_layer": 10,
+      "params": 19983456,
+      "h": 0.25,
+      "gamma": 0.0
+    }
+  },
+  "correctness": {
+    "midpoint": {
+      "exact_fp64": 1.0310172672084894e-14,
+      "drift_fp32": 5.436083826303413e-06,
+      "exact": true
+    },
+    "blended": {
+      "exact_fp64": 6.43932899341738e-14,
+      "drift_fp32": 4.476807896691191e-05,
+      "exact": true
+    },
+    "revnet": {
+      "exact_fp64": 1.7432172833174083e-13,
+      "drift_fp32": 9.755752307187599e-05,
+      "exact": true
+    },
+    "euler_reversible": false
+  },
+  "runs": {
+    "standard": {
+      "rule": "standard",
+      "reversible": false,
+      "batch": 108,
+      "seq": 512,
+      "n_layer": 10,
+      "params": 19986336,
+      "steps": 904,
+      "tokens": 49987584,
+      "final_loss": 5.057617664337158,
+      "tok_s": 43701.47569639439,
+      "wall_s": 1141.3113906383514,
+      "peak_bytes": 12117201920,
+      "losses": [
+        {
+          "step": 0,
+          "tokens": 0,
+          "loss": 9.501177787780762
+        },
+        {
+          "step": 50,
+          "tokens": 2764800,
+          "loss": 7.490170001983643
+        },
+        {
+          "step": 100,
+          "tokens": 5529600,
+          "loss": 6.857410430908203
+        },
+        {
+          "step": 150,
+          "tokens": 8294400,
+          "loss": 6.280230522155762
+        },
+        {
+          "step": 200,
+          "tokens": 11059200,
+          "loss": 5.978750705718994
+        },
+        {
+          "step": 250,
+          "tokens": 13824000,
+          "loss": 5.83872127532959
+        },
+        {
+          "step": 300,
+          "tokens": 16588800,
+          "loss": 5.706930637359619
+        },
+        {
+          "step": 350,
+          "tokens": 19353600,
+          "loss": 5.631030559539795
+        },
+        {
+          "step": 400,
+          "tokens": 22118400,
+          "loss": 5.577263355255127
+        },
+        {
+          "step": 450,
+          "tokens": 24883200,
+          "loss": 5.462262153625488
+        },
+        {
+          "step": 500,
+          "tokens": 27648000,
+          "loss": 5.433480739593506
+        },
+        {
+          "step": 550,
+          "tokens": 30412800,
+          "loss": 5.350469589233398
+        },
+        {
+          "step": 600,
+          "tokens": 33177600,
+          "loss": 5.2438507080078125
+        },
+        {
+          "step": 650,
+          "tokens": 35942400,
+          "loss": 5.214096546173096
+        },
+        {
+          "step": 700,
+          "tokens": 38707200,
+          "loss": 5.192122936248779
+        },
+        {
+          "step": 750,
+          "tokens": 41472000,
+          "loss": 5.169722080230713
+        },
+        {
+          "step": 800,
+          "tokens": 44236800,
+          "loss": 5.14981746673584
+        },
+        {
+          "step": 850,
+          "tokens": 47001600,
+          "loss": 5.0549187660217285
+        },
+        {
+          "step": 900,
+          "tokens": 49766400,
+          "loss": 5.025155067443848
+        },
+        {
+          "step": 903,
+          "tokens": 49932288,
+          "loss": 5.057617664337158
+        }
+      ]
+    },
+    "reversible_same": {
+      "rule": "midpoint",
+      "reversible": true,
+      "batch": 108,
+      "seq": 512,
+      "n_layer": 10,
+      "params": 19986336,
+      "steps": 904,
+      "tokens": 49987584,
+      "final_loss": 5.240787506103516,
+      "tok_s": 36516.34840718349,
+      "wall_s": 1365.8811511993408,
+      "peak_bytes": 2528390656,
+      "losses": [
+        {
+          "step": 0,
+          "tokens": 0,
+          "loss": 9.57505989074707
+        },
+        {
+          "step": 50,
+          "tokens": 2764800,
+          "loss": 7.494912624359131
+        },
+        {
+          "step": 100,
+          "tokens": 5529600,
+          "loss": 6.965161323547363
+        },
+        {
+          "step": 150,
+          "tokens": 8294400,
+          "loss": 6.529567718505859
+        },
+        {
+          "step": 200,
+          "tokens": 11059200,
+          "loss": 6.173262596130371
+        },
+        {
+          "step": 250,
+          "tokens": 13824000,
+          "loss": 6.0385918617248535
+        },
+        {
+          "step": 300,
+          "tokens": 16588800,
+          "loss": 5.8984761238098145
+        },
+        {
+          "step": 350,
+          "tokens": 19353600,
+          "loss": 5.821402549743652
+        },
+        {
+          "step": 400,
+          "tokens": 22118400,
+          "loss": 5.764010906219482
+        },
+        {
+          "step": 450,
+          "tokens": 24883200,
+          "loss": 5.654521942138672
+        },
+        {
+          "step": 500,
+          "tokens": 27648000,
+          "loss": 5.621935844421387
+        },
+        {
+          "step": 550,
+          "tokens": 30412800,
+          "loss": 5.5379533767700195
+        },
+        {
+          "step": 600,
+          "tokens": 33177600,
+          "loss": 5.439319610595703
+        },
+        {
+          "step": 650,
+          "tokens": 35942400,
+          "loss": 5.436323642730713
+        },
+        {
+          "step": 700,
+          "tokens": 38707200,
+          "loss": 5.391642093658447
+        },
+        {
+          "step": 750,
+          "tokens": 41472000,
+          "loss": 5.374807834625244
+        },
+        {
+          "step": 800,
+          "tokens": 44236800,
+          "loss": 5.349811553955078
+        },
+        {
+          "step": 850,
+          "tokens": 47001600,
+          "loss": 5.25109338760376
+        },
+        {
+          "step": 900,
+          "tokens": 49766400,
+          "loss": 5.214931964874268
+        },
+        {
+          "step": 903,
+          "tokens": 49932288,
+          "loss": 5.240787506103516
+        }
+      ]
+    },
+    "reversible_max": {
+      "rule": "midpoint",
+      "reversible": true,
+      "batch": 543,
+      "seq": 512,
+      "n_layer": 10,
+      "params": 19986336,
+      "steps": 179,
+      "tokens": 49764864,
+      "final_loss": 6.069492340087891,
+      "tok_s": 36762.738996661385,
+      "wall_s": 1338.5518419742584,
+      "peak_bytes": 11249621504,
+      "losses": [
+        {
+          "step": 0,
+          "tokens": 0,
+          "loss": 9.582239151000977
+        },
+        {
+          "step": 50,
+          "tokens": 13900800,
+          "loss": 7.466584205627441
+        },
+        {
+          "step": 100,
+          "tokens": 27801600,
+          "loss": 6.868056774139404
+        },
+        {
+          "step": 150,
+          "tokens": 41702400,
+          "loss": 6.273497104644775
+        },
+        {
+          "step": 178,
+          "tokens": 49486848,
+          "loss": 6.069492340087891
+        }
+      ]
+    }
+  },
+  "batches": {
+    "fixed": 108,
+    "reversible_max": 543
+  },
+  "depth_sweep": {
+    "rows": [
+      {
+        "n_layer": 4,
+        "d_model": 288,
+        "params": 10914336,
+        "stored": 165218496,
+        "reversible": 5923968,
+        "ratio": 27.889836001815
+      },
+      {
+        "n_layer": 8,
+        "d_model": 288,
+        "params": 16962336,
+        "stored": 326872320,
+        "reversible": 5923968,
+        "ratio": 55.1779347896545
+      },
+      {
+        "n_layer": 16,
+        "d_model": 288,
+        "params": 29058336,
+        "stored": 650179968,
+        "reversible": 5923968,
+        "ratio": 109.7541323653335
+      },
+      {
+        "n_layer": 32,
+        "d_model": 288,
+        "params": 53250336,
+        "stored": 1296795264,
+        "reversible": 5923968,
+        "ratio": 218.9065275166915
+      }
+    ],
+    "depth_growth": 8.0,
+    "stored_growth": 7.848971485613814,
+    "reversible_growth": 1.0
+  },
+  "drift": [
+    {
+      "rule": "midpoint",
+      "dtype": "float32",
+      "by_depth": {
+        "2": 9.064535413100339e-08,
+        "4": 1.1522734797050808e-06,
+        "8": 4.292402969297748e-06,
+        "16": 8.414292067744026e-06,
+        "32": 1.7354576514902126e-05
+      }
+    },
+    {
+      "rule": "midpoint",
+      "dtype": "float16",
+      "by_depth": {
+        "2": 0.0005112474437627812,
+        "4": 0.004424778761061947,
+        "8": 0.010869565217391304,
+        "16": 0.022122524752475246,
+        "32": 0.1127411575562701
+      }
+    },
+    {
+      "rule": "revnet",
+      "dtype": "float32",
+      "by_depth": {
+        "2": 3.851934867430593e-06,
+        "4": 5.297993921557804e-05,
+        "8": 0.00015617300412985955,
+        "16": 0.0005461172355344555,
+        "32": 0.00039501567722718305
+      }
+    },
+    {
+      "rule": "revnet",
+      "dtype": "float16",
+      "by_depth": {
+        "2": 0.024481327800829875,
+        "4": 0.17242442936458977,
+        "8": 0.3937621832358674,
+        "16": 1.57001414427157,
+        "32": 1.8236914600550964
+      }
+    }
+  ],
+  "gamma_sweep": [
+    {
+      "gamma": 0.0,
+      "predicted_amplification": 1.0,
+      "drift": 4.292402969297748e-06,
+      "measured_amplification": 1.0
+    },
+    {
+      "gamma": 0.125,
+      "predicted_amplification": 2.910285368046528,
+      "drift": 5.66551571820947e-06,
+      "measured_amplification": 1.3198937189106381
+    },
+    {
+      "gamma": 0.25,
+      "predicted_amplification": 9.98872123151958,
+      "drift": 1.2731318893428288e-05,
+      "measured_amplification": 2.966012041388364
+    },
+    {
+      "gamma": 0.5,
+      "predicted_amplification": 256.0,
+      "drift": 8.68021054801292e-05,
+      "measured_amplification": 20.222263869678184
+    }
+  ],
+  "frontier": [
+    {
+      "path": "stored",
+      "batch": 1,
+      "tok_s": 13159.003940071694,
+      "peak_bytes": 426745344
+    },
+    {
+      "path": "stored",
+      "batch": 2,
+      "tok_s": 25931.682302775072,
+      "peak_bytes": 531281408
+    },
+    {
+      "path": "stored",
+      "batch": 4,
+      "tok_s": 36381.80257321682,
+      "peak_bytes": 748819456
+    },
+    {
+      "path": "stored",
+      "batch": 8,
+      "tok_s": 36919.377252612234,
+      "peak_bytes": 1206080512
+    },
+    {
+      "path": "stored",
+      "batch": 16,
+      "tok_s": 39011.80878958867,
+      "peak_bytes": 2052396032
+    },
+    {
+      "path": "stored",
+      "batch": 32,
+      "tok_s": 38763.48873265357,
+      "peak_bytes": 3809285120
+    },
+    {
+      "path": "stored",
+      "batch": 64,
+      "tok_s": 38234.661169928615,
+      "peak_bytes": 7299142656
+    },
+    {
+      "path": "reversible",
+      "batch": 1,
+      "tok_s": 9717.230502607496,
+      "peak_bytes": 420240896
+    },
+    {
+      "path": "reversible",
+      "batch": 2,
+      "tok_s": 18333.113701385664,
+      "peak_bytes": 422706688
+    },
+    {
+      "path": "reversible",
+      "batch": 4,
+      "tok_s": 30035.970330948912,
+      "peak_bytes": 454127104
+    },
+    {
+      "path": "reversible",
+      "batch": 8,
+      "tok_s": 31689.7063173763,
+      "peak_bytes": 534445568
+    },
+    {
+      "path": "reversible",
+      "batch": 16,
+      "tok_s": 33794.81577873866,
+      "peak_bytes": 694615552
+    },
+    {
+      "path": "reversible",
+      "batch": 32,
+      "tok_s": 35388.78222472614,
+      "peak_bytes": 1012989440
+    },
+    {
+      "path": "reversible",
+      "batch": 64,
+      "tok_s": 36325.811622247005,
+      "peak_bytes": 1651015168
+    },
+    {
+      "path": "reversible",
+      "batch": 128,
+      "tok_s": 38204.5937654515,
+      "peak_bytes": 2929917440
+    },
+    {
+      "path": "reversible",
+      "batch": 256,
+      "tok_s": 38488.87072645689,
+      "peak_bytes": 5494341120
+    },
+    {
+      "path": "reversible",
+      "batch": 512,
+      "tok_s": 35155.22784246695,
+      "peak_bytes": 10628972032
+    }
+  ],
+  "gates": {
+    "midpoint_is_exact_in_fp64": true,
+    "blended_is_exact_in_fp64": true,
+    "revnet_is_exact_in_fp64": true,
+    "euler_is_not_reversible": true,
+    "no_dropout_anywhere": true,
+    "all_rules_same_param_count": true,
+    "reversible_uses_less_memory": true,
+    "reversible_costs_throughput": true,
+    "reversibility_buys_batch": true,
+    "all_runs_saw_the_same_tokens": true,
+    "every_run_trained": true,
+    "reversible_memory_is_depth_independent": true,
+    "stored_memory_grows_with_depth": true,
+    "blending_amplifies_drift": true
+  }
+}

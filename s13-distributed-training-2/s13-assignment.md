@@ -1,0 +1,3 @@
+Train a 20M LLM for 50M tokens on Google Colab (or anything else of your choice). Fix Batch size that you can run. Train again with Reversibility (report which variant worked for you, mid-point, euler, etc) Train again with Reversibility, but push it to the maximum batch size.
+
+Report final loss, speed (token/s), memory peak and other findings. Submit detailed README.md (github link), repo must have the ipynb notebooks.

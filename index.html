@@ -173,6 +173,16 @@
                             than quoted. All four stages end bit-identical, and the 30B memory wall is re-derived from
                             what the ranks actually held.</p>
                     </a>
+                    <a class="topic-card" data-session="S13" href="s13-distributed-training-2/forget-the-middle.html">
+                        <span class="card-badge">S13</span>
+                        <h3>Forget the Middle</h3>
+                        <p class="card-hook">Keep both ends. Rebuild everything between.</p>
+                        <p class="card-detail">A reversible stack stores the state entering the layers and the state
+                            leaving them, and reconstructs the rest during the backward pass &mdash; so activation
+                            memory stops depending on depth. Measured on a T4: byte-identical activations from 4 to 32
+                            layers, 4.8&times; less memory for 16% throughput, and a maximum-batch run that bought
+                            nothing because the GPU was never memory-bound.</p>
+                    </a>
                 </div>
 
                 <p class="topic-empty" id="topicEmpty" hidden>No widget matches that. <button type="button"

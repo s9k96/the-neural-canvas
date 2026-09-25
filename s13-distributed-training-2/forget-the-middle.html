@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neural Canvas — Forget the Middle</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <link rel="stylesheet" href="../shared.css" />
+    <style>
+        /* ---- palette ------------------------------------------------------------
+           Same validated categorical set as Sessions 9-12, checked with
+           validate_palette.py against this site's dark surface #0a0a0c:
+             #3987e5, #d95926, #199e70 — lightness band PASS, chroma floor PASS,
+             contrast 5.44 / 5.09 / 5.81 : 1, worst adjacent normal-vision dE 20.9
+             (floor 15), worst CVD dE 9.4 (target 8).
+           Here blue is always the reversible path and orange always the stored one.
+           Green/red are STATUS only, never a series, always with a glyph and a word. */
+        .viz {
+            --ok-c: #3987e5;
+            --bad-c: #d95926;
+            --third: #199e70;
+            --good: #199e70;
+            --crit: #d03b3b;
+            --grid: #24242a;
+            --axis: #45454f;
+            --neutral: #a3a3aa;
+        }
+
+        .report-section { margin: 0 auto 20px; max-width: 1040px; text-align: left; }
+        .report-section h2 { text-align: left; font-size: 20px; margin: 0 0 10px; letter-spacing: 0; }
+        .report-section h2 .num { color: var(--accent); font-family: var(--font-mono); font-size: 15px; margin-right: 10px; }
+        .report-section h3 { font-size: 13.5px; color: var(--text); margin: 22px 0 8px; }
+        .report-section p { color: var(--muted); font-size: 14.5px; line-height: 1.7; margin: 0 0 12px; }
+        .report-section p:last-child { margin-bottom: 0; }
+        .report-section strong { color: var(--text); font-weight: 600; }
+        .report-lead { font-size: 15.5px !important; color: var(--text) !important; }
+        code.mono { font-family: var(--font-mono); background: rgba(255, 255, 255, .06); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--text); }
+        .muted-note { color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+        .quote { border-left: 2px solid var(--panel-border); padding: 2px 0 2px 14px; color: var(--muted); font-size: 13.5px; font-style: italic; margin: 0 0 14px; }
+
+        .pill { display: inline-block; font-size: 9.5px; font-weight: 700; border-radius: 999px; padding: 2px 9px; letter-spacing: .05em; text-transform: uppercase; vertical-align: 3px; }
+        .pill.measured { color: #9dc6f5; border: 1px solid rgba(57, 135, 229, .7); background: rgba(57, 135, 229, .12); }
+        .pill.computed { color: #f0c3aa; border: 1px solid rgba(217, 89, 38, .7); background: rgba(217, 89, 38, .12); }
+        .pill.ref { color: var(--muted); border: 1px solid var(--panel-border); }
+
+        pre.code { background: rgba(255, 255, 255, .04); border: 1px solid var(--panel-border); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.8; color: var(--text); margin: 0 0 14px; }
+        pre.code .c { color: var(--muted); }
+        pre.code .k { color: var(--ok-c); }
+        pre.code .r { color: var(--bad-c); }
+
+        .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 12px; margin: 14px 0 4px; }
+        .tile { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 13px 15px; }
+        .tile .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .tile .v { font-size: 24px; font-weight: 700; color: var(--text); margin-top: 4px; line-height: 1.1; font-family: var(--font-mono); }
+        .tile .sub { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+
+        .readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(255, 255, 255, .03); }
+        .readout > div { padding: 15px 17px; border-right: 1px solid var(--panel-border); }
+        .readout > div:last-child { border-right: none; }
+        .readout .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .readout .v { font-size: 26px; font-weight: 700; font-family: var(--font-mono); margin-top: 5px; line-height: 1.05; color: var(--text); }
+        .readout .delta { font-size: 12px; font-family: var(--font-mono); margin-top: 5px; color: var(--muted); }
+
+        .ctl-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; margin: 4px 0 16px; }
+        .ctl { display: flex; flex-direction: column; gap: 5px; }
+        .ctl label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .ctl input[type=range] { width: 210px; accent-color: var(--accent); }
+        .ctl .val { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
+        .btn { background: rgba(255, 255, 255, .05); border: 1px solid var(--panel-border); color: var(--muted); border-radius: 999px; padding: 6px 14px; font-size: 12px; cursor: pointer; font-family: var(--font-sans); }
+        .btn:hover { color: var(--text); border-color: var(--muted); }
+        .btn.on { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+        .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        table.dt { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0 4px; }
+        table.dt th { text-align: left; font-weight: 600; color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; padding: 7px 9px; border-bottom: 1px solid var(--panel-border); }
+        table.dt td { padding: 8px 9px; border-bottom: 1px solid rgba(255, 255, 255, .05); color: var(--text); }
+        table.dt td.n, table.dt th.n { text-align: right; font-family: var(--font-mono); }
+        table.dt tr.hl td { background: rgba(57, 135, 229, .10); }
+        table.dt tr.warn td { background: rgba(217, 89, 38, .10); }
+        table.dt tr:last-child td { border-bottom: none; }
+
+        .box { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+        .box .boxk { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+        .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
+        .legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+        .chartwrap { overflow-x: auto; }
+        svg.chart { display: block; width: 100%; height: auto; }
+        svg.chart text { font-family: var(--font-mono); fill: var(--muted); font-size: 10px; }
+        svg.chart .axis { stroke: var(--axis); stroke-width: 1; }
+        svg.chart .grid { stroke: var(--grid); stroke-width: 1; }
+
+        .gate { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 12px; }
+        .gate.pass { color: var(--good); }
+        .gate.fail { color: var(--crit); }
+        .gatelist { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 7px 18px; margin-top: 10px; }
+
+        /* the reversible stack stepper */
+        .stack { display: grid; gap: 4px; margin: 10px 0 6px; font-family: var(--font-mono); font-size: 10.5px; }
+        .stack .lay { display: grid; grid-template-columns: 62px 1fr 1fr; gap: 6px; align-items: center; }
+        .stack .lbl { color: var(--muted); text-align: right; padding-right: 4px; }
+        .slot { height: 26px; border-radius: 5px; border: 1px solid var(--grid); background: rgba(255, 255, 255, .02); display: flex; align-items: center; justify-content: center; color: var(--axis); transition: background .18s, border-color .18s, color .18s; }
+        .slot.held { background: rgba(217, 89, 38, .26); border-color: rgba(217, 89, 38, .6); color: #f5cdb9; }
+        .slot.keep { background: rgba(57, 135, 229, .3); border-color: rgba(57, 135, 229, .75); color: #cfe2fb; }
+        .slot.now { border-color: var(--third); box-shadow: 0 0 0 1px var(--third) inset; }
+        .stackhd { display: grid; grid-template-columns: 62px 1fr 1fr; gap: 6px; font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 2px; }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <button class="nav-toggle" id="sidebarToggle" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="7" x2="20" y2="7"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="17" x2="20" y2="17"></line>
+            </svg>
+        </button>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Sections</h3>
+                <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">&times;</button>
+            </div>
+            <div class="nav-list"></div>
+        </aside>
+
+        <main class="content viz">
+            <div class="wrapper">
+                <h1>Forget the Middle</h1>
+                <div class="subtitle">Session 12 divided what a training run <em>stores</em>. This one
+                    divides what it <em>computes</em> &mdash; and then removes most of it instead. A
+                    reversible stack keeps the state entering the layers and the state leaving them,
+                    throws away everything in between, and rebuilds it on the way back.
+                    <strong>Activation memory stops depending on depth.</strong></div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">00</span>What was actually run</h2>
+                    <p class="report-lead">The assignment: train a 20M model for 50M tokens, again with
+                        reversibility at the same batch, again with the batch pushed as far as it will
+                        go &mdash; and report loss, speed, memory and whatever else turns up.</p>
+                    <div class="tiles" id="heroTiles"></div>
+                    <p class="muted-note" id="heroNote" style="margin-top:14px"></p>
+                    <h3>How to read the markers</h3>
+                    <p class="muted-note">Most of this session is about dividing a 30B model across many
+                        GPUs. The assignment is about one GPU, so those sections are arithmetic and the
+                        page says so rather than blurring the two.
+                        <span class="pill measured">measured</span> ran on the hardware below.
+                        <span class="pill computed">computed</span> is arithmetic from the session's
+                        figures. <span class="pill ref">reference</span> is recorded from the course.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">01</span>Why this session exists at all <span class="pill computed">computed</span></h2>
+                    <p>ZeRO spreads the optimizer state, then the gradients, then the weights across the
+                        copies of a model. Every GPU still runs the whole model on its own micro-batch,
+                        first layer to last. Three things break under that arrangement, and each is a
+                        section of this session.</p>
+                    <p><strong>ZeRO never divides activations.</strong> One sequence of 8,192 tokens
+                        through the 30B model stores 127.5 GiB of intermediate results. An H100 holds
+                        74.5 GiB. Take ZeRO-3 to its limit, put the entire training state at 16/N, and
+                        that one sequence still does not fit.</p>
+                    <p><strong>ZeRO-3 needs a whole layer to fit, and rebuilds it every step</strong> at a
+                        cost of 3 parameter-sizes of traffic. <strong>And one long sequence cannot be
+                        split by data parallelism at all</strong> &mdash; a 131,072-token sequence
+                        produces 2,040 GiB of activations and is a single sample.</p>
+                    <div class="readout" id="problemReadout"></div>
+                    <p class="muted-note" style="margin-top:12px">Session 12 answered <em>our model's
+                        state does not fit</em>. This one answers <em>our model's computation does not
+                        fit</em>. Tensor, sequence, pipeline and context parallelism divide the
+                        computation, and therefore the activations. Reversibility does something else
+                        entirely: it stops storing them.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">02</span>The model, and the two numbers that matter <span class="pill computed">computed</span></h2>
+                    <p>One model is used for every calculation in this session: <strong>30.2 billion
+                        parameters in 96 layers</strong>, hidden size 5,120, 40 attention heads sharing 8
+                        sets of keys and values. Training one weight costs 16 bytes &mdash; the weight,
+                        its gradient, a 32-bit master copy, and the optimizer's two running averages.</p>
+                    <table class="dt" id="modelTable"></table>
+                    <p style="margin-top:14px">Activations are counted at about <strong>34 bytes per
+                        token per unit of hidden size</strong>, with FlashAttention, from Korthikanti and
+                        colleagues' 2022 census of every tensor a transformer layer keeps. That is 1.33
+                        GiB per layer for an 8,192-token sequence, and 127.5 GiB across 96 layers.</p>
+                    <table class="dt" id="actTable"></table>
+                    <p class="muted-note" style="margin-top:12px" id="actNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">03</span>Ten words, with numbers <span class="pill ref">reference</span></h2>
+                    <table class="dt">
+                        <tr><th>word</th><th>what it is</th><th class="n">the number</th></tr>
+                        <tr><td><strong>GPU</strong></td><td>one accelerator card</td><td class="n">H100: 80 GB = 74.5 GiB · B200: 180 GB = 167.6 GiB</td></tr>
+                        <tr><td><strong>node</strong></td><td>one machine holding eight GPUs of the same kind</td><td class="n">8 GPUs</td></tr>
+                        <tr><td><strong>NVLink</strong></td><td>wiring between GPUs inside a node</td><td class="n">NVLink 4: 450 GB/s · NVLink 5: 900 GB/s</td></tr>
+                        <tr><td><strong>InfiniBand</strong></td><td>the cable between nodes, one 400 Gb/s card per GPU</td><td class="n">50 GB/s</td></tr>
+                        <tr><td><strong>micro-batch</strong></td><td>the sequences in one forward and backward pass</td><td class="n">1 × 8,192 tokens</td></tr>
+                        <tr><td><strong>all-reduce</strong></td><td>combine from every GPU, return to every GPU</td><td class="n">2(N−1)/N × the tensor</td></tr>
+                        <tr><td><strong>all-gather</strong></td><td>each GPU's slice → everyone has the whole</td><td class="n">(N−1)/N</td></tr>
+                        <tr><td><strong>reduce-scatter</strong></td><td>combine, then give each GPU one slice</td><td class="n">(N−1)/N</td></tr>
+                        <tr><td><strong>all-to-all</strong></td><td>every GPU sends a different piece to every other</td><td class="n">—</td></tr>
+                        <tr><td><strong>degree</strong></td><td>how many GPUs a form of parallelism divides across</td><td class="n">e.g. TP = 8</td></tr>
+                    </table>
+                    <p class="muted-note" style="margin-top:14px">One NVLink 4 connection carries
+                        <strong>9×</strong> the traffic of one InfiniBand card; NVLink 5 carries 18×.
+                        That ratio decides which form of parallelism is allowed to cross a node boundary,
+                        and it is the whole of section 05. Session 12 measured the (N−1)/N factor in the
+                        all-reduce row directly &mdash; a ring moves 1.94P at 32 ranks, not 2P.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">04</span>Four ways to divide the computation <span class="pill computed">computed</span></h2>
+                    <p>Each divides something different, and each pays for it differently.</p>
+                    <table class="dt">
+                        <tr><th>form</th><th>divides</th><th>cost</th><th>where it can live</th></tr>
+                        <tr><td><strong>Tensor</strong></td><td>every weight matrix, by columns then rows</td><td>2 all-reduces forward, 2 backward, <em>per layer</em> — 56.4 GB per sequence at TP=8</td><td>inside a node only</td></tr>
+                        <tr><td><strong>Sequence</strong></td><td>the layer-norm and dropout activations, along the tokens</td><td>same volume as the all-reduce it replaces</td><td>with tensor parallelism</td></tr>
+                        <tr><td><strong>Pipeline</strong></td><td>the model by layers, one group per stage</td><td>83.9 MB per micro-batch per boundary</td><td>across nodes</td></tr>
+                        <tr><td><strong>Context</strong></td><td>the tokens of a single sequence</td><td>attention must reach tokens on other GPUs</td><td>the only one that splits one sample</td></tr>
+                    </table>
+                    <h3>The pipeline bubble</h3>
+                    <p>A pipeline stage waits while the first micro-batch travels to it, and again at the
+                        end of the step. With <code class="mono">p</code> stages and
+                        <code class="mono">m</code> micro-batches, the share of the step spent waiting is
+                        <code class="mono">(p−1)/(m+p−1)</code>. More micro-batches shrink it.</p>
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label for="ppStages">stages <span class="val" id="ppStagesVal"></span></label>
+                            <input type="range" id="ppStages" min="2" max="32" step="1" value="8" />
+                        </div>
+                        <div class="ctl">
+                            <label for="ppMicro">micro-batches <span class="val" id="ppMicroVal"></span></label>
+                            <input type="range" id="ppMicro" min="1" max="128" step="1" value="32" />
+                        </div>
+                    </div>
+                    <div class="readout" id="ppReadout"></div>
+                    <p class="muted-note" style="margin-top:12px" id="ppNote"></p>
+                    <h3>Schedules change the memory, not the bubble</h3>
+                    <table class="dt">
+                        <tr><th>schedule, 8 stages, 32 micro-batches</th><th class="n">held at stage 0</th><th class="n">activation memory</th><th class="n">waiting</th></tr>
+                        <tr class="warn"><td>all forward, then all backward</td><td class="n">32</td><td class="n">510.0 GiB</td><td class="n">17.9%</td></tr>
+                        <tr class="hl"><td>1F1B</td><td class="n">8</td><td class="n">127.5 GiB</td><td class="n">17.9%</td></tr>
+                        <tr><td>interleaved 1F1B, 2 chunks</td><td class="n">&gt; 8</td><td class="n">&gt; 127.5 GiB</td><td class="n">9.9%</td></tr>
+                    </table>
+                    <p class="muted-note" style="margin-top:14px">Zero-bubble schedules split the backward
+                        pass into the gradient for the input and the gradient for the weights; the weight
+                        part can wait, so it fills idle slots. Sea AI's ZB-H1 cuts the bubble to a third
+                        of 1F1B's at the same peak memory.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">05</span>Where each form is allowed to live <span class="pill ref">reference</span></h2>
+                    <p>A cluster has fast wiring inside each node and slower cable between them, so the
+                        forms nest from the most demanding outward: <strong>tensor innermost, then
+                        context, then pipeline, then data parallelism on the outside</strong>.</p>
+                    <p>Tensor parallelism at degree 8 fills one node over NVLink. Data parallelism spans
+                        the nodes over InfiniBand. Most clusters are <em>rail-optimized</em> &mdash; card
+                        <em>k</em> of every node reaches the same switch &mdash; so pipeline and
+                        data-parallel partners sit at the same position in different nodes and their
+                        traffic stays on one rail.</p>
+                    <table class="dt">
+                        <tr><th>per GPU, 64 GPUs in 8 nodes</th><th class="n">GiB</th></tr>
+                        <tr><td>training state at TP = 8</td><td class="n">56.25</td></tr>
+                        <tr><td>activations at TP = 8 with sequence parallelism</td><td class="n">15.9</td></tr>
+                        <tr class="warn"><td>total, against a 74.5 GiB card</td><td class="n">72.2</td></tr>
+                        <tr class="hl"><td>with the optimizer state split across the 8 data-parallel copies</td><td class="n">35.3</td></tr>
+                    </table>
+                    <p style="margin-top:14px">Production layouts combine all of it. Llama 3 405B ran on
+                        up to 16,384 H100s with tensor, context, pipeline and data parallelism together.
+                        DeepSeek-V3 is the instructive counter-example: <strong>it trained with no tensor
+                        parallelism at all</strong>, because its H800s had NVLink at only ~3.2× InfiniBand
+                        rather than 9×, and that ratio is what makes tensor parallelism affordable.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">06</span>Reversibility: the rule <span class="pill computed">computed</span></h2>
+                    <p>Every section above divides the activations across more GPUs. A reversible network
+                        removes most of them instead.</p>
+                    <p>An ordinary block adds its output to its own input. That cannot be run backwards:
+                        recovering the input would need <code class="mono">f</code> evaluated <em>at the
+                        input being recovered</em>.</p>
+                    <pre class="code"><span class="c">ordinary, not invertible</span>
+p[l]   = p[l-1] + f(p[l-1])
+
+<span class="c">midpoint — reaches two layers back, evaluates in between</span>
+<span class="k">p[l+1] = p[l-1] + 2h · f(p[l])</span>
+<span class="k">p[l-1] = p[l+1] − 2h · f(p[l])</span>   <span class="c">← p[l] is already in hand</span></pre>
+                    <p>The backward pass walks down the stack, and at every step reconstructs the input it
+                        needs from the output it already holds. <strong>Nothing in between has to be
+                        kept.</strong> This is not recomputation: recomputation stores the input of every
+                        group of layers and runs them forward again. A reversible stack stores no layer
+                        inputs at all.</p>
+                    <h3>Watch what is in memory</h3>
+                    <p>Step through a forward and backward pass. Orange is a state held for the backward
+                        pass; blue is a boundary state the reversible stack keeps deliberately.</p>
+                    <div class="ctl-row">
+                        <div class="ctl">
+                            <label>mode</label>
+                            <div class="btnrow" id="stackMode"></div>
+                        </div>
+                        <div class="ctl">
+                            <label>step</label>
+                            <div class="btnrow">
+                                <button class="btn" id="stackPrev">&larr; back</button>
+                                <button class="btn on" id="stackNext">forward &rarr;</button>
+                                <button class="btn" id="stackReset">reset</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stackhd"><div></div><div style="text-align:center">stored activations</div><div style="text-align:center">reversible</div></div>
+                    <div class="stack" id="stackGrid"></div>
+                    <div class="readout" id="stackReadout" style="margin-top:14px"></div>
+                    <p class="muted-note" id="stackNote" style="margin-top:12px"></p>
+                    <h3>Two constraints come with it</h3>
+                    <p><strong>The forward pass must be deterministic.</strong> The backward pass rebuilds
+                        activations by computing the same block again, and a random dropout mask would
+                        make the reconstruction differ from what the forward actually used. Dropout of
+                        zero is a correctness requirement here, not a tuning choice &mdash; and it is
+                        gated in section 12.</p>
+                    <p><strong>The rule is only marginally stable.</strong> The step size and blend
+                        coefficient have to sit in a narrow range, and section 10 measures what happens
+                        outside it.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">07</span>Is the implementation correct? <span class="pill measured">measured</span></h2>
+                    <p class="report-lead">This is the section everything else depends on, and it is the
+                        reason the loss curve is not evidence. <strong>A reversible stack that
+                        reconstructs slightly wrong still trains.</strong> The loss still falls. It simply
+                        trains a different model than the one you wrote down.</p>
+                    <p>So reversible gradients are compared against ordinary autograd, and the comparison
+                        is run twice at different precisions, because those answer different questions.
+                        <strong>Is the arithmetic exact?</strong> Ask in float64 &mdash; an exact
+                        implementation differs only by rounding, so the error must collapse when precision
+                        rises. <strong>How much does it drift?</strong> Ask in float32.</p>
+                    <table class="dt" id="correctTable"></table>
+                    <p class="muted-note" style="margin-top:14px" id="correctNote"></p>
+                    <h3>Euler is in the comparison because it fails</h3>
+                    <p>The assignment asks which variant worked &mdash; "mid-point, euler, etc". Plain
+                        forward Euler, <code class="mono">p + h·f(p)</code>, has exactly the same flaw as
+                        the ordinary residual: inverting it needs <code class="mono">f</code> at the state
+                        being recovered. It is not reversible, and saying so with a measurement is worth
+                        more than leaving it unmentioned.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">08</span>The three runs <span class="pill measured">measured</span></h2>
+                    <p>Same tokens, same seed, same schedule. Run 1 against run 2 isolates what
+                        reversibility <strong>costs</strong>, because only the memory path changes. Run 2
+                        against run 3 isolates what it <strong>buys</strong>, because the saved memory is
+                        spent on batch size.</p>
+                    <table class="dt" id="runsTable"></table>
+                    <div class="chartwrap"><svg class="chart" id="lossChart" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg></div>
+                    <div class="legend" id="lossLegend"></div>
+                    <div class="readout" id="runsReadout" style="margin-top:14px"></div>
+                    <h3>The third run is a negative result, and the sharpest thing here</h3>
+                    <p id="run3Note"></p>
+                    <h3>Where this disagrees with the paper</h3>
+                    <p>The method's authors report a batch ratio of <strong>9.9×</strong> (26 →
+                        257 on an 80 GB H100, and "about 10" on five different cards) and a throughput
+                        gain of <strong>2.01×</strong> (56.96 → 114.49 samples/s), at an
+                        estimated overhead of 30–50%. This run got 5.0×, 1.007× and 16%.
+                        All three differences have the same two causes, and neither is a disagreement
+                        about the method.</p>
+                    <table class="dt" id="paperTable"></table>
+                    <p class="muted-note" id="paperNote" style="margin-top:14px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">09</span>Memory that does not depend on depth <span class="pill measured">measured</span></h2>
+                    <p class="report-lead">The session's central claim, which the notes assert and never
+                        show: <em>"a 96-layer model and a 20-layer model store the same two boundary
+                        states."</em></p>
+                    <p>Width and feed-forward size are held fixed and only the depth moves, so the
+                        parameter count is free to vary and is reported rather than pinned. That control
+                        matters more than it looks &mdash; the first version of this sweep held
+                        <em>parameters</em> fixed instead, which forces the width to shrink as depth
+                        grows, and then neither column is measuring depth. The note under the table says
+                        what that cost.</p>
+                    <div class="chartwrap"><svg class="chart" id="depthChart" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg></div>
+                    <div class="legend">
+                        <span><i style="background:#d95926"></i>stored activations</span>
+                        <span><i style="background:#3987e5"></i>reversible</span>
+                    </div>
+                    <table class="dt" id="depthTable"></table>
+                    <div class="readout" id="depthReadout" style="margin-top:14px"></div>
+                    <p class="muted-note" id="depthNote" style="margin-top:12px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">10</span>Reconstruction drift <span class="pill measured">measured</span></h2>
+                    <p>Not in the session notes, and it is what limits how deep a reversible stack can go.
+                        Reversal <em>subtracts</em>, so each rebuilt state carries the error of the one
+                        above it and the error compounds down the stack. In low precision it compounds
+                        much faster &mdash; the same failure mode Session 12 measured when a bfloat16 ring
+                        summed 1…32 to 524 instead of 528.</p>
+                    <div class="chartwrap"><svg class="chart" id="driftChart" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg></div>
+                    <div class="legend" id="driftLegend"></div>
+                    <table class="dt" id="driftTable"></table>
+                    <p class="muted-note" id="driftNote" style="margin-top:12px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">11</span>The blend coefficient, and a constraint on what it can mean <span class="pill measured">measured</span></h2>
+                    <p>The session records Lightning LM running a step size of 0.25 and a <strong>blend
+                        coefficient of 0.5</strong>, and says these must be set explicitly because library
+                        defaults differ. It never gives the formula. Under the natural reading, the
+                        inverse divides by <code class="mono">(1−γ)</code> &mdash; so it multiplies any
+                        reconstruction error by <code class="mono">1/(1−γ)</code> <em>once per
+                        layer</em>.</p>
+                    <pre class="code">p[l+1] = (1−γ)·p[l-1] + γ·p[l] + 2h·f(p[l])
+p[l-1] = ( p[l+1] − γ·p[l] − 2h·f(p[l]) ) <span class="r">/ (1−γ)</span>   <span class="c">← amplifies, every layer</span></pre>
+                    <table class="dt" id="gammaTable"></table>
+                    <p class="muted-note" id="gammaNote" style="margin-top:14px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">12</span>The frontier, and why the batch bought nothing <span class="pill measured">measured</span></h2>
+                    <p>The three required runs are three points. This is the curve they sit on: throughput
+                        against peak memory as the batch grows, for both paths, until the card refuses.</p>
+                    <div class="chartwrap"><svg class="chart" id="frontChart" viewBox="0 0 900 340" preserveAspectRatio="xMidYMid meet"></svg></div>
+                    <div class="legend">
+                        <span><i style="background:#d95926"></i>stored activations</span>
+                        <span><i style="background:#3987e5"></i>reversible</span>
+                    </div>
+                    <p class="muted-note" id="frontNote" style="margin-top:12px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">13</span>What reversibility changes upstream <span class="pill computed">computed</span></h2>
+                    <p>Reversibility does not make memory free. It moves the constraint. Activations stop
+                        being the term that decides the layout, and the weights and optimizer state become
+                        that term instead &mdash; which are the things ZeRO divides, so Session 12's
+                        decisions move back up the order.</p>
+                    <table class="dt" id="upstreamTable"></table>
+                    <p style="margin-top:14px">Applied to one node of eight B200s at TP = 8, the state per
+                        GPU is 56.25 GiB either way. Stored activations stop that node at 32,768 tokens;
+                        rebuilt ones let the same node hold <strong>131,072 tokens with 108 GiB still
+                        free</strong>.</p>
+                    <table class="dt">
+                        <tr><th>form of parallelism</th><th>what reversibility does to it</th></tr>
+                        <tr><td><strong>Tensor</strong></td><td>unchanged — it divides the weight matrices, and the weights are still there</td></tr>
+                        <tr><td><strong>Sequence</strong></td><td>now divides the boundary states, which are small; its original job is gone</td></tr>
+                        <tr><td><strong>Pipeline</strong></td><td>loses one of its two reasons — it divided state <em>and</em> activations by layer</td></tr>
+                        <tr><td><strong>Context</strong></td><td>needed only at much longer sequences; the threshold moves out ~100×</td></tr>
+                        <tr class="hl"><td><strong>ZeRO stages</strong></td><td>more important — they divide what now fills the card</td></tr>
+                    </table>
+                    <p class="muted-note" style="margin-top:14px">One interaction needs care. Under ZeRO-3
+                        a GPU holds only a slice of each layer's weights and gathers them once in the
+                        backward pass. A reversible backward reads those weights a <em>second</em> time,
+                        when it rebuilds the activations, so the gather has to happen there too. The
+                        Lightning LM report puts it directly: the recompute path is a second forward pass,
+                        and every parameter the forward gathers has to be gathered again for it.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">14</span>Gates</h2>
+                    <p>Every measured claim as a boolean. The harness exits non-zero if any is false, so
+                        the exit code is the pass/fail signal and not the printed summary.</p>
+                    <div class="readout" id="gateSummary"></div>
+                    <div class="gatelist" id="gateList"></div>
+                    <h3>What is not here</h3>
+                    <p>Stated rather than buried. <strong>The parallelism sections are arithmetic</strong>
+                        &mdash; sections 01 to 05 and 13 are about a 30B model on many GPUs, and this ran
+                        on one T4. <strong>fp16 reversibility is measured but not used</strong>: the
+                        training runs use autocast, keeping the residual stream in fp32, because section
+                        10 shows what happens otherwise. <strong>Only midpoint was trained</strong> —
+                        revnet and blended are verified correct and measured for drift, but the three
+                        required runs all use the rule the session specifies.</p>
+                </div>
+
+                <div class="panel report-section">
+                    <p class="muted-note" id="provenance"></p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+/* BEGIN GENERATED s13data */
+const S13DATA = {
+  "meta": {
+    "python": "3.13.15",
+    "torch": "2.11.0+cu128",
+    "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+    "device": "cuda",
+    "quick": false,
+    "gpu": "Tesla T4",
+    "vram_gb": 15.6,
+    "capability": "7.5",
+    "bf16_native": false,
+    "bf16_including_emulation": true,
+    "wall_seconds": 9.5,
+    "wall_seconds_full_run": 4434.9
+  },
+  "activation_arithmetic": [
+    {
+      "seq": 8192,
+      "stored_gib": 127.5,
+      "reversible_gib": 1.484375,
+      "ratio": 85.89473684210526
+    },
+    {
+      "seq": 32768,
+      "stored_gib": 510.0,
+      "reversible_gib": 5.9375,
+      "ratio": 85.89473684210526
+    },
+    {
+      "seq": 131072,
+      "stored_gib": 2040.0,
+      "reversible_gib": 23.75,
+      "ratio": 85.89473684210526
+    }
+  ],
+  "corpus": {
+    "tokens": 50000000,
+    "target": 50000000,
+    "vocab_cap": 8192,
+    "source": "HuggingFaceFW/fineweb-edu",
+    "dataset_config": "sample-10BT",
+    "tokenizer": "sarvamai/sarvam-1",
+    "source_provenance": "inferred, not recorded. This run's token cache was built before the harness wrote a provenance sidecar, so it reported its source as 'cache'. The fallback chain was re-resolved in the same environment and selected fineweb-edu on the first attempt, 50/50 sampled documents passing the length filter, so no fallback was reached. Strong inference, not a measurement of this run."
+  },
+  "configs": {
+    "standard": {
+      "d_model": 288,
+      "d_ff": 1408,
+      "n_layer": 10,
+      "params": 19986336,
+      "h": 1.0,
+      "gamma": 0.0
+    },
+    "midpoint": {
+      "d_model": 288,
+      "d_ff": 1408,
+      "n_layer": 10,
+      "params": 19986336,
+      "h": 0.25,
+      "gamma": 0.0
+    },
+    "blended": {
+      "d_model": 288,
+      "d_ff": 1408,
+      "n_layer": 10,
+      "params": 19986336,
+      "h": 0.25,
+      "gamma": 0.5
+    },
+    "revnet": {
+      "d_model": 288,
+      "d_ff": 3328,
+      "n_layer": 10,
+      "params": 19983456,
+      "h": 0.25,
+      "gamma": 0.0
+    }
+  },
+  "correctness": {
+    "midpoint": {
+      "exact_fp64": 1.0310172672084894e-14,
+      "drift_fp32": 5.436083826303413e-06,
+      "exact": true
+    },
+    "blended": {
+      "exact_fp64": 6.43932899341738e-14,
+      "drift_fp32": 4.476807896691191e-05,
+      "exact": true
+    },
+    "revnet": {
+      "exact_fp64": 1.7432172833174083e-13,
+      "drift_fp32": 9.755752307187599e-05,
+      "exact": true
+    },
+    "euler_reversible": false
+  },
+  "runs": {
+    "standard": {
+      "rule": "standard",
+      "reversible": false,
+      "batch": 108,
+      "seq": 512,
+      "n_layer": 10,
+      "params": 19986336,
+      "steps": 904,
+      "tokens": 49987584,
+      "final_loss": 5.057617664337158,
+      "tok_s": 43701.47569639439,
+      "wall_s": 1141.3113906383514,
+      "peak_bytes": 12117201920,
+      "losses": [
+        {
+          "step": 0,
+          "tokens": 0,
+          "loss": 9.501177787780762
+        },
+        {
+          "step": 50,
+          "tokens": 2764800,
+          "loss": 7.490170001983643
+        },
+        {
+          "step": 100,
+          "tokens": 5529600,
+          "loss": 6.857410430908203
+        },
+        {
+          "step": 150,
+          "tokens": 8294400,
+          "loss": 6.280230522155762
+        },
+        {
+          "step": 200,
+          "tokens": 11059200,
+          "loss": 5.978750705718994
+        },
+        {
+          "step": 250,
+          "tokens": 13824000,
+          "loss": 5.83872127532959
+        },
+        {
+          "step": 300,
+          "tokens": 16588800,
+          "loss": 5.706930637359619
+        },
+        {
+          "step": 350,
+          "tokens": 19353600,
+          "loss": 5.631030559539795
+        },
+        {
+          "step": 400,
+          "tokens": 22118400,
+          "loss": 5.577263355255127
+        },
+        {
+          "step": 450,
+          "tokens": 24883200,
+          "loss": 5.462262153625488
+        },
+        {
+          "step": 500,
+          "tokens": 27648000,
+          "loss": 5.433480739593506
+        },
+        {
+          "step": 550,
+          "tokens": 30412800,
+          "loss": 5.350469589233398
+        },
+        {
+          "step": 600,
+          "tokens": 33177600,
+          "loss": 5.2438507080078125
+        },
+        {
+          "step": 650,
+          "tokens": 35942400,
+          "loss": 5.214096546173096
+        },
+        {
+          "step": 700,
+          "tokens": 38707200,
+          "loss": 5.192122936248779
+        },
+        {
+          "step": 750,
+          "tokens": 41472000,
+          "loss": 5.169722080230713
+        },
+        {
+          "step": 800,
+          "tokens": 44236800,
+          "loss": 5.14981746673584
+        },
+        {
+          "step": 850,
+          "tokens": 47001600,
+          "loss": 5.0549187660217285
+        },
+        {
+          "step": 900,
+          "tokens": 49766400,
+          "loss": 5.025155067443848
+        },
+        {
+          "step": 903,
+          "tokens": 49932288,
+          "loss": 5.057617664337158
+        }
+      ]
+    },
+    "reversible_same": {
+      "rule": "midpoint",
+      "reversible": true,
+      "batch": 108,
+      "seq": 512,
+      "n_layer": 10,
+      "params": 19986336,
+      "steps": 904,
+      "tokens": 49987584,
+      "final_loss": 5.240787506103516,
+      "tok_s": 36516.34840718349,
+      "wall_s": 1365.8811511993408,
+      "peak_bytes": 2528390656,
+      "losses": [
+        {
+          "step": 0,
+          "tokens": 0,
+          "loss": 9.57505989074707
+        },
+        {
+          "step": 50,
+          "tokens": 2764800,
+          "loss": 7.494912624359131
+        },
+        {
+          "step": 100,
+          "tokens": 5529600,
+          "loss": 6.965161323547363
+        },
+        {
+          "step": 150,
+          "tokens": 8294400,
+          "loss": 6.529567718505859
+        },
+        {
+          "step": 200,
+          "tokens": 11059200,
+          "loss": 6.173262596130371
+        },
+        {
+          "step": 250,
+          "tokens": 13824000,
+          "loss": 6.0385918617248535
+        },
+        {
+          "step": 300,
+          "tokens": 16588800,
+          "loss": 5.8984761238098145
+        },
+        {
+          "step": 350,
+          "tokens": 19353600,
+          "loss": 5.821402549743652
+        },
+        {
+          "step": 400,
+          "tokens": 22118400,
+          "loss": 5.764010906219482
+        },
+        {
+          "step": 450,
+          "tokens": 24883200,
+          "loss": 5.654521942138672
+        },
+        {
+          "step": 500,
+          "tokens": 27648000,
+          "loss": 5.621935844421387
+        },
+        {
+          "step": 550,
+          "tokens": 30412800,
+          "loss": 5.5379533767700195
+        },
+        {
+          "step": 600,
+          "tokens": 33177600,
+          "loss": 5.439319610595703
+        },
+        {
+          "step": 650,
+          "tokens": 35942400,
+          "loss": 5.436323642730713
+        },
+        {
+          "step": 700,
+          "tokens": 38707200,
+          "loss": 5.391642093658447
+        },
+        {
+          "step": 750,
+          "tokens": 41472000,
+          "loss": 5.374807834625244
+        },
+        {
+          "step": 800,
+          "tokens": 44236800,
+          "loss": 5.349811553955078
+        },
+        {
+          "step": 850,
+          "tokens": 47001600,
+          "loss": 5.25109338760376
+        },
+        {
+          "step": 900,
+          "tokens": 49766400,
+          "loss": 5.214931964874268
+        },
+        {
+          "step": 903,
+          "tokens": 49932288,
+          "loss": 5.240787506103516
+        }
+      ]
+    },
+    "reversible_max": {
+      "rule": "midpoint",
+      "reversible": true,
+      "batch": 543,
+      "seq": 512,
+      "n_layer": 10,
+      "params": 19986336,
+      "steps": 179,
+      "tokens": 49764864,
+      "final_loss": 6.069492340087891,
+      "tok_s": 36762.738996661385,
+      "wall_s": 1338.5518419742584,
+      "peak_bytes": 11249621504,
+      "losses": [
+        {
+          "step": 0,
+          "tokens": 0,
+          "loss": 9.582239151000977
+        },
+        {
+          "step": 50,
+          "tokens": 13900800,
+          "loss": 7.466584205627441
+        },
+        {
+          "step": 100,
+          "tokens": 27801600,
+          "loss": 6.868056774139404
+        },
+        {
+          "step": 150,
+          "tokens": 41702400,
+          "loss": 6.273497104644775
+        },
+        {
+          "step": 178,
+          "tokens": 49486848,
+          "loss": 6.069492340087891
+        }
+      ]
+    }
+  },
+  "batches": {
+    "fixed": 108,
+    "reversible_max": 543
+  },
+  "depth_sweep": {
+    "rows": [
+      {
+        "n_layer": 4,
+        "d_model": 288,
+        "params": 10914336,
+        "stored": 165218496,
+        "reversible": 5923968,
+        "ratio": 27.889836001815
+      },
+      {
+        "n_layer": 8,
+        "d_model": 288,
+        "params": 16962336,
+        "stored": 326872320,
+        "reversible": 5923968,
+        "ratio": 55.1779347896545
+      },
+      {
+        "n_layer": 16,
+        "d_model": 288,
+        "params": 29058336,
+        "stored": 650179968,
+        "reversible": 5923968,
+        "ratio": 109.7541323653335
+      },
+      {
+        "n_layer": 32,
+        "d_model": 288,
+        "params": 53250336,
+        "stored": 1296795264,
+        "reversible": 5923968,
+        "ratio": 218.9065275166915
+      }
+    ],
+    "depth_growth": 8.0,
+    "stored_growth": 7.848971485613814,
+    "reversible_growth": 1.0
+  },
+  "drift": [
+    {
+      "rule": "midpoint",
+      "dtype": "float32",
+      "by_depth": {
+        "2": 9.064535413100339e-08,
+        "4": 1.1522734797050808e-06,
+        "8": 4.292402969297748e-06,
+        "16": 8.414292067744026e-06,
+        "32": 1.7354576514902126e-05
+      }
+    },
+    {
+      "rule": "midpoint",
+      "dtype": "float16",
+      "by_depth": {
+        "2": 0.0005112474437627812,
+        "4": 0.004424778761061947,
+        "8": 0.010869565217391304,
+        "16": 0.022122524752475246,
+        "32": 0.1127411575562701
+      }
+    },
+    {
+      "rule": "revnet",
+      "dtype": "float32",
+      "by_depth": {
+        "2": 3.851934867430593e-06,
+        "4": 5.297993921557804e-05,
+        "8": 0.00015617300412985955,
+        "16": 0.0005461172355344555,
+        "32": 0.00039501567722718305
+      }
+    },
+    {
+      "rule": "revnet",
+      "dtype": "float16",
+      "by_depth": {
+        "2": 0.024481327800829875,
+        "4": 0.17242442936458977,
+        "8": 0.3937621832358674,
+        "16": 1.57001414427157,
+        "32": 1.8236914600550964
+      }
+    }
+  ],
+  "gamma_sweep": [
+    {
+      "gamma": 0.0,
+      "predicted_amplification": 1.0,
+      "drift": 4.292402969297748e-06,
+      "measured_amplification": 1.0
+    },
+    {
+      "gamma": 0.125,
+      "predicted_amplification": 2.910285368046528,
+      "drift": 5.66551571820947e-06,
+      "measured_amplification": 1.3198937189106381
+    },
+    {
+      "gamma": 0.25,
+      "predicted_amplification": 9.98872123151958,
+      "drift": 1.2731318893428288e-05,
+      "measured_amplification": 2.966012041388364
+    },
+    {
+      "gamma": 0.5,
+      "predicted_amplification": 256.0,
+      "drift": 8.68021054801292e-05,
+      "measured_amplification": 20.222263869678184
+    }
+  ],
+  "frontier": [
+    {
+      "path": "stored",
+      "batch": 1,
+      "tok_s": 13159.003940071694,
+      "peak_bytes": 426745344
+    },
+    {
+      "path": "stored",
+      "batch": 2,
+      "tok_s": 25931.682302775072,
+      "peak_bytes": 531281408
+    },
+    {
+      "path": "stored",
+      "batch": 4,
+      "tok_s": 36381.80257321682,
+      "peak_bytes": 748819456
+    },
+    {
+      "path": "stored",
+      "batch": 8,
+      "tok_s": 36919.377252612234,
+      "peak_bytes": 1206080512
+    },
+    {
+      "path": "stored",
+      "batch": 16,
+      "tok_s": 39011.80878958867,
+      "peak_bytes": 2052396032
+    },
+    {
+      "path": "stored",
+      "batch": 32,
+      "tok_s": 38763.48873265357,
+      "peak_bytes": 3809285120
+    },
+    {
+      "path": "stored",
+      "batch": 64,
+      "tok_s": 38234.661169928615,
+      "peak_bytes": 7299142656
+    },
+    {
+      "path": "reversible",
+      "batch": 1,
+      "tok_s": 9717.230502607496,
+      "peak_bytes": 420240896
+    },
+    {
+      "path": "reversible",
+      "batch": 2,
+      "tok_s": 18333.113701385664,
+      "peak_bytes": 422706688
+    },
+    {
+      "path": "reversible",
+      "batch": 4,
+      "tok_s": 30035.970330948912,
+      "peak_bytes": 454127104
+    },
+    {
+      "path": "reversible",
+      "batch": 8,
+      "tok_s": 31689.7063173763,
+      "peak_bytes": 534445568
+    },
+    {
+      "path": "reversible",
+      "batch": 16,
+      "tok_s": 33794.81577873866,
+      "peak_bytes": 694615552
+    },
+    {
+      "path": "reversible",
+      "batch": 32,
+      "tok_s": 35388.78222472614,
+      "peak_bytes": 1012989440
+    },
+    {
+      "path": "reversible",
+      "batch": 64,
+      "tok_s": 36325.811622247005,
+      "peak_bytes": 1651015168
+    },
+    {
+      "path": "reversible",
+      "batch": 128,
+      "tok_s": 38204.5937654515,
+      "peak_bytes": 2929917440
+    },
+    {
+      "path": "reversible",
+      "batch": 256,
+      "tok_s": 38488.87072645689,
+      "peak_bytes": 5494341120
+    },
+    {
+      "path": "reversible",
+      "batch": 512,
+      "tok_s": 35155.22784246695,
+      "peak_bytes": 10628972032
+    }
+  ],
+  "gates": {
+    "midpoint_is_exact_in_fp64": true,
+    "blended_is_exact_in_fp64": true,
+    "revnet_is_exact_in_fp64": true,
+    "euler_is_not_reversible": true,
+    "no_dropout_anywhere": true,
+    "all_rules_same_param_count": true,
+    "reversible_uses_less_memory": true,
+    "reversible_costs_throughput": true,
+    "reversibility_buys_batch": true,
+    "all_runs_saw_the_same_tokens": true,
+    "every_run_trained": true,
+    "reversible_memory_is_depth_independent": true,
+    "stored_memory_grows_with_depth": true,
+    "blending_amplifies_drift": true
+  }
+};
+/* END GENERATED s13data */
+</script>
+    <script>
+        (function () {
+            const D = S13DATA;
+            if (!D || !D.runs) {
+                document.getElementById('heroTiles').innerHTML =
+                    '<div class="tile"><div class="k">no data</div><div class="v">&mdash;</div>'
+                    + '<div class="sub">No baked data: run build_notebook.py --bake-only</div></div>';
+                return;
+            }
+            const SVG = 'http://www.w3.org/2000/svg';
+            const fmt = (x, n = 2) => Number(x).toFixed(n);
+            const MB = b => (b / 1e6);
+            const el = (t, a) => { const n = document.createElementNS(SVG, t); for (const k in a) n.setAttribute(k, a[k]); return n; };
+            const clear = n => { while (n.firstChild) n.removeChild(n.firstChild); };
+            const gates = D.gates || {};
+            const nG = Object.keys(gates).length, pG = Object.values(gates).filter(Boolean).length;
+            const A = D.runs.standard, B = D.runs.reversible_same, C = D.runs.reversible_max;
+
+            /* ---- 00 hero ---------------------------------------------------- */
+            document.getElementById('heroTiles').innerHTML = [
+                ['memory saved', fmt(A.peak_bytes / B.peak_bytes, 1) + '×',
+                    fmt(MB(A.peak_bytes), 0) + ' → ' + fmt(MB(B.peak_bytes), 0) + ' MB, same batch'],
+                ['throughput cost', fmt((1 - B.tok_s / A.tok_s) * 100, 0) + '%',
+                    fmt(A.tok_s, 0) + ' → ' + fmt(B.tok_s, 0) + ' tok/s'],
+                ['batch it buys', fmt(D.batches.reversible_max / D.batches.fixed, 1) + '×',
+                    D.batches.fixed + ' → ' + D.batches.reversible_max],
+                ['depth independence', fmt(D.depth_sweep.reversible_growth, 3) + '×',
+                    'reversible bytes across 8× the depth'],
+                ['gates', pG + '/' + nG, pG === nG ? 'all pass' : 'FAILING'],
+            ].map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="sub">${s}</div></div>`).join('');
+
+            document.getElementById('heroNote').innerHTML =
+                `A ${(A.params / 1e6).toFixed(1)}M-parameter decoder (${D.configs.standard.n_layer} layers, `
+                + `d_model ${D.configs.standard.d_model}) on ${(D.corpus.tokens / 1e6).toFixed(0)}M streamed tokens, `
+                + `tokenized with the same frozen Sarvam-1 tokenizer as Sessions 9–12. Hardware: `
+                + `<strong>${D.meta.gpu}</strong>, ${D.meta.vram_gb} GB, compute capability ${D.meta.capability}. `
+                + `Full run ${(D.meta.wall_seconds_full_run / 60).toFixed(0)} minutes. Note `
+                + `<code class="mono">bf16_native: ${D.meta.bf16_native}</code> — a T4 is Turing, and `
+                + `<code class="mono">is_bf16_supported()</code> answers true only because it counts emulation.`;
+
+            /* ---- 01 the problem --------------------------------------------- */
+            const aa = D.activation_arithmetic;
+            document.getElementById('problemReadout').innerHTML = `
+                <div><div class="k">training state, 30.2B</div><div class="v">450G</div><div class="delta">16 bytes × 30.2e9</div></div>
+                <div><div class="k">activations, 8k tokens</div><div class="v">${fmt(aa[0].stored_gib, 1)}G</div><div class="delta">96 layers × 1.33 GiB</div></div>
+                <div><div class="k">activations, 131k tokens</div><div class="v">${fmt(aa[2].stored_gib, 0)}G</div><div class="delta">one single sample</div></div>
+                <div><div class="k">an H100 holds</div><div class="v">74.5G</div><div class="delta">80 GB</div></div>`;
+
+            /* ---- 02 model + activation table -------------------------------- */
+            document.getElementById('modelTable').innerHTML =
+                '<tr><th>what is stored for one weight</th><th class="n">bytes</th></tr>'
+                + [['the weight, in 16-bit format', 2], ['its gradient, in 16-bit format', 2],
+                ['a 32-bit master copy of the weight', 4],
+                ["the optimizer's two running averages, in 32-bit", 8]]
+                    .map(([w, b]) => `<tr><td>${w}</td><td class="n">${b}</td></tr>`).join('')
+                + '<tr class="hl"><td><strong>total</strong></td><td class="n"><strong>16</strong></td></tr>'
+                + '<tr><td>30.2 × 10⁹ weights × 16 bytes</td><td class="n">450.0 GiB</td></tr>';
+
+            document.getElementById('actTable').innerHTML =
+                '<tr><th>sequence</th><th class="n">stored activations</th><th class="n">reversible</th><th class="n">ratio</th></tr>'
+                + aa.map(r => `<tr><td>${r.seq.toLocaleString()} tokens</td>`
+                    + `<td class="n">${fmt(r.stored_gib, 1)} GiB</td>`
+                    + `<td class="n">${fmt(r.reversible_gib, 1)} GiB</td>`
+                    + `<td class="n">${fmt(r.ratio, 1)}×</td></tr>`).join('');
+            document.getElementById('actNote').innerHTML =
+                `The ratio is <strong>identical at every length</strong> — ${fmt(aa[0].ratio, 1)}× `
+                + `whether the sequence is 8,192 tokens or 131,072 — because the 96 cancels. What remains `
+                + `grows with the number of tokens, not with the depth of the model. Section 09 measures that `
+                + `on hardware.`;
+
+            /* ---- 04 pipeline bubble ------------------------------------------ */
+            const ppS = document.getElementById('ppStages'), ppM = document.getElementById('ppMicro');
+            function drawPP() {
+                const p = +ppS.value, m = +ppM.value;
+                document.getElementById('ppStagesVal').textContent = p;
+                document.getElementById('ppMicroVal').textContent = m;
+                const share = (p - 1) / (m + p - 1), papers = (p - 1) / m;
+                document.getElementById('ppReadout').innerHTML = `
+                    <div><div class="k">share of step waiting</div>
+                        <div class="v" style="color:${share > .3 ? 'var(--crit)' : share > .15 ? 'var(--bad-c)' : 'var(--good)'}">${(share * 100).toFixed(1)}%</div>
+                        <div class="delta">(p−1)/(m+p−1)</div></div>
+                    <div><div class="k">as papers write it</div><div class="v">${(papers * 100).toFixed(1)}%</div>
+                        <div class="delta">(p−1)/m — same run</div></div>
+                    <div><div class="k">useful slots</div><div class="v">${m}</div><div class="delta">of ${m + p - 1}</div></div>
+                    <div><div class="k">1F1B holds</div><div class="v">${p}</div><div class="delta">micro-batches at stage 0</div></div>`;
+                document.getElementById('ppNote').innerHTML =
+                    `Two ways of writing the same quantity, and they differ: dividing waiting by <em>working</em> `
+                    + `time gives ${(papers * 100).toFixed(1)}%, dividing by <em>total</em> time gives `
+                    + `${(share * 100).toFixed(1)}%. Published papers usually mean the first.`;
+            }
+            ppS.addEventListener('input', drawPP); ppM.addEventListener('input', drawPP); drawPP();
+
+            /* ---- 06 the stack stepper ---------------------------------------- */
+            const NL = 8;
+            let stackStep = 0, stackModeVal = 'both';
+            document.getElementById('stackMode').innerHTML =
+                [['both', 'both paths'], ['rev', 'reversible only']].map(([k, l]) =>
+                    `<button class="btn${k === 'both' ? ' on' : ''}" data-s="${k}">${l}</button>`).join('');
+            document.getElementById('stackMode').addEventListener('click', e => {
+                const b = e.target.closest('button[data-s]'); if (!b) return;
+                stackModeVal = b.dataset.s;
+                [...document.querySelectorAll('#stackMode .btn')].forEach(x => x.classList.toggle('on', x === b));
+                drawStack();
+            });
+            const TOTAL = 2 * NL;
+            function drawStack() {
+                const s = stackStep, fwd = s <= NL, at = fwd ? s : TOTAL - s;
+                let html = '';
+                for (let l = NL; l >= 0; l--) {
+                    const storedHeld = fwd ? (l <= at) : true;
+                    // reversible keeps only the two ends, plus the layer being rebuilt right now
+                    const isBoundary = (l === 0 || l === NL || l === NL - 1);
+                    const rebuilding = !fwd && (l === at || l === at + 1);
+                    const revHeld = isBoundary || rebuilding;
+                    const cls = c => `slot ${c}`;
+                    html += `<div class="lay"><div class="lbl">p[${l}]</div>`
+                        + `<div class="${cls(storedHeld ? 'held' : '')}${fwd && l === at ? ' now' : ''}">${storedHeld ? 'held' : ''}</div>`
+                        + `<div class="${cls(revHeld ? (isBoundary ? 'keep' : 'held') : '')}${rebuilding ? ' now' : ''}">`
+                        + `${isBoundary ? 'boundary' : (rebuilding ? 'rebuilding' : '')}</div></div>`;
+                }
+                document.getElementById('stackGrid').innerHTML = html;
+                const storedCount = fwd ? at + 1 : NL + 1;
+                const revCount = 3;
+                document.getElementById('stackReadout').innerHTML = `
+                    <div><div class="k">phase</div><div class="v" style="font-size:19px">${s === 0 ? 'start' : (fwd ? 'forward' : 'backward')}</div>
+                        <div class="delta">step ${s} of ${TOTAL}</div></div>
+                    <div><div class="k">stored path holds</div><div class="v" style="color:var(--bad-c)">${storedCount}</div><div class="delta">states</div></div>
+                    <div><div class="k">reversible holds</div><div class="v" style="color:var(--ok-c)">${revCount}</div><div class="delta">states, at any depth</div></div>
+                    <div><div class="k">ratio at ${NL} layers</div><div class="v">${(storedCount / revCount).toFixed(1)}×</div>
+                        <div class="delta">grows with depth on the left only</div></div>`;
+                document.getElementById('stackNote').innerHTML = s === 0
+                    ? 'Nothing computed yet. Step forward and watch the left column fill while the right one does not.'
+                    : fwd
+                        ? `Forward pass at layer ${at}. The stored path keeps every state it passes; the reversible path keeps only the two at the ends.`
+                        : `Backward pass at layer ${at}. The reversible path reconstructs p[${at}] from p[${at + 1}] by subtracting 2h·f, uses it, and discards it again. <strong>The number it holds never changes.</strong>`;
+            }
+            document.getElementById('stackNext').addEventListener('click', () => { if (stackStep < TOTAL) { stackStep++; drawStack(); } });
+            document.getElementById('stackPrev').addEventListener('click', () => { if (stackStep > 0) { stackStep--; drawStack(); } });
+            document.getElementById('stackReset').addEventListener('click', () => { stackStep = 0; drawStack(); });
+
+            /* ---- 07 correctness ---------------------------------------------- */
+            const CO = D.correctness;
+            document.getElementById('correctTable').innerHTML =
+                '<tr><th>rule</th><th class="n">float64 — is it exact?</th><th class="n">float32 — how much drift?</th><th>verdict</th></tr>'
+                + ['midpoint', 'blended', 'revnet'].map(r => `<tr><td><strong>${r}</strong></td>`
+                    + `<td class="n">${CO[r].exact_fp64.toExponential(2)}</td>`
+                    + `<td class="n">${CO[r].drift_fp32.toExponential(2)}</td>`
+                    + `<td style="color:${CO[r].exact ? 'var(--good)' : 'var(--crit)'}">${CO[r].exact ? '✓ exact' : '✗ wrong'}</td></tr>`).join('')
+                + `<tr class="warn"><td><strong>euler</strong></td><td class="n" colspan="2">no inverse exists</td>`
+                + `<td style="color:var(--bad-c)">✗ not reversible</td></tr>`;
+            document.getElementById('correctNote').innerHTML =
+                `Every reversible rule agrees with ordinary autograd to float64 rounding — the worst is `
+                + `${Math.max(...['midpoint', 'blended', 'revnet'].map(r => CO[r].exact_fp64)).toExponential(1)} — `
+                + `so the arithmetic is right. The float32 column is not a bug; it is the drift section 10 is about. `
+                + `Separating those two questions is what makes each answerable: a float32-only check cannot tell a `
+                + `wrong implementation from an exact one accumulating rounding.`;
+
+            /* ---- 08 the three runs ------------------------------------------- */
+            const rows = [['1. standard', A, 'stored activations'],
+            ['2. reversible', B, 'same batch'],
+            ['3. reversible', C, 'batch pushed to the limit']];
+            document.getElementById('runsTable').innerHTML =
+                '<tr><th>run</th><th></th><th class="n">batch</th><th class="n">steps</th>'
+                + '<th class="n">final loss</th><th class="n">tok/s</th><th class="n">peak memory</th></tr>'
+                + rows.map(([n, r, note], i) => `<tr class="${i === 1 ? 'hl' : (i === 2 ? 'warn' : '')}">`
+                    + `<td>${n}</td><td class="muted-note">${note}</td><td class="n">${r.batch}</td>`
+                    + `<td class="n">${r.steps}</td><td class="n">${fmt(r.final_loss, 3)}</td>`
+                    + `<td class="n">${fmt(r.tok_s, 0)}</td><td class="n">${fmt(MB(r.peak_bytes), 0)} MB</td></tr>`).join('');
+
+            (function drawLoss() {
+                const svg = document.getElementById('lossChart'); clear(svg);
+                const W = 900, H = 320, LX = 58, R = 130, T = 18, B_ = 44;
+                const series = [['standard, batch ' + A.batch, A, '#d95926', 'none'],
+                ['reversible, batch ' + B.batch, B, '#3987e5', 'none'],
+                ['reversible, batch ' + C.batch, C, '#199e70', '5 4']];
+                const all = series.flatMap(([, r]) => r.losses.map(p => p.loss));
+                const lo = Math.min(...all) * .97, hi = Math.max(...all) * 1.01;
+                const maxTok = Math.max(...series.flatMap(([, r]) => r.losses.map(p => p.tokens)));
+                const x = t => LX + (t / maxTok) * (W - LX - R);
+                const y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B_);
+                svg.appendChild(el('line', { x1: LX, y1: H - B_, x2: W - R, y2: H - B_, class: 'axis' }));
+                svg.appendChild(el('line', { x1: LX, y1: T, x2: LX, y2: H - B_, class: 'axis' }));
+                for (let k = 0; k <= 4; k++) {
+                    const v = lo + (hi - lo) * k / 4;
+                    svg.appendChild(el('line', { x1: LX, y1: y(v), x2: W - R, y2: y(v), class: 'grid' }));
+                    const t = el('text', { x: LX - 8, y: y(v) + 3, 'text-anchor': 'end' }); t.textContent = v.toFixed(1); svg.appendChild(t);
+                }
+                for (let k = 0; k <= 5; k++) {
+                    const tk = maxTok * k / 5;
+                    const t = el('text', { x: x(tk), y: H - B_ + 15, 'text-anchor': 'middle' });
+                    t.textContent = (tk / 1e6).toFixed(0) + 'M'; svg.appendChild(t);
+                }
+                const xl = el('text', { x: (LX + W - R) / 2, y: H - 8, 'text-anchor': 'middle' });
+                xl.textContent = 'tokens seen'; svg.appendChild(xl);
+                const yl = el('text', { x: 14, y: (T + H - B_) / 2, transform: `rotate(-90 14 ${(T + H - B_) / 2})`, 'text-anchor': 'middle' });
+                yl.textContent = 'loss'; svg.appendChild(yl);
+                series.forEach(([lab, r, col, dash], i) => {
+                    const d = r.losses.map((p, j) => `${j ? 'L' : 'M'}${x(p.tokens).toFixed(1)},${y(p.loss).toFixed(1)}`).join(' ');
+                    svg.appendChild(el('path', { d, fill: 'none', stroke: col, 'stroke-width': 2, 'stroke-dasharray': dash, 'stroke-linejoin': 'round' }));
+                    r.losses.forEach(p => svg.appendChild(el('circle', { cx: x(p.tokens), cy: y(p.loss), r: 2.2, fill: col })));
+                    const t = el('text', { x: W - R + 8, y: y(r.losses[r.losses.length - 1].loss) + 4 + i * 0 });
+                    t.setAttribute('fill', col); t.setAttribute('font-size', '10.5');
+                    t.textContent = fmt(r.final_loss, 2); svg.appendChild(t);
+                });
+                document.getElementById('lossLegend').innerHTML = series.map(([lab, , col]) =>
+                    `<span><i style="background:${col}"></i>${lab}</span>`).join('');
+            })();
+
+            document.getElementById('runsReadout').innerHTML = `
+                <div><div class="k">what it costs (1→2)</div><div class="v">${fmt((1 - B.tok_s / A.tok_s) * 100, 0)}%</div>
+                    <div class="delta">throughput, at identical batch</div></div>
+                <div><div class="k">what it saves (1→2)</div><div class="v" style="color:var(--good)">${fmt(A.peak_bytes / B.peak_bytes, 1)}×</div>
+                    <div class="delta">${fmt(MB(A.peak_bytes), 0)} → ${fmt(MB(B.peak_bytes), 0)} MB</div></div>
+                <div><div class="k">what the batch buys (2→3)</div><div class="v" style="color:var(--crit)">${fmt((C.tok_s / B.tok_s - 1) * 100, 1)}%</div>
+                    <div class="delta">at ${fmt(C.batch / B.batch, 1)}× the batch</div></div>
+                <div><div class="k">optimizer steps (2→3)</div><div class="v" style="color:var(--crit)">${B.steps} → ${C.steps}</div>
+                    <div class="delta">same tokens, one fifth the updates</div></div>`;
+
+            document.getElementById('run3Note').innerHTML =
+                `Pushing to the largest batch that fits bought <strong>${fmt((C.tok_s / B.tok_s - 1) * 100, 1)}% `
+                + `throughput</strong> — ${fmt(C.tok_s, 0)} against ${fmt(B.tok_s, 0)} tok/s — and made the `
+                + `loss <strong>worse</strong>, ${fmt(C.final_loss, 3)} against ${fmt(B.final_loss, 3)}. The reason is `
+                + `in the steps column: 50M tokens at batch ${C.batch} is only <strong>${C.steps} optimizer `
+                + `updates</strong> against ${B.steps}. Same tokens, a fifth of the learning. Section 12 shows why the `
+                + `throughput did not move either: this GPU is already saturated at batch 4, so the memory `
+                + `reversibility frees has nothing to spend itself on. That is the session's own caveat — `
+                + `<em>reversibility slows a run down whenever memory is not the binding constraint</em> — `
+                + `measured rather than quoted.`;
+
+            /* ---- 08b paper comparison ---------------------------------------- */
+            (function paperCompare() {
+                const mine = {
+                    batch: D.batches.reversible_max / D.batches.fixed,
+                    thr: C.tok_s / B.tok_s,
+                    overhead: 1 - B.tok_s / A.tok_s,
+                };
+                const rows = [
+                    ['batch the memory buys', '9.9\u00d7', '26 \u2192 257, 80 GB H100',
+                        fmt(mine.batch, 1) + '\u00d7', D.batches.fixed + ' \u2192 ' + D.batches.reversible_max],
+                    ['throughput gain from it', '2.01\u00d7', '56.96 \u2192 114.49 samples/s',
+                        fmt(mine.thr, 3) + '\u00d7', fmt(B.tok_s, 0) + ' \u2192 ' + fmt(C.tok_s, 0) + ' tok/s'],
+                    ['compute overhead', '30\u201350%', 'authors\u2019 estimate',
+                        fmt(mine.overhead * 100, 0) + '%', 'measured at equal batch'],
+                ];
+                document.getElementById('paperTable').innerHTML =
+                    '<tr><th></th><th class="n">the paper</th><th>its setting</th>'
+                    + '<th class="n">this run</th><th>its setting</th></tr>'
+                    + rows.map(r => `<tr><td>${r[0]}</td><td class="n">${r[1]}</td>`
+                        + `<td class="muted-note">${r[2]}</td><td class="n">${r[3]}</td>`
+                        + `<td class="muted-note">${r[4]}</td></tr>`).join('');
+                // Read the rows straight from the data: `DS` is declared in the next
+                // section, so referencing it here lands in the temporal dead zone and
+                // kills every render after this point.
+                const _rows = D.depth_sweep.rows;
+                const deep = _rows[_rows.length - 1], shallow = _rows[0];
+                document.getElementById('paperNote').innerHTML =
+                    `<strong>Depth.</strong> The paper measured at <strong>96 layers</strong>; this model has `
+                    + `${D.configs.standard.n_layer}. Reversibility removes per-layer storage, so its advantage `
+                    + `grows with depth \u2014 section 09 measures exactly that on this hardware, `
+                    + `${fmt(shallow.ratio, 0)}\u00d7 at ${shallow.n_layer} layers rising to `
+                    + `${fmt(deep.ratio, 0)}\u00d7 at ${deep.n_layer}. At 96 layers the batch ratio would be far `
+                    + `closer to theirs. A 20M model also spends much of its memory on an 8,192-row loss head and `
+                    + `on optimizer state, neither of which reversibility touches.`
+                    + `<br><br><strong>Saturation.</strong> Their 2.01\u00d7 came from batch 874 against 52 \u2014 `
+                    + `a regime where the baseline could not fill the GPU, so extra batch converted directly into `
+                    + `throughput. Section 12 shows this T4 saturating at <strong>batch 4</strong>, so the same `
+                    + `memory saving converts into nothing. <strong>The two results agree about the mechanism and `
+                    + `disagree about whether the mechanism pays, which is a property of the hardware and not of `
+                    + `the method.</strong> The 16% overhead against their 30\u201350% estimate points the same `
+                    + `way: at ${D.configs.standard.n_layer} layers one extra forward evaluation is a smaller `
+                    + `share of a step than it is at 96.`;
+            })();
+
+            /* ---- 09 depth independence --------------------------------------- */
+            const DS = D.depth_sweep.rows;
+            (function drawDepth() {
+                const svg = document.getElementById('depthChart'); clear(svg);
+                const W = 900, H = 320, LX = 62, R = 130, T = 22, B_ = 44;
+                const maxY = Math.max(...DS.map(r => r.stored)) * 1.12;
+                const xs = DS.map(r => r.n_layer);
+                const x = n => LX + (Math.log2(n) - Math.log2(xs[0])) / (Math.log2(xs[xs.length - 1]) - Math.log2(xs[0])) * (W - LX - R);
+                const y = v => T + (1 - v / maxY) * (H - T - B_);
+                svg.appendChild(el('line', { x1: LX, y1: H - B_, x2: W - R, y2: H - B_, class: 'axis' }));
+                svg.appendChild(el('line', { x1: LX, y1: T, x2: LX, y2: H - B_, class: 'axis' }));
+                for (let k = 0; k <= 4; k++) {
+                    const v = maxY * k / 4;
+                    svg.appendChild(el('line', { x1: LX, y1: y(v), x2: W - R, y2: y(v), class: 'grid' }));
+                    const t = el('text', { x: LX - 8, y: y(v) + 3, 'text-anchor': 'end' }); t.textContent = (v / 1e6).toFixed(0); svg.appendChild(t);
+                }
+                xs.forEach(n => {
+                    const t = el('text', { x: x(n), y: H - B_ + 15, 'text-anchor': 'middle' }); t.textContent = n; svg.appendChild(t);
+                });
+                const xl = el('text', { x: (LX + W - R) / 2, y: H - 8, 'text-anchor': 'middle' });
+                xl.textContent = 'layers (width held at ' + DS[0].d_model + ')'; svg.appendChild(xl);
+                const yl = el('text', { x: 14, y: (T + H - B_) / 2, transform: `rotate(-90 14 ${(T + H - B_) / 2})`, 'text-anchor': 'middle' });
+                yl.textContent = 'activation bytes saved for backward (MB)'; svg.appendChild(yl);
+                [['stored', '#d95926'], ['reversible', '#3987e5']].forEach(([key, col]) => {
+                    const d = DS.map((r, i) => `${i ? 'L' : 'M'}${x(r.n_layer).toFixed(1)},${y(r[key]).toFixed(1)}`).join(' ');
+                    svg.appendChild(el('path', { d, fill: 'none', stroke: col, 'stroke-width': 2.5, 'stroke-linejoin': 'round' }));
+                    DS.forEach(r => svg.appendChild(el('circle', { cx: x(r.n_layer), cy: y(r[key]), r: 4, fill: col })));
+                    const last = DS[DS.length - 1];
+                    const t = el('text', { x: W - R + 8, y: y(last[key]) + 4 });
+                    t.setAttribute('fill', col); t.setAttribute('font-size', '10.5');
+                    t.textContent = (last[key] / 1e6).toFixed(0) + ' MB'; svg.appendChild(t);
+                });
+            })();
+
+            document.getElementById('depthTable').innerHTML =
+                '<tr><th class="n">layers</th><th class="n">d_model</th><th class="n">params</th>'
+                + '<th class="n">stored</th><th class="n">reversible</th><th class="n">ratio</th></tr>'
+                + DS.map(r => `<tr><td class="n">${r.n_layer}</td><td class="n">${r.d_model}</td>`
+                    + `<td class="n">${(r.params / 1e6).toFixed(1)}M</td>`
+                    + `<td class="n">${fmt(MB(r.stored), 0)} MB</td>`
+                    + `<td class="n" style="color:var(--ok-c)">${r.reversible.toLocaleString()} B</td>`
+                    + `<td class="n">${fmt(r.ratio, 1)}×</td></tr>`).join('');
+
+            document.getElementById('depthReadout').innerHTML = `
+                <div><div class="k">depth grew</div><div class="v">${fmt(D.depth_sweep.depth_growth, 0)}×</div><div class="delta">4 → 32 layers</div></div>
+                <div><div class="k">stored grew</div><div class="v" style="color:var(--bad-c)">${fmt(D.depth_sweep.stored_growth, 2)}×</div><div class="delta">tracks the depth</div></div>
+                <div><div class="k">reversible grew</div><div class="v" style="color:var(--good)">${fmt(D.depth_sweep.reversible_growth, 3)}×</div><div class="delta">byte-identical</div></div>
+                <div><div class="k">at 32 layers</div><div class="v">${fmt(DS[DS.length - 1].ratio, 0)}×</div><div class="delta">less activation memory</div></div>`;
+
+            document.getElementById('depthNote').innerHTML =
+                `The reversible column is not merely flat, it is <strong>the same number</strong> — `
+                + `${DS[0].reversible.toLocaleString()} bytes at 4 layers and at 32. The parameter count meanwhile `
+                + `runs from ${(DS[0].params / 1e6).toFixed(1)}M to ${(DS[DS.length - 1].params / 1e6).toFixed(1)}M, `
+                + `because width is what is held, not size. <strong>An earlier version of this sweep held parameters `
+                + `fixed instead</strong>, which forces width to shrink as depth grows; stored activations then grew `
+                + `as √depth rather than linearly and the reversible column actually <em>fell</em>, passing a `
+                + `depth-independence check for entirely the wrong reason. A gate that an artifact can satisfy is not `
+                + `checking anything.`;
+
+            /* ---- 10 drift ----------------------------------------------------- */
+            const DR = D.drift, depths = [2, 4, 8, 16, 32];
+            (function drawDrift() {
+                const svg = document.getElementById('driftChart'); clear(svg);
+                const W = 900, H = 320, LX = 62, R = 140, T = 22, B_ = 44;
+                const vals = DR.flatMap(r => depths.map(d => r.by_depth[String(d)])).filter(v => v > 0);
+                const lo = Math.min(...vals) * .5, hi = Math.max(...vals) * 2;
+                const x = n => LX + (Math.log2(n) - 1) / (5 - 1) * (W - LX - R);
+                const y = v => T + (1 - (Math.log10(v) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo))) * (H - T - B_);
+                svg.appendChild(el('line', { x1: LX, y1: H - B_, x2: W - R, y2: H - B_, class: 'axis' }));
+                svg.appendChild(el('line', { x1: LX, y1: T, x2: LX, y2: H - B_, class: 'axis' }));
+                for (let e = -8; e <= 1; e++) {
+                    const v = Math.pow(10, e); if (v < lo || v > hi) continue;
+                    svg.appendChild(el('line', { x1: LX, y1: y(v), x2: W - R, y2: y(v), class: 'grid' }));
+                    const t = el('text', { x: LX - 8, y: y(v) + 3, 'text-anchor': 'end' }); t.textContent = '1e' + e; svg.appendChild(t);
+                }
+                depths.forEach(n => { const t = el('text', { x: x(n), y: H - B_ + 15, 'text-anchor': 'middle' }); t.textContent = n; svg.appendChild(t); });
+                const xl = el('text', { x: (LX + W - R) / 2, y: H - 8, 'text-anchor': 'middle' }); xl.textContent = 'layers'; svg.appendChild(xl);
+                const yl = el('text', { x: 14, y: (T + H - B_) / 2, transform: `rotate(-90 14 ${(T + H - B_) / 2})`, 'text-anchor': 'middle' });
+                yl.textContent = 'worst relative gradient error'; svg.appendChild(yl);
+                // 1% reference
+                svg.appendChild(el('line', { x1: LX, y1: y(0.01), x2: W - R, y2: y(0.01), stroke: '#a3a3aa', 'stroke-width': 1.2, 'stroke-dasharray': '6 4' }));
+                const rl = el('text', { x: W - R + 8, y: y(0.01) + 4 }); rl.setAttribute('fill', '#a3a3aa'); rl.textContent = '1% error'; svg.appendChild(rl);
+                const COL = { 'midpoint|float32': '#3987e5', 'midpoint|float16': '#d95926', 'revnet|float32': '#199e70', 'revnet|float16': '#c98a2b' };
+                DR.forEach(r => {
+                    const key = r.rule + '|' + r.dtype, col = COL[key] || '#a3a3aa';
+                    const pts = depths.map(d => [x(d), y(r.by_depth[String(d)])]);
+                    const dd = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+                    svg.appendChild(el('path', { d: dd, fill: 'none', stroke: col, 'stroke-width': 2, 'stroke-dasharray': r.dtype === 'float16' ? '4 3' : 'none', 'stroke-linejoin': 'round' }));
+                    pts.forEach(p => svg.appendChild(el('circle', { cx: p[0], cy: p[1], r: 3, fill: col })));
+                });
+                document.getElementById('driftLegend').innerHTML = DR.map(r =>
+                    `<span><i style="background:${COL[r.rule + '|' + r.dtype]}"></i>${r.rule} ${r.dtype}</span>`).join('');
+            })();
+
+            document.getElementById('driftTable').innerHTML =
+                '<tr><th>rule</th><th>dtype</th>' + depths.map(d => `<th class="n">${d} layers</th>`).join('') + '</tr>'
+                + DR.map(r => `<tr class="${r.dtype === 'float16' ? 'warn' : ''}"><td>${r.rule}</td><td>${r.dtype}</td>`
+                    + depths.map(d => `<td class="n">${r.by_depth[String(d)].toExponential(1)}</td>`).join('') + '</tr>').join('');
+
+            const m16 = DR.find(r => r.rule === 'midpoint' && r.dtype === 'float16');
+            const r16 = DR.find(r => r.rule === 'revnet' && r.dtype === 'float16');
+            document.getElementById('driftNote').innerHTML = m16 ? (
+                `In float32 the drift stays negligible — midpoint is ${DR[0].by_depth['32'].toExponential(1)} at 32 `
+                + `layers. In float16 it does not: midpoint reaches <strong>${(m16.by_depth['32'] * 100).toFixed(0)}% `
+                + `gradient error</strong> at 32 layers and revnet passes <strong>100%</strong>, which is no longer a `
+                + `gradient. <strong>This is why the training runs use autocast rather than a half-precision model</strong> `
+                + `— fp16 matmuls with the residual stream kept in fp32, so the reconstruction subtracts in fp32 and `
+                + `the error has nothing to compound in. Choosing <code class="mono">.half()</code> for speed would have `
+                + `produced a run that trains, reports a falling loss, and computes the wrong gradients.`) : '';
+
+            /* ---- 11 gamma ------------------------------------------------------ */
+            const GS = D.gamma_sweep;
+            document.getElementById('gammaTable').innerHTML =
+                '<tr><th class="n">γ</th><th class="n">predicted 1/(1−γ)<sup>L</sup></th>'
+                + '<th class="n">measured drift</th><th class="n">measured amplification</th></tr>'
+                + GS.map(r => `<tr class="${r.gamma === 0.5 ? 'warn' : ''}"><td class="n">${r.gamma}</td>`
+                    + `<td class="n">${fmt(r.predicted_amplification, 1)}×</td>`
+                    + `<td class="n">${r.drift.toExponential(2)}</td>`
+                    + `<td class="n">${fmt(r.measured_amplification, 1)}×</td></tr>`).join('');
+            const last = GS[GS.length - 1];
+            document.getElementById('gammaNote').innerHTML =
+                `The law is real in direction and <strong>over-predicts in magnitude</strong>: at γ = `
+                + `${last.gamma} over 8 layers it predicts ${fmt(last.predicted_amplification, 0)}× and the `
+                + `measurement gives ${fmt(last.measured_amplification, 1)}×. The blend damps the forward while `
+                + `the inverse amplifies, and the two partly cancel — so treat the formula as an upper bound. `
+                + `Either way the arithmetic constrains what the session's γ = 0.5 can mean: under this reading, `
+                + `20 layers would amplify by 2²⁰ ≈ 10⁶, so Lightning LM's published pairing of `
+                + `h = 0.25 with γ = 0.5 at depth implies a different formula from the natural one. The notes give `
+                + `the coefficient and not the equation, so this is a reading, and the measurement is what bounds it.`;
+
+            /* ---- 12 frontier ---------------------------------------------------- */
+            (function drawFront() {
+                const F = D.frontier, svg = document.getElementById('frontChart'); clear(svg);
+                const W = 900, H = 340, LX = 62, R = 140, T = 22, B_ = 48;
+                const xs = F.map(r => r.peak_bytes), ys = F.map(r => r.tok_s);
+                const xlo = Math.min(...xs) * .8, xhi = Math.max(...xs) * 1.15;
+                const yhi = Math.max(...ys) * 1.1;
+                const x = v => LX + (Math.log10(v) - Math.log10(xlo)) / (Math.log10(xhi) - Math.log10(xlo)) * (W - LX - R);
+                const y = v => T + (1 - v / yhi) * (H - T - B_);
+                svg.appendChild(el('line', { x1: LX, y1: H - B_, x2: W - R, y2: H - B_, class: 'axis' }));
+                svg.appendChild(el('line', { x1: LX, y1: T, x2: LX, y2: H - B_, class: 'axis' }));
+                for (let k = 0; k <= 4; k++) {
+                    const v = yhi * k / 4;
+                    svg.appendChild(el('line', { x1: LX, y1: y(v), x2: W - R, y2: y(v), class: 'grid' }));
+                    const t = el('text', { x: LX - 8, y: y(v) + 3, 'text-anchor': 'end' }); t.textContent = (v / 1000).toFixed(0) + 'k'; svg.appendChild(t);
+                }
+                [0.5, 1, 2, 5, 10].forEach(g => {
+                    const v = g * 1e9; if (v < xlo || v > xhi) return;
+                    svg.appendChild(el('line', { x1: x(v), y1: T, x2: x(v), y2: H - B_, class: 'grid' }));
+                    const t = el('text', { x: x(v), y: H - B_ + 15, 'text-anchor': 'middle' }); t.textContent = g + ' GB'; svg.appendChild(t);
+                });
+                const xl = el('text', { x: (LX + W - R) / 2, y: H - 8, 'text-anchor': 'middle' }); xl.textContent = 'peak memory'; svg.appendChild(xl);
+                const yl = el('text', { x: 14, y: (T + H - B_) / 2, transform: `rotate(-90 14 ${(T + H - B_) / 2})`, 'text-anchor': 'middle' });
+                yl.textContent = 'tokens / second'; svg.appendChild(yl);
+                [['stored', '#d95926'], ['reversible', '#3987e5']].forEach(([path, col]) => {
+                    const pts = F.filter(r => r.path === path);
+                    const d = pts.map((r, i) => `${i ? 'L' : 'M'}${x(r.peak_bytes).toFixed(1)},${y(r.tok_s).toFixed(1)}`).join(' ');
+                    svg.appendChild(el('path', { d, fill: 'none', stroke: col, 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+                    pts.forEach(r => {
+                        svg.appendChild(el('circle', { cx: x(r.peak_bytes), cy: y(r.tok_s), r: 3.5, fill: col }));
+                        const t = el('text', { x: x(r.peak_bytes), y: y(r.tok_s) - 8, 'text-anchor': 'middle' });
+                        t.setAttribute('fill', col); t.setAttribute('font-size', '9');
+                        t.textContent = r.batch; svg.appendChild(t);
+                    });
+                });
+                const sat = el('text', { x: W - R + 8, y: y(38000) + 4 });
+                sat.setAttribute('fill', '#a3a3aa'); sat.setAttribute('font-size', '10');
+                sat.textContent = 'saturation'; svg.appendChild(sat);
+                svg.appendChild(el('line', { x1: LX, y1: y(38000), x2: W - R, y2: y(38000), stroke: '#a3a3aa', 'stroke-width': 1, 'stroke-dasharray': '5 4' }));
+            })();
+
+            (function frontNote() {
+                const F = D.frontier;
+                const st = F.filter(r => r.path === 'stored'), rv = F.filter(r => r.path === 'reversible');
+                const stMax = st[st.length - 1], rvMax = rv[rv.length - 1];
+                document.getElementById('frontNote').innerHTML =
+                    `Numbers above each point are the batch size. Both paths reach roughly the same ceiling — about `
+                    + `38–39k tok/s — and the stored path is already there at <strong>batch 4</strong>, on `
+                    + `${fmt(MB(st.find(r => r.batch === 4).peak_bytes), 0)} MB. Everything to the right of that buys `
+                    + `memory consumption and no speed.`
+                    + `<br><br>That is the whole explanation for run 3. Reversibility moves the blue curve far to the `
+                    + `left — at batch 64 it uses ${fmt(MB(rv.find(r => r.batch === 64).peak_bytes), 0)} MB against `
+                    + `the orange path's ${fmt(MB(st.find(r => r.batch === 64).peak_bytes), 0)} MB, a `
+                    + `${fmt(st.find(r => r.batch === 64).peak_bytes / rv.find(r => r.batch === 64).peak_bytes, 1)}× `
+                    + `difference — but moving left along a flat curve gains nothing. <strong>Reversibility pays on a `
+                    + `GPU that is memory-bound, and this one is compute-bound from batch 4 onward.</strong> On a larger `
+                    + `model, a longer sequence, or a card where the stored path could not reach saturation at all, the `
+                    + `same measurement would come out the other way.`;
+            })();
+
+            /* ---- 13 upstream ---------------------------------------------------- */
+            document.getElementById('upstreamTable').innerHTML =
+                '<tr><th class="n">sequence</th><th class="n">stored activations</th><th class="n">reversible</th></tr>'
+                + aa.map(r => `<tr><td class="n">${r.seq.toLocaleString()}</td>`
+                    + `<td class="n">${fmt(r.stored_gib, 1)} GiB</td>`
+                    + `<td class="n" style="color:var(--ok-c)">${fmt(r.reversible_gib, 1)} GiB</td></tr>`).join('');
+
+            /* ---- 14 gates -------------------------------------------------------- */
+            document.getElementById('gateSummary').innerHTML = `
+                <div><div class="k">gates</div><div class="v" style="color:${pG === nG ? 'var(--good)' : 'var(--crit)'}">${pG}/${nG}</div>
+                    <div class="delta">${pG === nG ? 'all pass' : (nG - pG) + ' failing'}</div></div>
+                <div><div class="k">tokens per run</div><div class="v">${(A.tokens / 1e6).toFixed(0)}M</div><div class="delta">three runs</div></div>
+                <div><div class="k">model</div><div class="v">${(A.params / 1e6).toFixed(1)}M</div><div class="delta">${D.configs.standard.n_layer} layers, d_model ${D.configs.standard.d_model}</div></div>
+                <div><div class="k">wall time</div><div class="v">${(D.meta.wall_seconds_full_run / 60).toFixed(0)}m</div><div class="delta">${D.meta.gpu}</div></div>`;
+            document.getElementById('gateList').innerHTML = Object.entries(gates).map(([k, v]) =>
+                `<div class="gate ${v ? 'pass' : 'fail'}">${v ? '✓' : '✗'} ${k.replace(/_/g, ' ')}</div>`).join('');
+
+            document.getElementById('provenance').innerHTML =
+                `Every measured number was produced by <code class="mono">s13_reversibility.py</code> and the engine `
+                + `<code class="mono">s13_reversible.py</code>, executed on a ${D.meta.gpu} and baked in from `
+                + `<code class="mono">out/evidence.json</code>. python ${D.meta.python} · torch ${D.meta.torch} `
+                + `· ${D.meta.platform} · ${(D.meta.wall_seconds_full_run / 60).toFixed(0)} minutes end to end. `
+                + `The harness checkpoints each stage, so the figure above is the full cost and not the final `
+                + `invocation, which resumed from cache in ${D.meta.wall_seconds.toFixed(0)}s.`;
+
+            drawStack();
+        })();
+    </script>
+    <script>window.PAGE_ID = 'forget-the-middle'; window.ROOT_PATH = '../';</script>
+    <script src="../shared.js"></script>
+</body>
+
+</html>

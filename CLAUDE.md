@@ -31,12 +31,12 @@ markdown/notes-only deliverables and are deliberately absent from the site nav a
 - Pages set `window.PAGE_ID` (to highlight the active nav item) and optionally `window.ROOT_PATH`
   (relative prefix back to repo root) before loading `shared.js`.
 
-## The generate-then-bake pattern (S4, S6, S7, S9, S10, S11, S12)
+## The generate-then-bake pattern (S4, S6, S7, S9, S10, S11, S12, S13)
 
 Sessions with real data pipelines follow the same shape: a Python pipeline writes JSON/JS into an
 `out/` (or `submission_artifacts/`) folder, and a small `build_html_data.py` (S4, S6), the
-`run_demo.py` itself (S7), or `build_notebook.py` (S9, S10, S11, S12) injects that data as a literal
-`const DATASETS = {...}` / `s6data` / `S9DATA` / `S11DATA` / `S12DATA` blob directly into the session's `.html` file. The HTML has no fetch/XHR — page data is static and
+`run_demo.py` itself (S7), or `build_notebook.py` (S9–S13) injects that data as a literal
+`const DATASETS = {...}` / `s6data` / `S9DATA` / `S11DATA` / `S12DATA` / `S13DATA` blob directly into the session's `.html` file. The HTML has no fetch/XHR — page data is static and
 inlined, so **the generated JS blob in the HTML must be regenerated any time the upstream Python
 output changes**; editing the JSON in `out/` alone does nothing until the build script re-runs.
 
@@ -89,6 +89,13 @@ python s12-distributed-training/build_notebook.py     # .py -> executed .ipynb -
 python s12-distributed-training/s12_distributed.py    # or the harness alone
 python s12-distributed-training/build_notebook.py --bake-only
 python s12-distributed-training/check_page.py
+
+# S13 — reversibility (4 update rules, 14 gates; the notebook runs on a GPU, not here)
+python s13-distributed-training-2/s13_reversible.py          # engine self-check, seconds
+S13_QUICK=1 python s13-distributed-training-2/s13_reversibility.py   # CPU smoke, ~40s
+python s13-distributed-training-2/build_notebook.py          # .py -> Colab-ready .ipynb
+python s13-distributed-training-2/build_notebook.py --bake-only      # evidence -> page
+python s13-distributed-training-2/check_page.py
 ```
 
 S12 is the one session whose harness is **two** Python files. `s12_ranks.py` holds the rank
@@ -103,6 +110,17 @@ library call, and it is what makes the communication figures measured. The page 
 figure `measured`, `computed` or `reference`; keep that distinction when adding to it, since
 several sections (real-GPU timings, MXFP8, offload) are arithmetic about hardware this repo
 cannot run.
+
+S13 breaks the pattern in two documented ways, both forced. Its notebook is **never executed
+locally**: the assignment needs `torch.cuda.max_memory_allocated()` and 150M tokens of training,
+and no machine here has CUDA, so `build_notebook.py` generates the `.ipynb`, a GPU runs it, and
+`--bake-only` injects the returned `out/evidence.json`. And the notebook **embeds the engine**
+(`s13_reversible.py`) as a cell that writes it to disk rather than cloning the repo — the cell
+also evicts any stale copy from `sys.modules` and asserts the loaded module has the functions the
+harness needs, because a hosted runtime shares one Python process across notebooks and will
+otherwise hand back an older import. The harness runs as **nine resumable stages** cached under
+`out/stages/` (gitignored) with a `version` per stage, so changing a stage's logic invalidates
+just that cache rather than requiring anyone to delete files by hand.
 
 S10, S11 and S12 follow S9's shape exactly: a `# %%` cell-delimited `.py` is the source of truth, the
 committed `.ipynb` carries its outputs, and `out/evidence.json` is baked into the page. S11's
