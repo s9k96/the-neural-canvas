@@ -18,7 +18,7 @@ python check_page.py                   # does the page actually build in a brows
 ```
 
 `build_notebook.py` exits non-zero if any gate fails. That exit code is the pass/fail signal,
-not the printed summary. **Current state: 47/47 gates pass**, in about 12 minutes of CPU.
+not the printed summary. **Current state: 47/47 gates pass**, in about 12.5 minutes of CPU.
 
 ---
 
@@ -311,11 +311,11 @@ you decide to average it, in the same way it does not have a gradient until the 
 
 I spent the whole of §7 counting bytes, because the session's units are multiples of P and P is
 a quantity of bytes. Then §11's bucketing run moved **exactly the same 10.0 MB per rank per
-step** and spent **7.6× less time doing it** — 1.430s down to 0.187s — purely by sending it as
+step** and spent **8.2× less time doing it** — 1.439s down to 0.175s — purely by sending it as
 62 messages instead of 1,984.
 
 So "2P on the wire" is a statement about volume, and volume is only half of what a step pays
-for. The other half is the fixed cost of starting a transfer, 0.72 ms per send here, which the
+for. The other half is the fixed cost of starting a transfer, 0.73 ms per send here, which the
 multiples-of-P framing does not see at all. This reframed overlap and bucketing for me: they are
 not tuning knobs bolted onto a finished design, they are the reason the design's own cost model
 is incomplete without them.
@@ -355,15 +355,15 @@ largest weight difference **2.4e-03**, which is 2.4e-03 of the largest weight an
 
 | arrangement | step | compute | communication | comm / compute |
 |---|---:|---:|---:|---:|
-| data parallelism | 4.073s | 2.643s | 1.430s | 54% |
-| ZeRO-1 | 4.220s | 2.748s | 1.472s | 54% |
-| ZeRO-2 | 4.617s | 2.233s | 2.384s | 107% |
-| ZeRO-3 | 5.844s | 2.472s | 3.372s | 136% |
+| data parallelism | 4.213s | 2.774s | 1.439s | 52% |
+| ZeRO-1 | 5.198s | 3.520s | 1.678s | 48% |
+| ZeRO-2 | 5.412s | 2.757s | 2.655s | 96% |
+| ZeRO-3 | 6.109s | 2.726s | 3.384s | 124% |
 
 **Read the ordering, not the seconds.** Thirty-two processes are contending for 10 physical
 cores, so the absolute times describe this laptop. §11 also shows most of this column is message
 count rather than volume. What transfers is that ZeRO-3 moves 1.5× the
-bytes and spends 2.36× the time doing it, and that none of it is overlapped with the backward
+bytes and spends 2.35× the time doing it, and that none of it is overlapped with the backward
 pass — which is the entire answer to this column and is scoped out here (§11).
 
 The memory wall, from measured bytes-per-parameter multiplied out to 30B:
@@ -405,13 +405,13 @@ balance:
 
 | | messages/step | bytes/message | waiting | step | peak B/param |
 |---|---:|---:|---:|---:|---:|
-| one ring per tensor | 1,984 | 5.0 KB | 1.430s | 4.073s | 16.61 |
-| one ring for everything | 62 | 161 KB | **0.187s** | 3.014s | **20.00** |
+| one ring per tensor | 1,984 | 5.0 KB | 1.439s | 4.213s | 16.61 |
+| one ring for everything | 62 | 161 KB | **0.175s** | 2.980s | **20.00** |
 
 **Identical bytes on the wire** — 10.0 MB per rank per step either way — 32× fewer messages, and
-**7.6× less time waiting**. Effective throughput goes from 7.0 MB/s to 53.5 MB/s on the same
+**8.2× less time waiting**. Effective throughput goes from 7.0 MB/s to 57.2 MB/s on the same
 link, which is the whole finding: the small-message case was never moving bytes, it was paying
-0.72 ms of fixed cost per send. That is *why* bucketing exists, derived from my own numbers
+0.73 ms of fixed cost per send. That is *why* bucketing exists, derived from my own numbers
 instead of taken on faith.
 
 And the other side, which the notes state and this makes concrete: one buffer holding every
