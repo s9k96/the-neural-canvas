@@ -34,3 +34,13 @@ s12-distributed-training/out/runs/
 # out/evidence.json is the committed artifact.
 s13-distributed-training-2/out/stages/
 s13-distributed-training-2/out/tokens_*.npy
+
+# S14's training-run cache (per-run JSON + weight checkpoints) and its token cache: ~20M
+# FineWeb-Edu tokens re-streamed in seconds, verified against the sha256 recorded in
+# out/evidence.json. out/evidence.json is the committed artifact.
+s14-moe/out/stages/
+s14-moe/out/stages_quick/
+s14-moe/out/tokens_*.npy
+s14-moe/out/evidence_smoke.json
+s14-moe/out/full_run.log
+s14-moe/_smoke_page.html

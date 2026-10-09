@@ -14,7 +14,8 @@ const ICONS = {
     'training-step': '<path d="M3 20h4v-4h5v-4h5V8h4"/><path d="M12 3v6"/><path d="m9.5 6.5 2.5 2.5 2.5-2.5"/>',
     'setting-the-distance': '<path d="M3 4c7 1 7 13 18 15"/><path d="M6 20h9"/><path d="M6 17.5v5M15 17.5v5"/>',
     'the-redundancy-tax': '<rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="15" width="7" height="5" rx="1.5"/><rect x="14" y="15" width="7" height="5" rx="1.5"/><path d="M10 7.5h4M10 17.5h4M6.5 11v4M17.5 11v4"/>',
-    'forget-the-middle': '<path d="M5 4h14"/><path d="M5 20h14"/><path d="M8 8.5h8M8 12h8M8 15.5h8" stroke-dasharray="2 3"/><path d="m17 9 2.5 3-2.5 3"/>'
+    'forget-the-middle': '<path d="M5 4h14"/><path d="M5 20h14"/><path d="M8 8.5h8M8 12h8M8 15.5h8" stroke-dasharray="2 3"/><path d="m17 9 2.5 3-2.5 3"/>',
+    'one-becomes-eight': '<rect x="3" y="9" width="5" height="6" rx="1.5"/><path d="M8 12h3"/><path d="M11 5v14"/><path d="M11 5h3M11 9.7h3M11 14.3h3M11 19h3"/><circle cx="17" cy="5" r="1.6"/><circle cx="17" cy="9.7" r="1.6"/><circle cx="17" cy="14.3" r="1.6"/><circle cx="17" cy="19" r="1.6"/>'
 };
 
 const NAV_SECTIONS = [
@@ -38,7 +39,8 @@ const NAV_SECTIONS = [
     { label: 'S10 · The Training Loop', pages: [{ id: 'training-step', label: 'One Step, and What It Costs', href: 's10-training-loop/training-step.html' }] },
     { label: 'S11 · Optimizers & Schedules', pages: [{ id: 'setting-the-distance', label: 'Setting the Distance', href: 's11-optimizers/setting-the-distance.html' }] },
     { label: 'S12 · Distributed Training', pages: [{ id: 'the-redundancy-tax', label: 'The Redundancy Tax', href: 's12-distributed-training/the-redundancy-tax.html' }] },
-    { label: 'S13 · Reversibility', pages: [{ id: 'forget-the-middle', label: 'Forget the Middle', href: 's13-distributed-training-2/forget-the-middle.html' }] }
+    { label: 'S13 · Reversibility', pages: [{ id: 'forget-the-middle', label: 'Forget the Middle', href: 's13-distributed-training-2/forget-the-middle.html' }] },
+    { label: 'S14 · Mixture-of-Experts', pages: [{ id: 'one-becomes-eight', label: 'One Becomes Eight', href: 's14-moe/one-becomes-eight.html' }] }
 ];
 
 function iconSvg(id) {

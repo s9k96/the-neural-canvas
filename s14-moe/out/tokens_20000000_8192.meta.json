@@ -1,0 +1,9 @@
+{
+  "source": "HuggingFaceFW/fineweb-edu",
+  "dataset_config": "sample-10BT",
+  "documents": 17152,
+  "coverage": 0.95733665,
+  "distinct_ids": 14031,
+  "tokenizer_sha256": "bb5115a36ddb956a4ee0fd534e9870dd69157835622aec9c53062896f883c072",
+  "token_sha256": "2e3fa173f995d795cc95eeeb3a359efddf0f67de30b7b6f1347f61bafe1713af"
+}

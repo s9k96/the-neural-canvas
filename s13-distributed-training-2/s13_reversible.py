@@ -181,6 +181,32 @@ def run_stored(blocks, x, rule, h, gamma):
 
 
 # --------------------------------------------------------------------------------------
+# Recomputation path: gradient checkpointing, which is the thing reversibility has to beat.
+#
+# §16 is careful to distinguish the two: "Recomputation stores the input of every group of
+# layers and runs those layers forward again during the backward pass. A reversible stack
+# stores no layer inputs at all." Checkpointing is what anyone with a memory problem reaches
+# for first, so measuring reversibility only against store-everything flatters it. This is the
+# honest middle baseline: per-layer inputs kept, per-layer internals rebuilt.
+# --------------------------------------------------------------------------------------
+def run_checkpointed(blocks, x, rule, h, gamma):
+    cp = torch.utils.checkpoint.checkpoint
+    if rule == "revnet":
+        x1, x2 = x.chunk(2, dim=-1)
+        for l in range(0, len(blocks) - 1, 2):
+            y1 = x1 + cp(blocks[l], x2, use_reentrant=False)
+            y2 = x2 + cp(blocks[l + 1], y1, use_reentrant=False)
+            x1, x2 = y1, y2
+        return torch.cat([x1, x2], dim=-1)
+    p_prev = x
+    p = p_prev + h * cp(blocks[0], p_prev, use_reentrant=False)
+    for l in range(1, len(blocks)):
+        fout = cp(blocks[l], p, use_reentrant=False)
+        p_prev, p = p, step(rule, p_prev, p, fout, h, gamma)
+    return p
+
+
+# --------------------------------------------------------------------------------------
 # Reversible path: the forward keeps only the boundary states.
 # --------------------------------------------------------------------------------------
 class _RevStack(torch.autograd.Function):
@@ -316,9 +342,10 @@ def run_reversible(blocks, x, rule, h, gamma):
 
 # --------------------------------------------------------------------------------------
 class Model(nn.Module):
-    def __init__(self, cfg, reversible=False):
+    def __init__(self, cfg, reversible=False, checkpointed=False):
         super().__init__()
-        self.cfg, self.reversible = cfg, reversible
+        assert not (reversible and checkpointed), "pick one memory strategy"
+        self.cfg, self.reversible, self.checkpointed = cfg, reversible, checkpointed
         width = cfg.d_model // 2 if cfg.rule == "revnet" else cfg.d_model
         n = cfg.n_layer + (cfg.n_layer % 2 if cfg.rule == "revnet" else 0)
         self.embed = nn.Embedding(cfg.vocab_size, cfg.d_model)
@@ -338,7 +365,8 @@ class Model(nn.Module):
         see `chunked_ce`, and the reason it exists."""
         c = self.cfg
         x = self.embed(idx) + self.pos(torch.arange(idx.shape[1], device=idx.device))
-        runner = run_reversible if self.reversible else run_stored
+        runner = (run_reversible if self.reversible
+                  else run_checkpointed if self.checkpointed else run_stored)
         return self.norm_f(runner(self.blocks, x, c.rule, c.h, c.gamma))
 
     def head_for_loss(self):
@@ -463,7 +491,8 @@ def peak_bytes_read(device):
 
 
 # --------------------------------------------------------------------------------------
-def gradient_check(cfg, batch=2, seq=32, seed=0, device="cpu", dtype=torch.float32):
+def gradient_check(cfg, batch=2, seq=32, seed=0, device="cpu", dtype=torch.float32,
+                   path="reversible"):
     """The gate that matters: do reversible gradients equal stored-activation gradients?
 
     A reversible stack that reconstructs slightly wrong still trains, and its loss still
@@ -473,7 +502,8 @@ def gradient_check(cfg, batch=2, seq=32, seed=0, device="cpu", dtype=torch.float
     torch.manual_seed(seed)
     ref = Model(cfg, reversible=False).to(device=device, dtype=dtype)
     torch.manual_seed(seed)
-    rev = Model(cfg, reversible=True).to(device=device, dtype=dtype)
+    rev = Model(cfg, reversible=(path == "reversible"),
+                checkpointed=(path == "checkpointed")).to(device=device, dtype=dtype)
 
     g = torch.Generator(device="cpu").manual_seed(seed + 1)
     idx = torch.randint(cfg.vocab_size, (batch, seq), generator=g).to(device)
@@ -502,7 +532,7 @@ def gradient_check(cfg, batch=2, seq=32, seed=0, device="cpu", dtype=torch.float
         if rel > worst:
             worst, worst_name = rel, n
     return {
-        "rule": cfg.rule, "n_layer": cfg.n_layer,
+        "rule": cfg.rule, "n_layer": cfg.n_layer, "path": path,
         "worst_rel_grad_error": worst, "worst_param": worst_name,
         "activation_bytes_stored": a_ref[0], "activation_bytes_reversible": a_rev[0],
         "activation_ratio": a_ref[0] / max(a_rev[0], 1),

@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neural Canvas — One Becomes Eight</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <link rel="stylesheet" href="../shared.css" />
+    <style>
+        /* ---- palette ------------------------------------------------------------
+           Same validated categorical set as Sessions 9-12, checked with
+           validate_palette.py against this site's dark surface #0a0a0c:
+             #3987e5, #d95926, #199e70 — lightness band PASS, chroma floor PASS,
+             contrast 5.44 / 5.09 / 5.81 : 1, worst adjacent normal-vision dE 20.9
+             (floor 15), worst CVD dE 9.4 (target 8).
+           Here blue is always the MoE main run (bias balancing) and orange always the dense model;
+           green is the aux-loss branch and grey the unbalanced one.
+           Green/red are STATUS only, never a series, always with a glyph and a word. */
+        .viz {
+            --ok-c: #3987e5;
+            --bad-c: #d95926;
+            --third: #199e70;
+            --good: #199e70;
+            --crit: #d03b3b;
+            --grid: #24242a;
+            --axis: #45454f;
+            --neutral: #a3a3aa;
+        }
+
+        .report-section { margin: 0 auto 20px; max-width: 1040px; text-align: left; }
+        .report-section h2 { text-align: left; font-size: 20px; margin: 0 0 10px; letter-spacing: 0; }
+        .report-section h2 .num { color: var(--accent); font-family: var(--font-mono); font-size: 15px; margin-right: 10px; }
+        .report-section h3 { font-size: 13.5px; color: var(--text); margin: 22px 0 8px; }
+        .report-section p { color: var(--muted); font-size: 14.5px; line-height: 1.7; margin: 0 0 12px; }
+        .report-section p:last-child { margin-bottom: 0; }
+        .report-section strong { color: var(--text); font-weight: 600; }
+        .report-lead { font-size: 15.5px !important; color: var(--text) !important; }
+        code.mono { font-family: var(--font-mono); background: rgba(255, 255, 255, .06); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: var(--text); }
+        .muted-note { color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+        .quote { border-left: 2px solid var(--panel-border); padding: 2px 0 2px 14px; color: var(--muted); font-size: 13.5px; font-style: italic; margin: 0 0 14px; }
+
+        .pill { display: inline-block; font-size: 9.5px; font-weight: 700; border-radius: 999px; padding: 2px 9px; letter-spacing: .05em; text-transform: uppercase; vertical-align: 3px; }
+        .pill.measured { color: #9dc6f5; border: 1px solid rgba(57, 135, 229, .7); background: rgba(57, 135, 229, .12); }
+        .pill.computed { color: #f0c3aa; border: 1px solid rgba(217, 89, 38, .7); background: rgba(217, 89, 38, .12); }
+        .pill.ref { color: var(--muted); border: 1px solid var(--panel-border); }
+
+        pre.code { background: rgba(255, 255, 255, .04); border: 1px solid var(--panel-border); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.8; color: var(--text); margin: 0 0 14px; }
+        pre.code .c { color: var(--muted); }
+        pre.code .k { color: var(--ok-c); }
+        pre.code .r { color: var(--bad-c); }
+
+        .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 12px; margin: 14px 0 4px; }
+        .tile { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 13px 15px; }
+        .tile .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .tile .v { font-size: 24px; font-weight: 700; color: var(--text); margin-top: 4px; line-height: 1.1; font-family: var(--font-mono); }
+        .tile .sub { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+
+        .readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(255, 255, 255, .03); }
+        .readout > div { padding: 15px 17px; border-right: 1px solid var(--panel-border); }
+        .readout > div:last-child { border-right: none; }
+        .readout .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .readout .v { font-size: 26px; font-weight: 700; font-family: var(--font-mono); margin-top: 5px; line-height: 1.05; color: var(--text); }
+        .readout .delta { font-size: 12px; font-family: var(--font-mono); margin-top: 5px; color: var(--muted); }
+
+        .ctl-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; margin: 4px 0 16px; }
+        .ctl { display: flex; flex-direction: column; gap: 5px; }
+        .ctl label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .ctl input[type=range] { width: 210px; accent-color: var(--accent); }
+        .ctl .val { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
+        .btn { background: rgba(255, 255, 255, .05); border: 1px solid var(--panel-border); color: var(--muted); border-radius: 999px; padding: 6px 14px; font-size: 12px; cursor: pointer; font-family: var(--font-sans); }
+        .btn:hover { color: var(--text); border-color: var(--muted); }
+        .btn.on { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+        .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        table.dt { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0 4px; }
+        table.dt th { text-align: left; font-weight: 600; color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; padding: 7px 9px; border-bottom: 1px solid var(--panel-border); }
+        table.dt td { padding: 8px 9px; border-bottom: 1px solid rgba(255, 255, 255, .05); color: var(--text); }
+        table.dt td.n, table.dt th.n { text-align: right; font-family: var(--font-mono); }
+        table.dt tr.hl td { background: rgba(57, 135, 229, .10); }
+        table.dt tr.warn td { background: rgba(217, 89, 38, .10); }
+        table.dt tr:last-child td { border-bottom: none; }
+
+        .box { background: rgba(255, 255, 255, .03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+        .box .boxk { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+        .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
+        .legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+        .chartwrap { overflow-x: auto; }
+        svg.chart { display: block; width: 100%; height: auto; }
+        svg.chart text { font-family: var(--font-mono); fill: var(--muted); font-size: 10px; }
+        svg.chart .axis { stroke: var(--axis); stroke-width: 1; }
+        svg.chart .grid { stroke: var(--grid); stroke-width: 1; }
+
+        .gate { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 12px; }
+        .gate.pass { color: var(--good); }
+        .gate.fail { color: var(--crit); }
+        .gatelist { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 7px 18px; margin-top: 10px; }
+
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <button class="nav-toggle" id="sidebarToggle" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="7" x2="20" y2="7"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="17" x2="20" y2="17"></line>
+            </svg>
+        </button>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Sections</h3>
+                <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">&times;</button>
+            </div>
+            <div class="nav-list"></div>
+        </aside>
+
+        <main class="content viz">
+            <div class="wrapper">
+                <h1>One Becomes Eight</h1>
+                <div class="subtitle">A transformer's feed-forward block holds most of its weights, and every
+                    token runs through all of them. A mixture of experts stores many smaller blocks and runs
+                    only the few a router picks. This page trains a dense model, turns its feed-forward block
+                    into eight experts <em>without changing a single output</em>, and keeps training.
+                    <strong>The loss keeps falling, from exactly where it was.</strong></div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">00</span>What was actually run</h2>
+                    <p class="report-lead">The assignment: train a dense model, convert it into a mixture of
+                        experts, and show that it continues to train and reduce its loss. Model size and data
+                        were left open.</p>
+                    <div class="tiles" id="heroTiles"></div>
+                    <p class="muted-note" id="heroNote" style="margin-top:14px"></p>
+                    <h3>How to read the markers</h3>
+                    <p class="muted-note">The session's reference model has 30.5 billion parameters, and
+                        most of the session is about it. Nothing here can train it, so those sections are
+                        arithmetic, and the page says so.
+                        <span class="pill measured">measured</span> ran on the machine below.
+                        <span class="pill computed">computed</span> is arithmetic from the session's
+                        figures, recomputed in the notebook (all <span id="notesCount"></span> of the notes'
+                        figures it checks reproduce). <span class="pill ref">reference</span> is recorded
+                        from the course and the papers it cites.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">01</span>Why mixture-of-experts exists <span class="pill ref">reference</span></h2>
+                    <pre class="code"><span class="c">STANDARD LAYER                       MIXTURE-OF-EXPERTS LAYER</span>
+token                                token
+  │                                    │
+  ▼                                    ▼
+one feed-forward block, 6,144 wide   <span class="k">router</span> ── scores 128 small networks
+every weight is used                   │
+                                       ▼
+                                     picks 8 of them, each 768 wide
+                                     8 × 768 = 6,144 of width is used
+                                     <span class="r">120 small networks sit idle for this token</span></pre>
+                    <p>That one change lets the number of parameters grow while the work per token stays
+                        small. <strong>Capacity grows with the total parameters; cost per token grows with
+                        the active ones.</strong> It also creates three problems, each a part of this
+                        session: <strong>choosing</strong> (a router decides which few each token uses),
+                        <strong>balancing</strong> (left alone, the router favours a few experts and the rest
+                        never learn), and <strong>placing</strong> (experts live on different GPUs, so tokens
+                        travel). A fourth topic is <strong>growing</strong> one from a model that already
+                        works &mdash; which is what this assignment does.</p>
+                    <table class="dt">
+                        <tr><th>study</th><th>comparison</th><th>result</th></tr>
+                        <tr><td>Switch Transformer, 2021</td><td>64 experts vs a standard model with the same work per token</td><td>same quality 7× faster</td></tr>
+                        <tr><td>Krajewski et al., 2024</td><td>MoE tuned for 10²⁰ operations</td><td>matches a standard model given 20× the compute</td></tr>
+                        <tr><td>Ling team, 2025</td><td>0.85B active of 17.5B total</td><td>matches a 6.1B standard model at 7× less compute</td></tr>
+                        <tr><td>Kimi K2, 2025</td><td>48 experts per active expert vs 8</td><td>same loss at 1.69× fewer operations</td></tr>
+                    </table>
+                    <p class="muted-note" style="margin-top:10px">The costs are real too. Memory follows the
+                        <em>total</em>; experts on different GPUs mean every token travels (DeepSeek-V3 reported
+                        about one unit of communication per unit of compute); Switch diverged with a 16-bit
+                        router; and ST-MoE found MoE models overfit small fine-tuning sets more easily.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">02</span>The reference model, and its two sizes <span class="pill computed">computed</span></h2>
+                    <p>The session uses one model throughout: the published shape of <strong>Qwen3-30B-A3B</strong>
+                        &mdash; 48 layers, hidden size 2,048, 32 query heads sharing 4 key-value heads, and in
+                        every layer 128 experts of width 768, of which each token uses 8. Every row below is
+                        recomputed from that shape alone.</p>
+                    <table class="dt" id="refTable"></table>
+                    <div class="readout" id="refReadout" style="margin-top:14px"></div>
+                    <p class="muted-note" style="margin-top:12px" id="gqaNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">03</span>The layer, and what an expert is <span class="pill computed">computed</span></h2>
+                    <p>A mixture-of-experts layer keeps attention exactly as it is and replaces the
+                        feed-forward network with a router and a set of experts. With <code class="mono">T</code>
+                        the chosen set and <code class="mono">gᵢ</code> the router's weights, which add to one:</p>
+                    <pre class="code">y = Σ<sub>i∈T</sub> gᵢ · Eᵢ(x)        Eᵢ(x) = W<sub>down</sub>( SiLU(W<sub>gate</sub> x) ⊙ W<sub>up</sub> x )</pre>
+                    <p>An expert is a small SwiGLU network with no attention and no embeddings of its own; it
+                        cannot produce text by itself, and the router chooses again for every token in every
+                        layer. The reference model's own configuration shows what an expert <em>is</em>: its
+                        standard feed-forward width is 6,144, and <strong>8 × 768 = 6,144</strong>. A token
+                        uses the width of one ordinary feed-forward network, assembled from 8 pieces chosen
+                        out of 128. Training never assigns a subject to an expert; any specialisation is
+                        whatever falls out of training the router and experts together.</p>
+                    <p class="muted-note">Mixtral 8x7B is not 56B: attention and embeddings are shared, so it
+                        is 47B, of which about 45B (96%) sit in the experts. The reference model's experts hold
+                        28.99B of 30.53B, 95%.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">04</span>Active and total parameters <span class="pill computed">computed</span></h2>
+                    <p>The two sizes control different costs: <strong>compute follows the active
+                        parameters, memory follows the total.</strong> Change the number of experts per layer
+                        and the number each token uses; everything else is the reference model's shape.</p>
+                    <div class="ctl-row">
+                        <div class="ctl"><label>experts per layer E</label><div class="btnrow" id="atE"></div></div>
+                        <div class="ctl"><label>used per token k</label><div class="btnrow" id="atK"></div></div>
+                    </div>
+                    <div class="readout" id="atReadout"></div>
+                    <table class="dt" style="margin-top:16px">
+                        <tr><th>model</th><th class="n">total</th><th class="n">active</th><th class="n">total ÷ active</th></tr>
+                        <tr><td>Mixtral 8x7B, 2023</td><td class="n">47B</td><td class="n">13B</td><td class="n">3.6</td></tr>
+                        <tr class="hl"><td>the reference model (Qwen3-30B-A3B shape), 2025</td><td class="n">30.5B</td><td class="n">3.3B</td><td class="n">9.1</td></tr>
+                        <tr><td>DeepSeek-V3, 2024</td><td class="n">671B</td><td class="n">37B</td><td class="n">18.1</td></tr>
+                        <tr><td>gpt-oss-120b, 2025</td><td class="n">116.8B</td><td class="n">5.1B</td><td class="n">22.8</td></tr>
+                        <tr><td>Kimi K2, 2025</td><td class="n">1.04T</td><td class="n">32.6B</td><td class="n">31.9</td></tr>
+                        <tr><td>DeepSeek-V4.1-Flash, 2026</td><td class="n">552B</td><td class="n">16B</td><td class="n">34.5</td></tr>
+                        <tr id="mineRatioRow"></tr>
+                    </table>
+                    <p class="muted-note" style="margin-top:8px">The last row is this page's own model, for scale.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">05</span>The router <span class="pill computed">computed</span></h2>
+                    <p>The router multiplies the token's vector by one matrix and gets a logit per expert. A
+                        score function turns the logits into scores, the top <code class="mono">k</code> are
+                        kept, and the kept scores are rescaled to add to one. This is §7's worked token: 8
+                        experts, its logits fixed. <strong>Softmax</strong> scores compete and add to one;
+                        <strong>sigmoid</strong> scores each expert on its own. The bias toggle is §13's
+                        balancer: it changes which experts are <em>chosen</em> and never the weights.</p>
+                    <div class="ctl-row">
+                        <div class="ctl"><label>score function</label><div class="btnrow" id="rtFn"></div></div>
+                        <div class="ctl"><label>top k</label><div class="btnrow" id="rtK"></div></div>
+                        <div class="ctl"><label>bias −0.5 on expert 5</label><div class="btnrow" id="rtB"></div></div>
+                    </div>
+                    <div class="chartwrap"><svg class="chart" id="rtChart" viewBox="0 0 900 230"></svg></div>
+                    <p class="muted-note" id="rtNote"></p>
+                    <p>Two practical details keep the router stable, and the model on this page uses both:
+                        it runs in <strong>32-bit</strong> (Switch's base model diverged in 16-bit; casting only
+                        the router fixed it and still ran faster than full 32-bit, 1,390 vs 1,160 examples a
+                        second), and it <strong>starts small</strong>, at a tenth of the usual initial scale.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">06</span>Many small experts, and what they learn <span class="pill ref">reference</span></h2>
+                    <p>Early models used a few large experts; current ones use many small ones. Splitting
+                        experts finer and choosing proportionally more keeps compute fixed and multiplies the
+                        ways a token's network can be assembled:</p>
+                    <div class="readout" id="comboReadout"></div>
+                    <p style="margin-top:14px">DeepSeekMoE also introduced the <strong>shared expert</strong>,
+                        used by every token, as one place for common knowledge: removing it from their 2B model
+                        raised Pile loss from 1.808 to 2.414. DeepSeek-V3 and Kimi K2 keep one; the reference
+                        model, gpt-oss and MiMo use none, and OLMoE found no benefit. This page's model has no
+                        shared expert.</p>
+                    <p><strong>What experts learn surprises most people: kinds of tokens, much more than
+                        subjects.</strong> ST-MoE found experts for punctuation, verbs, names and numbers, and
+                        "for" and "pour" reaching the same expert. In Mixtral, arXiv, biology and philosophy
+                        text route almost identically, while Python's <code class="mono">self</code> and code
+                        indentation always reach the same experts. A few experts matter enormously &mdash; three
+                        of 6,144 in the reference shape create its extreme activations, and removing them cuts
+                        GSM8K accuracy by 53% &mdash; while REAP removed half the experts of two large models
+                        for under 2% accuracy.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">07</span>The assignment, part one: a dense model, then eight experts <span class="pill measured">measured</span></h2>
+                    <p class="report-lead">The dense model is a small decoder whose feed-forward block is one
+                        SwiGLU network. It is converted by <strong>sparse upcycling</strong> (§15 of the notes):
+                        every expert starts as a copy of that network, a new router picks 2 of 8 per token, and
+                        the two weights are rescaled to add to one.</p>
+                    <table class="dt" id="sizeTable"></table>
+                    <h3>The check that has to come first</h3>
+                    <p>"It continues to train" means nothing if the conversion itself moved the model: a
+                        falling loss afterwards could just be the MoE recovering from damage the conversion did.
+                        With identical experts the output cannot change &mdash;
+                        <code class="mono">Σ gᵢ·E(x) = E(x)·Σ gᵢ = E(x)</code> &mdash; so the converted model
+                        must score <em>the same</em> as the dense one, before any MoE training step:</p>
+                    <div class="readout" id="convReadout"></div>
+                    <h3>The consequence nobody mentions</h3>
+                    <p>The same identity means that at the moment of conversion <strong>the router gets no
+                        gradient from the language loss at all</strong>. Every choice gives the same output, so
+                        no choice is better than another. The router can only start learning after the experts
+                        have drifted apart on the different tokens its random initial choices sent them.</p>
+                    <div class="readout" id="rgReadout"></div>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">08</span>The assignment, part two: it keeps training <span class="pill measured">measured</span></h2>
+                    <p>Four branches start from the same dense checkpoint and read the same next tokens in the
+                        same order, so the only difference between them is the model. The dense model keeps
+                        training too, as the control: a dense model <em>also</em> keeps reducing its loss on
+                        new tokens, so "the MoE's loss falls" alone would only show that nothing broke.</p>
+                    <div class="ctl-row">
+                        <div class="ctl"><label>view</label><div class="btnrow" id="lossView"></div></div>
+                    </div>
+                    <div class="legend" id="lossLegend"></div>
+                    <div class="chartwrap"><svg class="chart" id="lossChart" viewBox="0 0 900 340"></svg></div>
+                    <table class="dt" id="branchTable" style="margin-top:12px"></table>
+                    <p class="muted-note" id="branchNote" style="margin-top:10px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">09</span>Did the experts actually separate? <span class="pill measured">measured</span></h2>
+                    <p>If the copies never drifted apart, the "MoE" would be the dense model computed eight
+                        times. Left: the router's language-loss gradient through the main run, starting from
+                        effectively zero. Right: per layer, how far each expert moved from the network it was
+                        copied from, and how far apart the experts ended up from one another, both relative to
+                        the size of that network's weights.</p>
+                    <div class="split">
+                        <div class="box"><div class="boxk">router gradient norm, moe-bias (log scale)</div>
+                            <svg class="chart" id="rgChart" viewBox="0 0 440 240"></svg></div>
+                        <div class="box"><div class="boxk">expert spread after training, per layer</div>
+                            <table class="dt" id="spreadTable"></table></div>
+                    </div>
+                    <p class="muted-note" id="spreadNote" style="margin-top:10px"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">10</span>Load imbalance and collapse <span class="pill measured">measured</span></h2>
+                    <p>The router and experts train together, and that creates a loop: an expert chosen a
+                        little more often gets more updates, gets better, gets scored higher, and is chosen even
+                        more. A router left alone favours a few experts; the rest stop learning. The standard
+                        measure is the <strong>maximum violation</strong>,
+                        <code class="mono">MaxVio = (max load − mean load) / mean load</code>: 0 is perfectly even,
+                        1 means the busiest expert has twice the average. Below, measured every 25 steps for the
+                        three MoE branches, averaged over layers.</p>
+                    <div class="legend" id="mvLegend"></div>
+                    <div class="chartwrap"><svg class="chart" id="mvChart" viewBox="0 0 900 260"></svg></div>
+                    <h3>Where the tokens went</h3>
+                    <p class="muted-note">Each row is an expert, each column 25 training steps. Shade is the
+                        expert's load relative to an even share (an even share is the mid shade); a red
+                        <span style="color:var(--crit)">×</span> is an expert that received no tokens at all in
+                        that window.</p>
+                    <div class="ctl-row">
+                        <div class="ctl"><label>branch</label><div class="btnrow" id="hmArm"></div></div>
+                        <div class="ctl"><label>layer</label><div class="btnrow" id="hmLayer"></div></div>
+                    </div>
+                    <div class="chartwrap"><svg class="chart" id="hmChart" viewBox="0 0 900 200"></svg></div>
+                    <p class="muted-note" id="hmNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">11</span>Capacity and dropped tokens <span class="pill computed">computed from measured loads</span></h2>
+                    <p>The first fix limited how many tokens each expert could take per batch:
+                        <code class="mono">capacity = tokens × k / experts × capacity factor</code>. A token that
+                        arrives after its expert is full is <em>dropped</em> &mdash; it skips that expert and
+                        continues through the residual connection. For the reference model one 8,192-token
+                        sequence averages 512 tokens per expert, so a factor of 1.25 gives 640 slots.</p>
+                    <p>The model on this page is <strong>dropless</strong>, like DeepSeek-V3, OLMoE and the
+                        reference model. But its measured loads say what a capacity limit <em>would</em> have
+                        cost: the slider applies a capacity factor to each branch's real per-step expert loads
+                        (the last 25 steps, every layer) and counts the overflow.</p>
+                    <div class="ctl-row">
+                        <div class="ctl"><label>capacity factor</label><input type="range" id="cfSlider" min="0.5" max="2" step="0.05" value="1.25"><span class="val" id="cfVal"></span></div>
+                    </div>
+                    <div class="readout" id="cfReadout"></div>
+                    <p class="muted-note" style="margin-top:10px">Switch used factors of 1.0 and 1.25 and
+                        dropped under 1%. MegaBlocks then made experts of any load run in one pass, and its
+                        dropless model reduced validation loss by 0.26 where capacity factor 1.0 managed 0.15.
+                        The overflow here is computed from 25-step totals, so it understates per-step peaks.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">12</span>Auxiliary loss vs the bias <span class="pill measured">measured</span></h2>
+                    <p><strong>The auxiliary loss</strong> (Switch) adds
+                        <code class="mono">α·N·Σ fᵢ·Pᵢ</code> to the training loss &mdash;
+                        <code class="mono">fᵢ</code> the fraction of tokens sent to expert i (no gradient: top-k
+                        is a step), <code class="mono">Pᵢ</code> its mean router probability (has one). It is
+                        <span id="auxEven"></span> when perfectly even and <span id="auxColl"></span> when
+                        collapsed onto one of 128. Its drawback: its gradient flows into the same router
+                        weights the language loss trains.</p>
+                    <p><strong>The bias</strong> (Wang et al., 2024) adds nothing to the loss. Every expert
+                        has a number added to its score <em>only when choosing</em>; after each step it moves
+                        by <code class="mono">γ·sign(mean load − loadᵢ)</code>. Busy experts get pushed down,
+                        idle ones up, and the language-loss gradient is untouched &mdash; the notebook checks
+                        that the bias has no gradient and that the weights still come from the raw scores.</p>
+                    <table class="dt" id="balTable"></table>
+                    <p class="muted-note" id="balNote" style="margin-top:10px"></p>
+                    <table class="dt" style="margin-top:14px">
+                        <tr><th>Wang et al., 2024</th><th class="n">aux loss: perplexity</th><th class="n">MaxVio</th><th class="n">bias: perplexity</th><th class="n">MaxVio</th></tr>
+                        <tr><td>1B parameters</td><td class="n">9.56</td><td class="n">0.72</td><td class="n">9.50</td><td class="n">0.04</td></tr>
+                        <tr><td>3B parameters</td><td class="n">7.97</td><td class="n">0.52</td><td class="n">7.92</td><td class="n">0.04</td></tr>
+                    </table>
+                    <p class="muted-note" style="margin-top:10px">DeepSeek-V3 adopted the bias with γ = 0.001,
+                        plus a tiny sequence-level auxiliary loss (0.0001) against extreme imbalance inside one
+                        sequence; GLM-4.5, Kimi K2, DeepSeek-V4, Ling and MiMo use the same recipe. The ST-MoE
+                        <strong>router z-loss</strong>, <code class="mono">(log Σ e^z)²</code> averaged over
+                        tokens, penalises large logits for stability and was not needed at this scale.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">13</span>Balancing scope <span class="pill ref">reference</span></h2>
+                    <p>Every balancing method counts load over <em>some</em> group of tokens: one sequence, one
+                        micro-batch on one GPU, or the whole batch across all GPUs. <strong>Balancing over a small
+                        group forces every group to use every expert, which blocks experts from specialising by
+                        subject.</strong> A micro-batch of only code would have to use the maths experts too.</p>
+                    <table class="dt">
+                        <tr><th>Qwen team, 2025</th><th>balanced over</th><th class="n">perplexity</th><th>benchmark</th></tr>
+                        <tr><td>3.4B total, 0.6B active</td><td>4 sequences</td><td class="n">8.167</td><td rowspan="2">MMLU 41.63 → 43.48</td></tr>
+                        <tr class="hl"><td></td><td>512 sequences</td><td class="n">8.038</td></tr>
+                        <tr><td>15B total, 2.54B active</td><td>16 sequences</td><td class="n">5.778</td><td rowspan="2">GSM8K 48.07 → 54.28</td></tr>
+                        <tr class="hl"><td></td><td>512 sequences</td><td class="n">5.603</td></tr>
+                    </table>
+                    <p class="muted-note" style="margin-top:10px" id="scopeNote"></p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">14</span>Growing again: clone families <span class="pill measured">measured</span></h2>
+                    <p>Upcycling is a family of methods. <strong>Copy</strong> (sparse upcycling, what §07 did)
+                        makes every expert the whole network; <strong>partition</strong> gives each a slice;
+                        <strong>drop-upcycling</strong> copies and redraws a fraction of each copy's neurons.
+                        The hard part is always the same: <em>making the copies become different</em>.</p>
+                    <table class="dt">
+                        <tr><th>method</th><th>how experts start</th><th>measured result</th></tr>
+                        <tr><td>Sparse upcycling, 2022</td><td>full copies; only the router is new</td><td>beats continuing dense at 10–60% extra budget</td></tr>
+                        <tr><td>Partition, Qwen1.5-MoE, 2024</td><td>the network cut into pieces</td><td>64 experts from 1.8B, 75% cheaper than a 7B</td></tr>
+                        <tr><td>Drop-upcycling, 2025</td><td>copies with r of the neurons redrawn</td><td>r = 0.5 best; matched a 13B at ¼ the compute</td></tr>
+                        <tr><td>Branch-Train-MiX, 2024</td><td>copies trained apart on maths, code, wiki</td><td>47.9 vs 46.3 for sparse upcycling</td></tr>
+                    </table>
+                    <p style="margin-top:14px">The notes record a failure the published studies do not. The
+                        Lightning LM team grew 20 experts to 460 by cloning each 23 times <em>without redrawing
+                        any neurons</em>, with hard top-k, and dead experts rose 27 → 38 → 122 → 154 → 168 within
+                        a few hundred steps: the router could not tell near-identical clones apart, and each
+                        family collapsed onto a few members. Their fix was probabilistic selection during an
+                        early window. The same experiment, at this page's scale: the trained 8-expert model is
+                        grown to <strong>32 experts (each cloned 4×)</strong>, router columns tiled with 1% noise,
+                        top-k 2 → 4, and trained three ways on the same next tokens.</p>
+                    <div class="legend" id="clLegend"></div>
+                    <div class="split">
+                        <div class="box"><div class="boxk">validation loss after growth</div>
+                            <svg class="chart" id="clLoss" viewBox="0 0 440 240"></svg></div>
+                        <div class="box"><div class="boxk">dead experts per 25-step window, all layers</div>
+                            <svg class="chart" id="clDead" viewBox="0 0 440 240"></svg></div>
+                    </div>
+                    <table class="dt" id="cloneTable" style="margin-top:14px"></table>
+                    <p class="muted-note" id="cloneNote" style="margin-top:10px"></p>
+                    <p class="muted-note">Upcycling saves compute only up to a point: a from-scratch MoE caught
+                        up after about 120% of the dense budget in the original study and 25% in OLMoE's.
+                        Skywork's rule is to train from scratch once the MoE budget passes twice the dense
+                        model's cost.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">15</span>Expert parallelism <span class="pill computed">computed</span></h2>
+                    <p>The reference model's experts hold 28.99B parameters, far more than one GPU should train.
+                        <strong>Expert parallelism</strong> places different experts on different GPUs: at
+                        EP = 8, GPU g holds experts 16g to 16g+15 of every layer. Attention and the router run
+                        at home; each token is sent to the GPUs holding its 8 experts (<em>dispatch</em>, an
+                        all-to-all), computed there, and sent back (<em>combine</em>) &mdash; two all-to-alls each
+                        way, every MoE layer.</p>
+                    <pre class="code"><span class="c">token "the" on GPU 2 picks experts 3, 17, 40, 41, 77, 90, 101, 126</span>
+fixed map e ÷ 16:  3→GPU0  17→GPU1  <span class="k">40→GPU2  41→GPU2</span>  77→GPU4  90→GPU5  101→GPU6  126→GPU7
+<span class="c">(40 and 41 are at home, so those two copies never leave)</span>
+count → exchange counts → <span class="k">dispatch</span> → 16 experts run per GPU → <span class="k">combine</span> → unpermute, weighted sum</pre>
+                    <div class="ctl-row">
+                        <div class="ctl"><label>link</label><div class="btnrow" id="epLink"></div></div>
+                    </div>
+                    <div class="readout" id="epReadout"></div>
+                    <p class="muted-note" style="margin-top:10px">Each token sends k copies of its vector:
+                        8 × 2,048 × 2 bytes for dispatch and the same for combine, 7/8 of it off the GPU, × 48
+                        layers × 2 for the backward pass. Megatron-LM's guideline follows from the network-card
+                        row: keep expert parallelism inside one node. DeepEP measured 726 GB/s inside a B200 node
+                        and about 90 GB/s across two.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">16</span>Expert parallelism with the other forms, and choosing a layout <span class="pill computed">computed</span></h2>
+                    <p>A mixture-of-experts model has two kinds of weights, divided differently. Attention, router
+                        and embeddings are copied on every GPU, their gradients summed across all of them, and
+                        their optimizer state divided by ZeRO-1. Experts are already divided by expert
+                        parallelism; when there are more GPUs than the EP degree, each expert's copies sum
+                        gradients within their own smaller <em>expert data-parallel</em> group.</p>
+                    <table class="dt" id="layoutTable"></table>
+                    <p class="muted-note" style="margin-top:10px">Activations at 34 bytes per token per hidden
+                        unit per layer. Megatron-LM publishes exactly the first row for this shape: EP 8, no
+                        tensor or pipeline parallelism, recomputing the expert activation and the layer norm.
+                        MoE Parallel Folding lets attention use tensor parallelism while experts use EP on the
+                        same cards (Mixtral 8x22B on 128 H100s: 46.3% → 49.3% utilisation); DualPipe overlaps
+                        one micro-batch's all-to-all with another's compute; EPLB re-places extra copies of the
+                        busiest experts when serving.</p>
+                    <h3>The nine steps, in order</h3>
+                    <p class="muted-note">Count total and active size → EP = GPUs per node → ZeRO-1 for the dense
+                        parts → check training state per GPU → add activations (recompute some if needed) → check
+                        tokens per expert (a few hundred or more; here <span id="tpe"></span>) → compare
+                        all-to-all with compute → cross nodes only when it does not fit → measure the step time
+                        and let the measurement choose.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">17</span>Case studies <span class="pill ref">reference</span></h2>
+                    <table class="dt">
+                        <tr><th>model</th><th>total / active</th><th>routed + shared, top-k</th><th>router</th><th>balancing</th></tr>
+                        <tr><td>DeepSeek-V3, 2024</td><td>671B / 37B</td><td>256 + 1, top-8</td><td>sigmoid, ×2.5</td><td>bias 0.001 + seq loss 0.0001, 4-node cap</td></tr>
+                        <tr><td>DeepSeek-V4-Pro, 2026</td><td>1.6T / 49B</td><td>384 + 1, top-6</td><td>√softplus, ×2.5</td><td>bias + 0.0001, node cap removed</td></tr>
+                        <tr><td>DeepSeek-V4.1-Flash, 2026</td><td>552B + 196B Engram</td><td>384 + 1, top-6</td><td>√softplus, ×1.5</td><td>separate text and image biases</td></tr>
+                        <tr><td>MiMo-V2.6-Pro, 2026</td><td>1.02T / 42B</td><td>384 + 0, top-8</td><td>sigmoid</td><td>bias + small seq loss; router frozen in RL</td></tr>
+                        <tr><td>Kimi K2, 2025</td><td>1.04T / 32.6B</td><td>384 + 1, top-8</td><td>sigmoid, ×2.827</td><td>bias</td></tr>
+                        <tr class="hl"><td>Qwen3-30B-A3B, 2025</td><td>30.5B / 3.3B</td><td>128 + 0, top-8</td><td>softmax</td><td>whole-batch aux loss 0.001</td></tr>
+                        <tr><td>Lightning LM 120B, 2026</td><td>118.7B / 5.9B</td><td>460 + 1, top-12</td><td>sigmoid</td><td>three-tier bias controller</td></tr>
+                        <tr id="mineCaseRow"></tr>
+                    </table>
+                    <p class="muted-note" style="margin-top:10px">MiMo's collapse during reinforcement learning
+                        (busiest expert from 6× to 16× the average load within 20 steps, nearly-unused experts
+                        0.5% → 22%) was cured by restoring only the pre-RL router weights, after which the team
+                        froze the router for all of RL.</p>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">18</span>What this says about V5's decisions</h2>
+                    <table class="dt" id="v5Table"></table>
+                </div>
+
+                <!-- ============================================================ -->
+                <div class="panel report-section">
+                    <h2><span class="num">19</span>Gates</h2>
+                    <div class="readout" id="gateReadout"></div>
+                    <div class="gatelist" id="gateList"></div>
+                    <h3>Limits</h3>
+                    <p class="muted-note" id="limits"></p>
+                    <h3>Provenance</h3>
+                    <p class="muted-note" id="provenance"></p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+/* BEGIN GENERATED s14data */
+const S14DATA = null;
+/* END GENERATED s14data */
+</script>
+    <script>
+        (function () {
+            const D = (typeof S14DATA !== 'undefined') ? S14DATA : null;
+            if (!D || !D.branches || !D.gates) {
+                document.getElementById('heroTiles').innerHTML =
+                    '<div class="tile"><div class="k">no data</div><div class="v">&mdash;</div>'
+                    + '<div class="sub">No baked data: run build_notebook.py --bake-only</div></div>';
+                return;
+            }
+            const SVG = 'http://www.w3.org/2000/svg';
+            const fmt = (x, n = 2) => Number(x).toFixed(n);
+            const M = x => (x / 1e6).toFixed(2) + 'M';
+            const el = (t, a) => { const n = document.createElementNS(SVG, t); for (const k in a) n.setAttribute(k, a[k]); return n; };
+            const txt = (svg, x, y, s, a = {}) => { const t = el('text', Object.assign({ x, y }, a)); t.textContent = s; svg.appendChild(t); return t; };
+            const clear = n => { while (n.firstChild) n.removeChild(n.firstChild); };
+            const last = a => a[a.length - 1];
+            const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+            const C = { dense: '#d95926', bias: '#3987e5', aux: '#199e70', none: '#a3a3aa' };
+            const gates = D.gates, nG = Object.keys(gates).length, pG = Object.values(gates).filter(Boolean).length;
+            const R = D.reference, B = D.branches, CV = D.conversion, MD = D.model, F_ = D.findings;
+            const main = B['moe-bias'], dc = B['dense-continued'];
+            const TPS = MD.seq * MD.batch;
+            const trainSec = [D.dense, ...Object.values(B), ...Object.values(D.clone.arms)].reduce((s, r) => s + r.seconds, 0);
+            const mvOf = r => mean(last(r.load)[1].map(l => l.maxvio));
+            const deadOf = r => last(r.load)[1].reduce((s, l) => s + l.dead, 0);
+
+            function buttons(id, opts, init, onChange, label = v => v) {
+                const host = document.getElementById(id); let cur = init;
+                host.innerHTML = opts.map(v => `<button class="btn${v === init ? ' on' : ''}" data-v="${v}">${label(v)}</button>`).join('');
+                host.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+                    host.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+                    b.classList.add('on'); cur = isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v; onChange(cur);
+                }));
+                onChange(init);
+            }
+
+            /* generic line chart: series = [{label, color, dash, pts:[[x,y],...]}] */
+            function lineChart(svg, series, o) {
+                clear(svg);
+                const [W, H] = svg.getAttribute('viewBox').split(' ').slice(2).map(Number);
+                const LX = o.lx || 52, RX = o.rx || 20, T = 14, BT = 36;
+                const xs = series.flatMap(s => s.pts.map(p => p[0])), ys = series.flatMap(s => s.pts.map(p => p[1]));
+                const x0 = o.x0 ?? Math.min(...xs), x1 = o.x1 ?? Math.max(...xs);
+                const tf = o.log ? Math.log10 : (v => v);
+                let y0 = o.y0 ?? Math.min(...ys.map(tf)), y1 = o.y1 ?? Math.max(...ys.map(tf));
+                if (!o.log) { const pad = (y1 - y0) * .06 || .1; if (o.y0 === undefined) y0 -= pad; y1 += pad; }
+                const X = v => LX + (v - x0) / (x1 - x0 || 1) * (W - LX - RX);
+                const Y = v => T + (1 - (tf(v) - y0) / (y1 - y0 || 1)) * (H - T - BT);
+                svg.appendChild(el('line', { x1: LX, y1: H - BT, x2: W - RX, y2: H - BT, class: 'axis' }));
+                svg.appendChild(el('line', { x1: LX, y1: T, x2: LX, y2: H - BT, class: 'axis' }));
+                for (let k = 0; k <= 4; k++) {
+                    const tv = y0 + (y1 - y0) * k / 4, v = o.log ? Math.pow(10, tv) : tv;
+                    const yy = T + (1 - k / 4) * (H - T - BT);
+                    svg.appendChild(el('line', { x1: LX, y1: yy, x2: W - RX, y2: yy, class: 'grid' }));
+                    txt(svg, LX - 6, yy + 3, o.log ? v.toExponential(0) : v.toFixed(o.yd ?? 2), { 'text-anchor': 'end' });
+                }
+                for (let k = 0; k <= 4; k++) {
+                    const v = x0 + (x1 - x0) * k / 4;
+                    txt(svg, X(v), H - BT + 14, o.xfmt ? o.xfmt(v) : v.toFixed(0), { 'text-anchor': 'middle' });
+                }
+                txt(svg, (LX + W - RX) / 2, H - 6, o.xlabel || '', { 'text-anchor': 'middle' });
+                (o.marks || []).forEach(([xv, lab]) => {
+                    svg.appendChild(el('line', { x1: X(xv), y1: T, x2: X(xv), y2: H - BT, stroke: '#45454f', 'stroke-dasharray': '3 3' }));
+                    txt(svg, X(xv) + 4, T + 10, lab);
+                });
+                series.forEach(s => {
+                    const d = s.pts.map((p, j) => `${j ? 'L' : 'M'}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ');
+                    svg.appendChild(el('path', { d, fill: 'none', stroke: s.color, 'stroke-width': s.w || 2, 'stroke-dasharray': s.dash || 'none', 'stroke-linejoin': 'round' }));
+                    if (s.dots !== false) s.pts.forEach(p => svg.appendChild(el('circle', { cx: X(p[0]).toFixed(1), cy: Y(p[1]).toFixed(1), r: 2.2, fill: s.color })));
+                });
+            }
+            const legend = (id, series) => document.getElementById(id).innerHTML =
+                series.map(s => `<span><i style="background:${s.color}"></i>${s.label}</span>`).join('');
+
+            /* ---- 00 hero ---------------------------------------------------- */
+            const dGap = abs => Math.abs(abs);
+            document.getElementById('heroTiles').innerHTML = [
+                ['conversion moved the loss by', CV.max_logit_diff < 1e-3 ? dGap(CV.moe_val - CV.dense_val).toExponential(1) : '—',
+                    `dense ${fmt(CV.dense_val, 4)} → MoE ${fmt(CV.moe_val, 4)}, before any MoE step`],
+                ['MoE loss after conversion', fmt(main.val[0][1], 3) + ' → ' + fmt(last(main.val)[1], 3),
+                    `${(main.tokens / 1e6).toFixed(1)}M more tokens, every checkpoint below the start`],
+                ['vs dense, same tokens', (F_.moe_minus_dense_val < 0 ? '' : '+') + fmt(F_.moe_minus_dense_val, 3),
+                    `MoE ${fmt(last(main.val)[1], 3)} vs dense-continued ${fmt(last(dc.val)[1], 3)} val loss`],
+                ['router gradient at conversion', CV.router_grad_at_conversion.toExponential(1),
+                    `attention's on the same batch: ${CV.attn_grad_at_conversion.toExponential(1)}`],
+                ['gates', pG + '/' + nG, pG === nG ? 'all pass' : 'FAILING'],
+            ].map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="sub">${s}</div></div>`).join('');
+            document.getElementById('heroNote').innerHTML =
+                `A ${M(MD.sizes['1x1'].total)}-parameter dense decoder (${MD.layers} layers, d_model ${MD.d_model}, `
+                + `SwiGLU width ${MD.ffn}) trained on ${(D.dense.tokens / 1e6).toFixed(1)}M tokens, then upcycled to `
+                + `8 experts with top-2 routing (${M(MD.sizes['8x2'].total)} total, ${M(MD.sizes['8x2'].active)} active). `
+                + `Data: ${(D.corpus.tokens / 1e6).toFixed(0)}M tokens from ${D.corpus.documents.toLocaleString()} `
+                + `${D.corpus.source} documents, tokenized with the frozen Sarvam-1 tokenizer of Sessions 9–13, `
+                + `vocabulary capped to ${D.corpus.vocab_cap.toLocaleString()} ids (${fmt(D.corpus.coverage * 100, 1)}% of occurrences). `
+                + `<strong>No token is read twice.</strong> Run on ${D.meta.device.toUpperCase()} (${D.meta.platform}); `
+                + `${(trainSec / 60).toFixed(0)} minutes of training across ${2 + Object.keys(B).length + Object.keys(D.clone.arms).length - 1} runs.`;
+            document.getElementById('notesCount').textContent = D.notes_check.filter(c => c.ok).length + ' of ' + D.notes_check.length;
+
+            /* ---- 02 reference model ----------------------------------------- */
+            const B9 = v => (v / 1e9).toFixed(2) + 'B', M2 = v => (v / 1e6).toFixed(2) + 'M';
+            document.getElementById('refTable').innerHTML =
+                '<tr><th>part</th><th class="n">per layer</th><th class="n">across 48 layers</th></tr>'
+                + `<tr><td>attention (Q widens 2,048 → 4,096; K, V 512 each)</td><td class="n">${M2(R.attention_per_layer)}</td><td class="n">${B9(R.attention_per_layer * 48)}</td></tr>`
+                + `<tr><td>one expert, 3 × 2,048 × 768</td><td class="n">${M2(R.expert)}</td><td class="n"></td></tr>`
+                + `<tr><td>all 128 experts</td><td class="n">${M2(R.experts_per_layer)}</td><td class="n">${B9(R.experts_all_layers)}</td></tr>`
+                + `<tr><td>the router, 2,048 × 128</td><td class="n">${M2(R.router_per_layer)}</td><td class="n">${B9(R.router_per_layer * 48)}</td></tr>`
+                + `<tr><td>embeddings, input and output</td><td class="n"></td><td class="n">${B9(R.embeddings)}</td></tr>`
+                + `<tr class="hl"><td><strong>total</strong></td><td class="n"></td><td class="n"><strong>${B9(R.total)}</strong></td></tr>`
+                + `<tr class="hl"><td><strong>active</strong>: attention + 8 experts + router + embeddings</td><td class="n">${M2(R.active_per_layer)}</td><td class="n"><strong>${B9(R.active)}</strong></td></tr>`;
+            document.getElementById('refReadout').innerHTML = `
+                <div><div class="k">training state, 16 B/weight</div><div class="v">${fmt(R.train_state_gib, 0)}G</div><div class="delta">set by the total</div></div>
+                <div><div class="k">work per token, 6× active</div><div class="v">${fmt(R.gflop_per_token_moe, 1)}</div><div class="delta">GFLOP; a dense 30.2B: ${fmt(R.gflop_per_token_dense30b, 0)}</div></div>
+                <div><div class="k">total ÷ active</div><div class="v">${fmt(R.ratio, 1)}×</div><div class="delta">memory of a 30B, ~1/9 of its compute</div></div>`;
+            document.getElementById('gqaNote').innerHTML =
+                `<strong>Grouped-query attention:</strong> 32 query heads share 4 key-value heads, 8 per group. The KV cache is `
+                + `${fmt(R.kv_cache_kib, 0)} KiB per token in 16-bit, against ${fmt(R.kv_cache_mha_kib, 0)} KiB with one KV head per query head — `
+                + `8× more sequences, or 8× longer ones, on the same card. It also caps tensor parallelism at 4 ways before KV heads must be copied; the layout here uses expert parallelism instead, so it does not bite.`;
+
+            /* ---- 04 active / total widget ----------------------------------- */
+            let atE = 128, atK = 8;
+            function drawAT() {
+                const L = 48, attn = R.attention_per_layer, ex = R.expert, emb = R.embeddings;
+                const k = Math.min(atK, atE), router = 2048 * atE;
+                const total = L * (attn + atE * ex + router) + emb, active = L * (attn + k * ex + router) + emb;
+                document.getElementById('atReadout').innerHTML = `
+                    <div><div class="k">total</div><div class="v">${(total / 1e9).toFixed(2)}B</div><div class="delta">sets memory</div></div>
+                    <div><div class="k">active</div><div class="v">${(active / 1e9).toFixed(2)}B</div><div class="delta">sets compute</div></div>
+                    <div><div class="k">work per token</div><div class="v">${(6 * active / 1e9).toFixed(1)}</div><div class="delta">GFLOP to train</div></div>
+                    <div><div class="k">training state</div><div class="v">${(16 * total / 2 ** 30).toFixed(0)}G</div><div class="delta">GiB at 16 bytes</div></div>
+                    <div><div class="k">ratio</div><div class="v">${(total / active).toFixed(1)}×</div><div class="delta">${atE} experts, ${k} used</div></div>`;
+            }
+            buttons('atE', [32, 64, 128, 256], 128, v => { atE = v; drawAT(); });
+            buttons('atK', [2, 4, 8, 16], 8, v => { atK = v; drawAT(); });
+            const s82 = MD.sizes['8x2'];
+            document.getElementById('mineRatioRow').innerHTML = `<td><strong>this page's MoE</strong>, 8 experts top-2</td><td class="n">${M(s82.total)}</td><td class="n">${M(s82.active)}</td><td class="n">${fmt(s82.total / s82.active, 1)}</td>`;
+            document.getElementById('mineRatioRow').className = 'warn';
+
+            /* ---- 05 router widget -------------------------------------------- */
+            const RE = D.router_example, z = RE.logits;
+            let rtFn = 'softmax', rtK = 2, rtB = 'off';
+            function drawRT() {
+                const svg = document.getElementById('rtChart'); clear(svg);
+                const sc = rtFn === 'softmax' ? (() => { const e = z.map(Math.exp), s = e.reduce((a, b) => a + b, 0); return e.map(v => v / s); })() : z.map(v => 1 / (1 + Math.exp(-v)));
+                const bias = z.map((_, i) => (rtB === 'on' && i === 5) ? -0.5 : 0);
+                const sel = sc.map((v, i) => [v + bias[i], i]).sort((a, b) => b[0] - a[0]).slice(0, rtK).map(p => p[1]);
+                const ws = sel.reduce((s, i) => s + sc[i], 0);
+                const W = 900, H = 230, LX = 40, bw = (W - LX - 20) / 8, top = 20, base = 170, mx = Math.max(...sc);
+                svg.appendChild(el('line', { x1: LX, y1: base, x2: W - 20, y2: base, class: 'axis' }));
+                sc.forEach((v, i) => {
+                    const x = LX + i * bw + bw * .2, w = bw * .6, h = v / mx * (base - top);
+                    const on = sel.includes(i);
+                    svg.appendChild(el('rect', { x, y: base - h, width: w, height: h, rx: 3, fill: on ? C.bias : '#2a2a31', stroke: on ? C.bias : '#45454f' }));
+                    if (bias[i]) {
+                        const hb = Math.max(0, v + bias[i]) / mx * (base - top);
+                        svg.appendChild(el('line', { x1: x - 4, x2: x + w + 4, y1: base - hb, y2: base - hb, stroke: '#d03b3b', 'stroke-width': 2, 'stroke-dasharray': '4 3' }));
+                        txt(svg, x + w / 2, base - hb - 5, 'with bias ' + (v + bias[i]).toFixed(3), { 'text-anchor': 'middle', fill: '#d03b3b' });
+                    }
+                    txt(svg, x + w / 2, base - h - 6, v.toFixed(3), { 'text-anchor': 'middle' });
+                    txt(svg, x + w / 2, base + 15, 'expert ' + i, { 'text-anchor': 'middle' });
+                    txt(svg, x + w / 2, base + 29, 'z = ' + z[i].toFixed(1), { 'text-anchor': 'middle' });
+                    if (on) txt(svg, x + w / 2, base + 45, 'w = ' + (sc[i] / ws).toFixed(3), { 'text-anchor': 'middle', fill: '#9dc6f5' });
+                });
+                document.getElementById('rtNote').innerHTML = `Chosen: experts ${sel.join(' and ')}, weights ${sel.map(i => (sc[i] / ws).toFixed(3)).join(' and ')} `
+                    + `(sum 1.000).` + (rtB === 'on' ? ` The bias pushed expert 5's <em>selection</em> score down; the weights are still computed from the raw scores, so expert 0 keeps its original share of the pair.` : '')
+                    + ` §7's numbers: softmax top-2 → ${RE.softmax.weights.map(w => w.toFixed(2)).join(' / ')}; sigmoid → ${RE.sigmoid.weights.map(w => w.toFixed(3)).join(' / ')}.`;
+            }
+            buttons('rtFn', ['softmax', 'sigmoid'], 'softmax', v => { rtFn = v; drawRT(); });
+            buttons('rtK', [1, 2, 3], 2, v => { rtK = v; drawRT(); });
+            buttons('rtB', ['off', 'on'], 'off', v => { rtB = v; drawRT(); });
+
+            /* ---- 06 combos ---------------------------------------------------- */
+            document.getElementById('comboReadout').innerHTML = `
+                <div><div class="k">Mixtral: 2 of 8</div><div class="v">${R.combos_mixtral}</div><div class="delta">possible pairs</div></div>
+                <div><div class="k">16 experts, choose 2</div><div class="v">${R.combos_16c2}</div><div class="delta">DeepSeekMoE's baseline</div></div>
+                <div><div class="k">split ×4: 64, choose 8</div><div class="v">${(R.combos_64c8 / 1e9).toFixed(1)}B</div><div class="delta">same compute</div></div>
+                <div><div class="k">reference: 8 of 128</div><div class="v">${(R.combos_ref / 1e12).toFixed(2)}T</div><div class="delta">${R.combos_ref.toLocaleString()}</div></div>`;
+
+            /* ---- 07 sizes + conversion ---------------------------------------- */
+            const sz = MD.sizes;
+            document.getElementById('sizeTable').innerHTML =
+                '<tr><th>model</th><th class="n">experts</th><th class="n">top-k</th><th class="n">total</th><th class="n">active</th><th class="n">feed-forward work per token</th></tr>'
+                + [['dense', '1x1', 1, 1], ['upcycled MoE (§08)', '8x2', 8, 2], ['grown MoE (§14)', '32x4', 32, 4]].map(([n, key, e, k]) =>
+                    `<tr${key === '8x2' ? ' class="hl"' : ''}><td>${n}</td><td class="n">${e}</td><td class="n">${k}</td><td class="n">${M(sz[key].total)}</td><td class="n">${M(sz[key].active)}</td><td class="n">${k}×</td></tr>`).join('');
+            document.getElementById('convReadout').innerHTML = `
+                <div><div class="k">dense, validation loss</div><div class="v">${fmt(CV.dense_val, 6)}</div><div class="delta">${(D.ranges.val[1] - D.ranges.val[0]).toLocaleString()} held-out tokens</div></div>
+                <div><div class="k">converted, same tokens</div><div class="v">${fmt(CV.moe_val, 6)}</div><div class="delta">|Δ| ${Math.abs(CV.moe_val - CV.dense_val).toExponential(1)}</div></div>
+                <div><div class="k">largest logit difference</div><div class="v">${CV.max_logit_diff.toExponential(1)}</div><div class="delta">on logits up to ${fmt(CV.logit_scale, 1)}: float32 rounding</div></div>
+                <div><div class="k">router weights sum to 1</div><div class="v">${CV.weight_sum_err.toExponential(0)}</div><div class="delta">worst error, every token, every layer</div></div>`;
+            const rg = main.router_grad;
+            document.getElementById('rgReadout').innerHTML = `
+                <div><div class="k">router gradient, at conversion</div><div class="v">${CV.router_grad_at_conversion.toExponential(1)}</div><div class="delta">float32 rounding of an exact zero</div></div>
+                <div><div class="k">attention gradient, same batch</div><div class="v">${CV.attn_grad_at_conversion.toExponential(1)}</div><div class="delta">${(CV.attn_grad_at_conversion / CV.router_grad_at_conversion).toExponential(0)}× larger</div></div>
+                <div><div class="k">router gradient, end of training</div><div class="v">${last(rg)[1].toExponential(1)}</div><div class="delta">step ${last(rg)[0]}, once the experts differ</div></div>`;
+
+            /* ---- 08 loss chart ------------------------------------------------- */
+            const d0 = D.ranges.continue[0];
+            const tokPts = (r, off) => r.val.map(([s, v]) => [(off + s * TPS) / 1e6, v]);
+            const brS = [['dense-continued', C.dense, 'none'], ['moe-bias', C.bias, 'none'], ['moe-aux', C.aux, '6 3'], ['moe-none', C.none, '2 3']]
+                .map(([n, c, dash]) => ({ label: n + (n === 'moe-bias' ? ' (main run)' : ''), color: c, dash, pts: tokPts(B[n], d0) }));
+            function drawLoss(view) {
+                const dense = { label: 'dense phase', color: '#6b6b75', pts: tokPts(D.dense, 0) };
+                const series = view === 'whole run' ? [dense, ...brS] : brS;
+                lineChart(document.getElementById('lossChart'), series, {
+                    xlabel: 'tokens seen (millions)', xfmt: v => v.toFixed(view === 'whole run' ? 1 : 2) + 'M', yd: view === 'whole run' ? 1 : 3,
+                    marks: [[d0 / 1e6, 'converted']], x0: view === 'whole run' ? 0 : undefined
+                });
+                legend('lossLegend', series);
+            }
+            buttons('lossView', ['after conversion', 'whole run'], 'after conversion', drawLoss);
+            document.getElementById('branchTable').innerHTML =
+                '<tr><th>branch</th><th class="n">val at conversion</th><th class="n">val at end</th><th class="n">reduction</th><th class="n">tokens/s</th><th class="n">train time</th></tr>'
+                + Object.entries(B).map(([n, r]) => `<tr${n === 'moe-bias' ? ' class="hl"' : ''}><td>${n}</td><td class="n">${fmt(r.val[0][1], 4)}</td>`
+                    + `<td class="n">${fmt(last(r.val)[1], 4)}</td><td class="n">${fmt(r.val[0][1] - last(r.val)[1], 4)}</td>`
+                    + `<td class="n">${Math.round(r.tok_per_s).toLocaleString()}</td><td class="n">${(r.seconds / 60).toFixed(1)} min</td></tr>`).join('');
+            const better = F_.moe_beats_dense_at_equal_tokens;
+            document.getElementById('branchNote').innerHTML =
+                `Every MoE branch starts at exactly the dense model's loss and keeps falling: the main run goes from `
+                + `${fmt(main.val[0][1], 3)} to ${fmt(last(main.val)[1], 3)}, and no checkpoint after conversion is above where it started. `
+                + (better
+                    ? `Against the control, at equal tokens, the MoE ends <strong>${fmt(-F_.moe_minus_dense_val, 3)} lower</strong> than the dense model trained on the same tokens. `
+                    : `Against the control, at equal tokens, the MoE ends <strong>${fmt(F_.moe_minus_dense_val, 3)} higher</strong> than the dense model trained on the same tokens — at this scale and budget the extra parameters have not yet paid. `)
+                + `It does that at <strong>${fmt(F_.moe_throughput_ratio, 2)}×</strong> the dense model's throughput on this CPU: each token runs two experts, and the routing (sort, gather, scatter) is overhead a dense layer does not have. `
+                + `Equal tokens is not equal compute: per token the MoE does 2× the feed-forward work.`;
+
+            /* ---- 09 router gradient + spread ------------------------------------ */
+            lineChart(document.getElementById('rgChart'), [{ label: 'router grad', color: C.bias, pts: [[0, Math.max(CV.router_grad_at_conversion, 1e-12)], ...rg] }],
+                { log: true, xlabel: 'MoE training step', lx: 50, dots: true });
+            const SP = D.spread;
+            document.getElementById('spreadTable').innerHTML =
+                '<tr><th>layer</th><th class="n">moved from the dense network</th><th class="n">apart from each other</th></tr>'
+                + SP.map(r => `<tr><td>${r.layer}</td><td class="n">${fmt(mean(r.from_dense), 3)} (${fmt(Math.min(...r.from_dense), 3)}–${fmt(Math.max(...r.from_dense), 3)})</td><td class="n">${fmt(r.pairwise_mean, 3)}</td></tr>`).join('');
+            const firstRg = rg.find(p => p[0] >= 2);
+            document.getElementById('spreadNote').innerHTML =
+                `The router's gradient is ${CV.router_grad_at_conversion.toExponential(0)} at conversion, ${firstRg[1].toExponential(1)} after one update `
+                + `(a single step on different tokens already makes the copies differ), and ${last(rg)[1].toExponential(1)} by the end. `
+                + `Every expert moved from the network it was copied from, and the experts in every layer ended at least `
+                + `${fmt(Math.min(...SP.map(r => r.pairwise_mean)), 3)} of the network's own weight norm apart from one another.`;
+
+            /* ---- 10 MaxVio + heatmap ------------------------------------------ */
+            const mvS = [['moe-none', C.none, '2 3'], ['moe-aux', C.aux, '6 3'], ['moe-bias', C.bias, 'none']].map(([n, c, dash]) =>
+                ({ label: n, color: c, dash, pts: B[n].load.map(([s, ls]) => [s, mean(ls.map(l => l.maxvio))]) }));
+            lineChart(document.getElementById('mvChart'), mvS, { xlabel: 'MoE training step', y0: 0 });
+            legend('mvLegend', mvS);
+            let hmArm = 'moe-none', hmLayer = 0;
+            const HM_ARMS = { 'moe-none': B['moe-none'], 'moe-aux': B['moe-aux'], 'moe-bias': B['moe-bias'], ...D.clone.arms };
+            function drawHM() {
+                const svg = document.getElementById('hmChart'); clear(svg);
+                const r = HM_ARMS[hmArm], E = r.counts[0][1][0].length, cols = r.counts.length;
+                const H = Math.max(140, E * 9 + 40); svg.setAttribute('viewBox', `0 0 900 ${H}`);
+                const LX = 64, cw = (900 - LX - 10) / cols, ch = (H - 34) / E;
+                r.counts.forEach(([step, layers], j) => {
+                    const c = layers[hmLayer], m = c.reduce((a, b) => a + b, 0) / E;
+                    c.forEach((v, e) => {
+                        const ratio = Math.min(v / m, 2.5) / 2.5;
+                        svg.appendChild(el('rect', { x: LX + j * cw, y: 6 + e * ch, width: cw - 1, height: ch - 1, fill: `rgba(57,135,229,${(0.06 + 0.94 * ratio).toFixed(3)})` }));
+                        if (v === 0) txt(svg, LX + j * cw + cw / 2, 6 + e * ch + ch / 2 + 3, '×', { 'text-anchor': 'middle', fill: '#d03b3b', 'font-size': Math.min(10, ch) });
+                    });
+                    if (j % Math.ceil(cols / 8) === 0) txt(svg, LX + j * cw + cw / 2, H - 14, String(step), { 'text-anchor': 'middle' });
+                });
+                for (let e = 0; e < E; e += (E > 8 ? 4 : 1)) txt(svg, LX - 6, 6 + e * ch + ch / 2 + 3, (E > 8 ? 'clones ' + e + '–' + (e + 3) : 'expert ' + e), { 'text-anchor': 'end' });
+                txt(svg, 480, H - 2, 'training step', { 'text-anchor': 'middle' });
+                const lastc = last(r.counts)[1][hmLayer], m = lastc.reduce((a, b) => a + b, 0) / E;
+                document.getElementById('hmNote').innerHTML = `${hmArm}, layer ${hmLayer}, last window: busiest expert ${fmt(Math.max(...lastc) / m, 2)}× the even share, `
+                    + `quietest ${fmt(Math.min(...lastc) / m, 2)}×; ${lastc.filter(v => v === 0).length} of ${E} received nothing.`;
+            }
+            buttons('hmArm', Object.keys(HM_ARMS), 'moe-none', v => { hmArm = v; drawHM(); });
+            buttons('hmLayer', [...Array(MD.layers).keys()], 0, v => { hmLayer = v; drawHM(); });
+
+            /* ---- 11 capacity -------------------------------------------------- */
+            const cf = document.getElementById('cfSlider');
+            function drawCF() {
+                const f = +cf.value; document.getElementById('cfVal').textContent = f.toFixed(2);
+                document.getElementById('cfReadout').innerHTML = ['moe-none', 'moe-aux', 'moe-bias'].map(n => {
+                    const layers = last(B[n].counts)[1]; let drop = 0, tot = 0;
+                    layers.forEach(c => { const m = c.reduce((a, b) => a + b, 0) / c.length, cap = m * f; c.forEach(v => { drop += Math.max(0, v - cap); tot += v; }); });
+                    return `<div><div class="k">${n}</div><div class="v">${fmt(drop / tot * 100, 1)}%</div><div class="delta">of token-expert assignments dropped</div></div>`;
+                }).join('');
+            }
+            cf.addEventListener('input', drawCF); drawCF();
+
+            /* ---- 12 balancing table --------------------------------------------- */
+            document.getElementById('auxEven').textContent = fmt(D.router_example.aux_even, 2);
+            document.getElementById('auxColl').textContent = fmt(D.router_example.aux_collapsed, 2);
+            document.getElementById('balTable').innerHTML =
+                '<tr><th>this page</th><th>balancing</th><th class="n">final val loss</th><th class="n">MaxVio, last window</th><th class="n">worst MaxVio, any window</th><th class="n">dead experts, last window</th></tr>'
+                + [['moe-none', 'none'], ['moe-aux', 'aux loss, α = 0.01'], ['moe-bias', 'bias, γ = 0.001']].map(([n, b]) => {
+                    const r = B[n], worst = Math.max(...r.load.map(([, ls]) => mean(ls.map(l => l.maxvio))));
+                    return `<tr${n === 'moe-bias' ? ' class="hl"' : ''}><td>${n}</td><td>${b}</td><td class="n">${fmt(last(r.val)[1], 4)}</td><td class="n">${fmt(mvOf(r), 3)}</td><td class="n">${fmt(worst, 3)}</td><td class="n">${deadOf(r)}</td></tr>`;
+                }).join('');
+            const mv = F_.maxvio;
+            const valOf = n => last(B[n].val)[1];
+            document.getElementById('balNote').innerHTML =
+                `Both methods balance: MaxVio ends at ${fmt(mv['moe-bias'], 2)} with the bias and ${fmt(mv['moe-aux'], 2)} with the auxiliary loss, against ${fmt(mv['moe-none'], 2)} with neither. `
+                + `The loss differences between the three are ${fmt(Math.max(valOf('moe-none'), valOf('moe-aux'), valOf('moe-bias')) - Math.min(valOf('moe-none'), valOf('moe-aux'), valOf('moe-bias')), 3)} at most — `
+                + `too small at this scale to separate the methods on quality, which is what the papers' 1B–3B comparisons below are for. `
+                + `What this scale does show is the mechanism: imbalance without balancing, and both cures working.`;
+            document.getElementById('scopeNote').innerHTML =
+                `Not measured here. The bias on this page counts load over each whole training step — ${MD.batch} sequences, ${TPS.toLocaleString()} tokens — which on one machine <em>is</em> the whole batch, `
+                + `the scope the Qwen result favours. Across GPUs it would mean summing the counts over all of them before the update.`;
+
+            /* ---- 14 clone families --------------------------------------------- */
+            const CA = D.clone.arms;
+            const clS = [['clone-hard-none', C.none, '2 3'], ['clone-hard-bias', C.dense, 'none'], ['clone-prob-bias', C.bias, 'none']]
+                .map(([n, c, dash]) => ({ label: n, color: c, dash, n }));
+            lineChart(document.getElementById('clLoss'), clS.map(s => ({ ...s, pts: CA[s.n].val })),
+                { xlabel: 'step after growth', yd: 3, marks: [[0, '']] });
+            lineChart(document.getElementById('clDead'), clS.map(s => ({ ...s, pts: CA[s.n].load.map(([st, ls]) => [st, ls.reduce((a, l) => a + l.dead, 0)]) })),
+                { xlabel: 'step after growth', y0: 0, yd: 0, marks: [[D.clone.prob_window, 'probabilistic ends']] });
+            legend('clLegend', clS);
+            const ratio = r => mean(r.spread.map(s => s.within_family)) / mean(r.spread.map(s => s.across_family));
+            const totalE = MD.layers * 32;
+            const starvedEnd = r => last(r.load)[1].reduce((a, l) => a + l.starved, 0);
+            document.getElementById('cloneTable').innerHTML =
+                '<tr><th>arm</th><th class="n">val before growth</th><th class="n">right after</th><th class="n">end</th><th class="n">dead, worst window</th><th class="n">dead, last window</th><th class="n">starved, last window</th><th class="n">clone distance ÷ family distance</th></tr>'
+                + clS.map(({ n }) => {
+                    const r = CA[n];
+                    return `<tr><td>${n}</td><td class="n">${fmt(D.clone.from_val, 4)}</td><td class="n">${fmt(r.val[0][1], 4)}</td><td class="n">${fmt(last(r.val)[1], 4)}</td>`
+                        + `<td class="n">${F_.clone_dead_max[n]} / ${totalE}</td><td class="n">${F_.clone_dead_end[n]} / ${totalE}</td><td class="n">${starvedEnd(r)} / ${totalE}</td><td class="n">${fmt(ratio(r), 3)}</td></tr>`;
+                }).join('');
+            const bump = CA['clone-hard-bias'].val[0][1] - D.clone.from_val;
+            const dn = F_.clone_dead_end, dm = F_.clone_dead_max;
+            document.getElementById('cloneNote').innerHTML =
+                `Growing is <strong>not</strong> function-preserving the way §07's conversion was, and it is measured rather than hidden: the loss jumps by ${fmt(bump, 3)} at the moment of growth. `
+                + `Tiled router columns score all four clones of a family alike, so a token's top-4 is one family's four clones where it used to be two different experts. `
+                + `Without balancing, hard top-4 ends with <strong>${dn['clone-hard-none']} of ${totalE}</strong> experts receiving no tokens at all (worst window ${dm['clone-hard-none']}); `
+                + `with the bias, ${dn['clone-hard-bias']} (worst ${dm['clone-hard-bias']}); with probabilistic selection for the first ${D.clone.prob_window} steps and the bias, ${dn['clone-prob-bias']} (worst ${dm['clone-prob-bias']}). `
+                + `"Starved" counts experts below a tenth of an even share in the last 25 steps — alive on paper, learning almost nothing. `
+                + `The last column is how far apart clones of one family ended, as a fraction of how far apart different families are: below 1 means families are still recognisable as families.`;
+
+            /* ---- 15 expert parallelism ----------------------------------------- */
+            buttons('epLink', Object.keys(R.a2a_seconds), 'NVLink 5 (B200)', link => {
+                const t = R.a2a_seconds[link], c = R.compute_seconds_b200;
+                document.getElementById('epReadout').innerHTML = `
+                    <div><div class="k">all-to-all bytes, one sequence</div><div class="v">${fmt(R.a2a_gb, 1)} GB</div><div class="delta">dispatch + combine, forward + backward</div></div>
+                    <div><div class="k">time on this link</div><div class="v">${t.toFixed(3)} s</div><div class="delta">${link}</div></div>
+                    <div><div class="k">compute, same sequence</div><div class="v">${c.toFixed(3)} s</div><div class="delta">${fmt(R.compute_tflop_seq, 1)} TFLOP at B200 peak</div></div>
+                    <div><div class="k">communication ÷ compute</div><div class="v" style="color:${t / c > 2 ? 'var(--crit)' : 'var(--text)'}">${(t / c).toFixed(1)}×</div><div class="delta">${t / c > 2 ? 'cannot be hidden' : 'must overlap'}</div></div>`;
+            });
+
+            /* ---- 16 layout table -------------------------------------------------- */
+            const fits = (tot, card) => tot <= card ? `<span class="gate pass">✓ fits ${card} GiB</span>` : `<span class="gate fail">✗ ${card} GiB card</span>`;
+            const st8 = R.ep8_experts_gib + R.ep8_dense_gib;
+            document.getElementById('layoutTable').innerHTML =
+                '<tr><th>layout</th><th class="n">GPUs</th><th class="n">experts per GPU</th><th class="n">dense parts, ZeRO-1</th><th class="n">training state</th><th class="n">+ one 8k sequence</th><th>fits</th></tr>'
+                + `<tr class="hl"><td>one B200 node, EP = 8</td><td class="n">8</td><td class="n">${fmt(R.ep8_experts_gib, 1)} GiB</td><td class="n">${fmt(R.ep8_dense_gib, 1)} GiB</td><td class="n">${fmt(st8, 1)} GiB</td><td class="n">${fmt(R.ep8_total_gib, 1)} GiB</td><td>${fits(R.ep8_total_gib, 167.6)}</td></tr>`
+                + `<tr><td>one H100 node, EP = 8</td><td class="n">8</td><td class="n">${fmt(R.ep8_experts_gib, 1)} GiB</td><td class="n">${fmt(R.ep8_dense_gib, 1)} GiB</td><td class="n">${fmt(st8, 1)} GiB</td><td class="n">${fmt(R.ep8_total_gib, 1)} GiB</td><td>${fits(R.ep8_total_gib, 74.5)}</td></tr>`
+                + `<tr><td>two H100 nodes, EP = 16</td><td class="n">16</td><td class="n">${fmt(R.ep8_experts_gib / 2, 1)} GiB</td><td class="n">—</td><td class="n">${fmt(R.ep16_state_gib, 1)} GiB</td><td class="n">${fmt(R.ep16_total_gib, 1)} GiB</td><td>${fits(R.ep16_total_gib, 74.5)}</td></tr>`;
+            document.getElementById('tpe').textContent = R.tokens_per_expert_ep8.toLocaleString() + ' per expert at EP 8, against roughly 280 where a B200 stops waiting on memory';
+
+            /* ---- 17 case row ------------------------------------------------------- */
+            document.getElementById('mineCaseRow').innerHTML = `<td><strong>this page</strong></td><td>${M(s82.total)} / ${M(s82.active)}</td><td>8 + 0, top-2</td><td>softmax, fp32</td><td>bias γ = 0.001, whole step</td>`;
+            document.getElementById('mineCaseRow').className = 'warn';
+
+            /* ---- 18 V5 decisions ------------------------------------------------- */
+            document.getElementById('v5Table').innerHTML =
+                '<tr><th>the notes recommend</th><th>what this page adds</th></tr>'
+                + [['Balancing: a per-expert bias, γ ≈ 0.001, load counted over the whole batch',
+                    `Measured working: MaxVio ${fmt(mv['moe-none'], 2)} → ${fmt(mv['moe-bias'], 2)} with no loss penalty visible at this scale.`],
+                ['No dropped tokens; grouped expert computation',
+                    `The measured loads would drop ${(() => { const layers = last(B['moe-none'].counts)[1]; let d = 0, t = 0; layers.forEach(c => { const m = c.reduce((a, b) => a + b, 0) / c.length; c.forEach(v => { d += Math.max(0, v - 1.25 * m); t += v; }); }); return fmt(d / t * 100, 1); })()}% of assignments at capacity 1.25 without balancing (§11).`],
+                ['EP = 8 inside a node, ZeRO-1 for the dense parts', 'Arithmetic only (§15–16); one machine here.'],
+                ['A 32-bit router, frozen during RL', 'The router here is float32 and starts at a tenth of the usual scale; RL is out of scope.'],
+                ['From scratch or grown?', `Grown, and function-preserving: the converted model scores ${Math.abs(CV.moe_val - CV.dense_val).toExponential(0)} away from the dense one, so none of the dense budget is lost at conversion. Whether growth beats from-scratch is a budget question this page does not answer.`],
+                ['Growing to many experts', 'Cloning without redrawing costs a measured loss jump and produces dead clones (§14); the fix has to be planned, not discovered.']]
+                    .map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
+
+            /* ---- 19 gates -------------------------------------------------------- */
+            document.getElementById('gateReadout').innerHTML = `
+                <div><div class="k">gates</div><div class="v" style="color:${pG === nG ? 'var(--good)' : 'var(--crit)'}">${pG}/${nG}</div><div class="delta">${pG === nG ? 'all pass' : (nG - pG) + ' failing'}</div></div>
+                <div><div class="k">notes' figures</div><div class="v">${D.notes_check.filter(c => c.ok).length}/${D.notes_check.length}</div><div class="delta">recomputed and matched</div></div>
+                <div><div class="k">training runs</div><div class="v">${1 + Object.keys(B).length + Object.keys(CA).length}</div><div class="delta">${(trainSec / 60).toFixed(0)} min on ${D.meta.device.toUpperCase()}</div></div>
+                <div><div class="k">tokens read</div><div class="v">${((D.ranges.clone[1]) / 1e6).toFixed(0)}M</div><div class="delta">each exactly once per branch</div></div>`;
+            document.getElementById('gateList').innerHTML = Object.entries(gates).map(([k, v]) =>
+                `<div class="gate ${v ? 'pass' : 'fail'}">${v ? '✓' : '✗'} ${k}</div>`).join('');
+            document.getElementById('limits').innerHTML =
+                `<strong>Scale.</strong> A ${M(MD.sizes['1x1'].total)} dense model, ${(D.dense.tokens / 1e6).toFixed(0)}M + ${(main.tokens / 1e6).toFixed(0)}M tokens, one seed. Nothing here establishes behaviour at 1B+, and the gap between branches is one run each, not a distribution. `
+                + `<strong>Equal tokens, not equal compute.</strong> The MoE does twice the feed-forward work per token. `
+                + `<strong>CPU.</strong> MPS was measured and rejected (slower than CPU for the MoE, and non-deterministic); throughput figures are this machine's, not a GPU's. `
+                + `<strong>Not implemented:</strong> expert parallelism, capacity limits (computed from loads instead), z-loss, shared experts, partition and drop-upcycling, micro-batch vs whole-batch scope.`;
+            document.getElementById('provenance').innerHTML =
+                `Every measured number was produced by <code class="mono">s14_moe.py</code> and baked in from <code class="mono">out/evidence.json</code> by <code class="mono">build_notebook.py</code>. `
+                + `python ${D.meta.python} · torch ${D.meta.torch} · ${D.meta.platform}. Token cache sha256 <code class="mono">${D.corpus.token_sha256.slice(0, 16)}…</code>, tokenizer sha256 <code class="mono">${D.corpus.tokenizer_sha256.slice(0, 16)}…</code>.`;
+        })();
+    </script>
+    <script>window.PAGE_ID = 'one-becomes-eight'; window.ROOT_PATH = '../';</script>
+    <script src="../shared.js"></script>
+</body>
+
+</html>

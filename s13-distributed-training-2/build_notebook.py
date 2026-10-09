@@ -102,6 +102,30 @@ def engine_cell():
             "print(f'wrote and loaded s13_reversible.py ({len(engine_src):,} bytes)')\n")
 
 
+def reset_cell():
+    """A visible switch for wiping cached stages, rather than an environment variable.
+
+    Resuming is the default and is what makes a lost session cheap. But a cache from a
+    different machine, a different model size, or a build whose stage `version` markers were
+    not bumped is worse than no cache at all, so the escape hatch has to be obvious and
+    adjacent to the run.
+    """
+    return ("# ---------------------------------------------------------------------------\n"
+            "# Cached stages let a lost session resume instead of restarting. Keep RESET as\n"
+            "# \"0\" for that.\n"
+            "#\n"
+            "# Set RESET = \"1\" to wipe every cached stage AND the token cache, then Run All.\n"
+            "# Do that if:\n"
+            "#   - the cache came from a different machine or a different GPU\n"
+            "#   - the model size, sequence length or token budget changed\n"
+            "#   - a run looks like it is reporting numbers from an older version of the code\n"
+            "# ---------------------------------------------------------------------------\n"
+            "import os\n"
+            "RESET = \"0\"\n"
+            "os.environ[\"S13_RESET\"] = RESET\n"
+            "print('cache will be WIPED' if RESET == '1' else 'cached stages will be reused')\n")
+
+
 def to_notebook(cells):
     nb = {"cells": [], "metadata": {
         "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
@@ -168,6 +192,8 @@ def main():
                            "execution_count": None, "outputs": [], "source": setup_cell()})
     nb["cells"].insert(2, {"cell_type": "code", "id": "s13engine", "metadata": {},
                            "execution_count": None, "outputs": [], "source": engine_cell()})
+    nb["cells"].insert(3, {"cell_type": "code", "id": "s13reset", "metadata": {},
+                           "execution_count": None, "outputs": [], "source": reset_cell()})
     NB.write_text(json.dumps(nb, indent=1, ensure_ascii=False), encoding="utf-8")
     code = sum(1 for c in nb["cells"] if c["cell_type"] == "code")
     print(f"wrote {NB.name} · {len(nb['cells'])} cells ({code} code), engine embedded")

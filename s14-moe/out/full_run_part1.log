@@ -1,0 +1,115 @@
+python 3.9.6 · torch 2.2.2 · device cpu
+total                    30.53 B
+active                    3.35 B
+experts_all_layers       28.99 B
+dense_parts               1.54 B
+train state @16B           455 GiB   work/token 20.1 GFLOP
+all-to-all, 1 seq         45.1 GB    EP=8 on B200: 87.4 GiB per card
+router example, softmax top-2 weights [0.55, 0.45] · sigmoid [0.507, 0.493]
+
+23/23 of the notes' figures reproduce
+cached: 20,000,000 tokens · source HuggingFaceFW/fineweb-edu
+E=1   k=1: total   5.58M  active   5.58M  (counted 5,575,168 = formula)
+E=8   k=2: total  22.10M  active   7.94M  (counted 22,098,432 = formula)
+E=32  k=4: total  78.75M  active  12.69M  (counted 78,746,112 = formula)
+  ok   weights_sum_to_one
+  ok   bias_changed_selection
+  ok   weights_from_raw_scores
+  ok   bias_has_no_gradient
+  dense              step    50/610  train 7.437  val 6.955  17,538 tok/s
+  dense              step   100/610  train 6.520  val 6.398  17,182 tok/s
+  dense              step   150/610  train 6.142  val 6.175  16,895 tok/s
+  dense              step   200/610  train 6.023  val 6.013  16,367 tok/s
+  dense              step   250/610  train 5.929  val 5.887  15,761 tok/s
+  dense              step   300/610  train 5.807  val 5.872  15,243 tok/s
+  dense              step   350/610  train 5.779  val 5.775  15,043 tok/s
+  dense              step   400/610  train 5.697  val 5.745  14,954 tok/s
+  dense              step   450/610  train 5.708  val 5.697  14,890 tok/s
+  dense              step   500/610  train 5.606  val 5.653  14,809 tok/s
+  dense              step   550/610  train 5.596  val 5.598  14,716 tok/s
+  dense              step   600/610  train 5.547  val 5.591  14,574 tok/s
+  dense              step   610/610  train 5.478  val 5.603  14,379 tok/s
+[done]   dense · 352s
+dense: val 9.068 -> 5.603 over 4,997,120 tokens at 14,379 tok/s
+[done]   conversion · 14s
+dense val 5.602706   converted val 5.602706   |Δ| 1.54e-08
+router gradient at conversion 3.63e-09 (attention's on the same batch: 1.52e-01)
+largest logit difference 4.77e-06 on logits up to 11.8; router weights sum to 1 within 1.2e-07
+  dense-continued    step    40/488  train 5.545  val 5.520  12,515 tok/s
+  dense-continued    step    80/488  train 5.495  val 5.536  12,431 tok/s
+  dense-continued    step   120/488  train 5.452  val 5.533  12,470 tok/s
+  dense-continued    step   160/488  train 5.381  val 5.548  12,313 tok/s
+  dense-continued    step   200/488  train 5.485  val 5.491  11,998 tok/s
+  dense-continued    step   240/488  train 5.457  val 5.455  11,758 tok/s
+  dense-continued    step   280/488  train 5.514  val 5.462  11,718 tok/s
+  dense-continued    step   320/488  train 5.445  val 5.395  11,747 tok/s
+  dense-continued    step   360/488  train 5.318  val 5.373  11,782 tok/s
+  dense-continued    step   400/488  train 5.300  val 5.360  11,803 tok/s
+  dense-continued    step   440/488  train 5.358  val 5.329  11,728 tok/s
+  dense-continued    step   480/488  train 5.271  val 5.289  11,732 tok/s
+  dense-continued    step   488/488  train 5.248  val 5.294  11,581 tok/s
+[done]   dense-continued · 351s
+  moe-bias           step    40/488  train 5.544  val 5.521  7,063 tok/s
+  moe-bias           step    80/488  train 5.497  val 5.546  6,951 tok/s
+  moe-bias           step   120/488  train 5.457  val 5.541  6,716 tok/s
+  moe-bias           step   160/488  train 5.389  val 5.558  6,666 tok/s
+  moe-bias           step   200/488  train 5.492  val 5.500  6,784 tok/s
+  moe-bias           step   240/488  train 5.468  val 5.469  6,835 tok/s
+  moe-bias           step   280/488  train 5.530  val 5.482  6,901 tok/s
+  moe-bias           step   320/488  train 5.458  val 5.409  6,966 tok/s
+  moe-bias           step   360/488  train 5.331  val 5.388  7,052 tok/s
+  moe-bias           step   400/488  train 5.308  val 5.374  7,072 tok/s
+  moe-bias           step   440/488  train 5.367  val 5.343  7,078 tok/s
+  moe-bias           step   480/488  train 5.281  val 5.292  7,092 tok/s
+  moe-bias           step   488/488  train 5.253  val 5.302  6,996 tok/s
+[done]   moe-bias · 580s
+  moe-aux            step    40/488  train 5.544  val 5.521  6,499 tok/s
+  moe-aux            step    80/488  train 5.497  val 5.548  6,685 tok/s
+  moe-aux            step   120/488  train 5.458  val 5.542  6,850 tok/s
+  moe-aux            step   160/488  train 5.391  val 5.568  6,929 tok/s
+  moe-aux            step   200/488  train 5.490  val 5.497  6,978 tok/s
+  moe-aux            step   240/488  train 5.469  val 5.474  6,999 tok/s
+  moe-aux            step   280/488  train 5.531  val 5.477  6,981 tok/s
+  moe-aux            step   320/488  train 5.455  val 5.406  6,995 tok/s
+  moe-aux            step   360/488  train 5.326  val 5.384  7,003 tok/s
+  moe-aux            step   400/488  train 5.306  val 5.370  6,973 tok/s
+  moe-aux            step   440/488  train 5.365  val 5.341  6,936 tok/s
+  moe-aux            step   480/488  train 5.277  val 5.290  6,921 tok/s
+  moe-aux            step   488/488  train 5.252  val 5.304  6,838 tok/s
+[done]   moe-aux · 593s
+  moe-none           step    40/488  train 5.544  val 5.522  6,764 tok/s
+  moe-none           step    80/488  train 5.498  val 5.544  6,791 tok/s
+  moe-none           step   120/488  train 5.456  val 5.544  6,400 tok/s
+  moe-none           step   160/488  train 5.389  val 5.575  6,504 tok/s
+  moe-none           step   200/488  train 5.484  val 5.495  6,600 tok/s
+  moe-none           step   240/488  train 5.462  val 5.463  6,680 tok/s
+  moe-none           step   280/488  train 5.517  val 5.464  6,743 tok/s
+  moe-none           step   320/488  train 5.447  val 5.397  6,778 tok/s
+  moe-none           step   360/488  train 5.321  val 5.378  6,773 tok/s
+  moe-none           step   400/488  train 5.299  val 5.361  6,752 tok/s
+  moe-none           step   440/488  train 5.357  val 5.331  6,757 tok/s
+  moe-none           step   480/488  train 5.270  val 5.286  6,777 tok/s
+  moe-none           step   488/488  train 5.246  val 5.290  6,704 tok/s
+[done]   moe-none · 606s
+
+branch             val start  val end       Δ    tok/s  MaxVio  dead
+dense-continued        5.603    5.294  -0.308   11,581       —     —
+moe-bias               5.603    5.302  -0.301    6,996    0.18     0
+moe-aux                5.603    5.304  -0.299    6,838    0.31     0
+moe-none               5.603    5.290  -0.313    6,704    1.97     0
+layer 0: moved from dense 0.521 · apart from each other 0.660
+layer 1: moved from dense 0.591 · apart from each other 0.779
+layer 2: moved from dense 0.712 · apart from each other 0.946
+layer 3: moved from dense 0.683 · apart from each other 0.907
+Traceback (most recent call last):
+  File "/Users/shubham/Projects/the-neural-canvas/s14-moe/s14_moe.py", line 862, in <module>
+    CLONE[arm], m_ = trained(arm, lambda: grow(MOE_M, 32, 4, router_noise=0.01, seed=7),
+  File "/Users/shubham/Projects/the-neural-canvas/s14-moe/s14_moe.py", line 695, in trained
+    rec = stage(name, run, version)
+  File "/Users/shubham/Projects/the-neural-canvas/s14-moe/s14_moe.py", line 78, in stage
+    value = fn()
+  File "/Users/shubham/Projects/the-neural-canvas/s14-moe/s14_moe.py", line 690, in run
+    rec = train(model, rng, name=name, **kw)
+  File "/Users/shubham/Projects/the-neural-canvas/s14-moe/s14_moe.py", line 673, in train
+    print(f"  {name:<18} step {step:>5}/{steps}  train {rec['train'][-1][1]:.3f}  "
+IndexError: list index out of range
