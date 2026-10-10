@@ -23,7 +23,8 @@ S14_QUICK=1 python s14_moe.py             # smoke run of the whole harness on a 
 
 Use `.venv-s9/bin/python` (torch 2.2.2, nbclient), plus `datasets` for the one-time token fetch.
 
-**Current state: GATES_TBD gates pass**, on CPU (Apple M5), TRAIN_MIN_TBD minutes of training.
+**Current state: 14/14 gates pass**, on the CPU of an Apple M5, 83 minutes of training across 8 runs.
+The console log of every run as it trained is [`out/training_log.txt`](out/training_log.txt).
 
 ---
 
@@ -98,7 +99,7 @@ validation checkpoint after conversion is below that starting point.
 
 **What it doesn't show is the MoE winning.** At 4M tokens, all four branches end within 0.014 of one
 another. With one seed, a gap that size can't separate them. The main run ends 0.008 *above*
-the dense control, and the unbalanced MoE 0.005 below it. This is reported, not hidden, and it is what
+the dense control, and the unbalanced MoE 0.004 below it. This is reported, not hidden, and it is what
 the notes' own §15 numbers predict: sparse upcycling beat continued dense training only with
 10–60% *extra* budget, and here the experts spend the first part of that budget just becoming different
 from one another. On top of that, equal tokens is not equal compute. Per token the MoE does twice the
@@ -138,7 +139,46 @@ which is the scope §14 favours.
 
 ## 5 · Growing again: clone families
 
-CLONE_TBD
+§15 of the notes records a failure the published growth studies don't. Lightning LM cloned 20
+experts into 460 without redrawing any neurons, kept hard top-k, and dead experts rose
+27 → 38 → 122 → 154 → 168 within a few hundred steps. The router couldn't tell near-identical clones
+apart, so each family collapsed onto a few members. Their fix was probabilistic selection during an
+early window.
+
+The same experiment at this scale: the trained `moe-bias` model is grown from 8 experts to **32**
+(each cloned 4×), the router columns are tiled with 1% noise, and top-k goes from 2 to 4. All three
+arms read the same next 2M tokens.
+
+| arm | val right after growth | val at end | dead experts (of 128), last window | worst window | starved, last window |
+|---|---|---|---|---|---|
+| hard top-4, no balancing | 5.395 | 5.215 | **15** | 15 | **41** |
+| hard top-4, bias | 5.395 | **5.212** | **0** | 0 | 0 |
+| probabilistic for 150 steps, then hard, bias | 5.395 | 5.234 | 5 | **33** | — |
+
+("Starved" means below a tenth of an even share: alive on paper, learning almost nothing.)
+
+What this shows:
+
+* **Growing is not function-preserving the way §1's conversion was**, and the jump is measured rather
+  than hidden: +0.093 at the moment of growth. Tiled router columns score all four clones of a family
+  alike, so a token's top-4 is one family's four clones where it used to be two different experts.
+  All three arms recover past the 8-expert model's 5.302 by the end.
+* **Without balancing, the collapse appears and is still growing when the run ends.** Dead experts
+  go 0 → 3 → 7 → 10 → 15, starved ones 7 → 41, and MaxVio climbs 1.68 → 3.12. That is the notes'
+  failure, reproduced.
+* **With the bias at γ = 0.001, it never appears.** There are zero dead and zero starved experts in
+  every window, and the loss is the best of the three.
+* **Probabilistic selection made things worse here, not better.** While it was on, validation
+  loss sat at 5.34–5.37 against ~5.24 for the hard arms: validation uses hard top-4, so the model was
+  evaluated under a rule it wasn't being trained with. And on the switch to hard selection at step 150,
+  dead experts *spiked to 33*, then recovered to 5.
+
+This doesn't contradict the notes; it bounds them. Lightning LM's bias moved at γ = 0.0001, then
+0.00005, which is 10–20× slower than here, over 460 experts in families of 23, not 32 in families of 4.
+A slow bias can't rescue a clone before the router has settled on its siblings. That explanation is
+**a hypothesis**: a γ sweep on the grown model would test it, and wasn't run. Clones of one family ended
+0.42–0.50 as far apart as different families are, so the families are still recognisable as families
+after 2M tokens.
 
 ---
 
@@ -187,7 +227,8 @@ from 6.5 s to 4.7 s.
 | `build_notebook.py` | `.py` → executed `.ipynb` → baked page | yes |
 | `one-becomes-eight.html` | the page, `S14DATA` baked in | yes |
 | `check_page.py` | renders the page in headless Chrome, asserts every panel built | yes |
-| `out/evidence.json` | every number the page shows | yes |
+| `out/evidence.json` | every number the page shows, incl. per-25-step train loss, val loss, expert loads and router gradient for every run | yes |
+| `out/training_log.txt` | the console log of the training runs as they happened, both invocations, merged | yes |
 | `out/tokens_20000000_8192.meta.json` | token cache provenance: source, coverage, sha256 | yes |
 | `out/tokens_*.npy` | the 20M-token cache, re-streamed in ~11 s, verified by sha256 | no |
 | `out/stages/` | per-run JSON + weight checkpoints, the resume cache | no |
@@ -199,4 +240,36 @@ notebook retrain from scratch, delete `out/stages/`.
 
 ## 10 · Gates
 
-GATE_LIST_TBD
+- ✓ the notes' reference figures reproduce
+- ✓ parameter counts equal the formula
+- ✓ router weights sum to one and the bias stays out of the gradient
+- ✓ dense pretraining reduces validation loss
+- ✓ conversion preserves the function (val loss within 1e-4)
+- ✓ conversion preserves the function (logits within 1e-3)
+- ✓ MoE starts exactly where the dense model stopped
+- ✓ MoE keeps reducing validation loss after conversion
+- ✓ no MoE checkpoint is worse than where the dense model stopped
+- ✓ the router gets no language-loss gradient at conversion
+- ✓ experts separated from one another
+- ✓ bias balancing beats no balancing on MaxVio
+- ✓ aux loss beats no balancing on MaxVio
+- ✓ no token range is read twice and none overlaps validation
+
+`s14_moe.py` exits non-zero if any gate fails, and so does `build_notebook.py`. Findings that could
+have gone either way (whether the MoE beats the dense control, and whether probabilistic selection
+helps) are recorded in `evidence.json["findings"]` as measured. They are deliberately not gates.
+
+---
+
+## 11 · How the run went
+
+It took three invocations, all in [`out/training_log.txt`](out/training_log.txt), verbatim with headers:
+
+1. Dense model, conversion, the four branches. Then a crash at the start of the clone phase: a
+   **logging** bug (the progress print indexed an empty train-loss list at step 20). The print was fixed;
+   no training logic changed.
+2. Resumed: six runs reloaded from cache, the three clone arms trained. **The machine slept** during
+   the last arm, so its record said 67 tokens/s over 29,814 s.
+3. That one arm was rerun under `caffeinate -i`. Every validation loss, training-loss window and
+   per-expert token count matched the slept run **bit for bit** (CPU training is deterministic). Only
+   the timing changed, to 3,587 tokens/s over 557 s.

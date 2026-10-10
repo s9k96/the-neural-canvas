@@ -42,5 +42,6 @@ s14-moe/out/stages/
 s14-moe/out/stages_quick/
 s14-moe/out/tokens_*.npy
 s14-moe/out/evidence_smoke.json
-s14-moe/out/full_run.log
+# raw logs; the committed record is out/training_log.txt, merged from these
+s14-moe/out/full_run*.log
 s14-moe/_smoke_page.html

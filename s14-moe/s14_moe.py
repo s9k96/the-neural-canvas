@@ -84,7 +84,8 @@ def stage(name, fn, version="1"):
 T_START = time.time()
 EVIDENCE = {"meta": {"python": platform.python_version(), "torch": torch.__version__,
                      "platform": platform.platform(), "device": str(DEV), "quick": QUICK,
-                     "chip": platform.processor() or platform.machine()}}
+                     "chip": (os.popen("sysctl -n machdep.cpu.brand_string 2>/dev/null").read().strip()
+                              or platform.processor() or platform.machine())}}
 
 
 def snapshot(label):
@@ -563,6 +564,11 @@ snapshot("router_check")
 # * **aux** — Switch's `α·N·Σ fᵢ·Pᵢ` with α = 0.01, summed over layers;
 # * **bias** — after every step, `bᵢ ← bᵢ + γ·sign(mean load − loadᵢ)` with γ = 0.001, the load
 #   counted over the whole step's batch (§14's whole-batch scope).
+#
+# Every run is a cached stage, so a rebuilt notebook prints `[resume] <run>` and the result
+# tables rather than training progress. **The console output of every run as it trained is in
+# [`out/training_log.txt`](out/training_log.txt)**; the per-25-step curves are in
+# `out/evidence.json`.
 
 # %%
 LR, WARMUP = 1e-3, 100

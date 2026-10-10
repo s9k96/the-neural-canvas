@@ -183,6 +183,16 @@
                             layers, 4.8&times; less memory for 16% throughput, and a maximum-batch run that bought
                             nothing because the GPU was never memory-bound.</p>
                     </a>
+                    <a class="topic-card" data-session="S14" href="s14-moe/one-becomes-eight.html">
+                        <span class="card-badge">S14</span>
+                        <h3>One Becomes Eight</h3>
+                        <p class="card-hook">A dense model becomes a mixture of experts and keeps learning.</p>
+                        <p class="card-detail">A dense model's feed-forward block is copied into eight experts. The
+                            converted model scores the same as the dense one to 1.5e-8, and at that moment the router
+                            gets no gradient at all. Training continues from exactly where it stopped, 5.603 &rarr;
+                            5.302. Measured on the way: collapse without balancing (MaxVio 1.97, the bias brings it to
+                            0.18), and dead clones when 8 experts are grown to 32, which the bias prevents.</p>
+                    </a>
                 </div>
 
                 <p class="topic-empty" id="topicEmpty" hidden>No widget matches that. <button type="button"
